@@ -11,6 +11,11 @@ ACCOUNT_PLAN_TYPES: Final[set[str]] = {
     "business",
     "enterprise",
     "edu",
+    # Anthropic/Claude vocabulary (add-anthropic-account-model): subscription
+    # tier plus Console API-key accounts. "unknown" is the DEFAULT_PLAN
+    # fallback and is added by the rate-limit set below.
+    "max",
+    "console",
 }
 
 RATE_LIMIT_PLAN_TYPES: Final[set[str]] = {

@@ -18,12 +18,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.auth import (
     DEFAULT_EMAIL,
     DEFAULT_PLAN,
-    OpenAIAuthClaims,
     clean_account_identity_part,
-    extract_id_token_claims,
     generate_unique_account_id,
-    normalize_seat_type,
-    resolve_seat_identity,
 )
 from app.core.auth.api_key_cache import get_api_key_cache
 from app.core.cache.invalidation import NAMESPACE_API_KEY, get_cache_invalidation_poller
@@ -32,9 +28,8 @@ from app.core.clients.oauth import (
     OAuthTokens,
     build_authorization_url,
     exchange_authorization_code,
-    exchange_device_token,
     generate_pkce_pair,
-    request_device_code,
+    split_pasted_callback,
 )
 from app.core.config.settings import OAUTH_CALLBACK_PORT, OAUTH_REDIRECT_URI, get_settings
 from app.core.crypto import TokenEncryptor
@@ -42,7 +37,7 @@ from app.core.plan_types import coerce_account_plan_type
 from app.core.upstream_proxy import ResolvedUpstreamRoute, UpstreamProxyRouteError, resolve_upstream_route
 from app.core.utils.time import naive_utc_to_epoch, utcnow
 from app.db.models import Account, AccountProxyBinding, AccountStatus
-from app.db.session import get_background_session, sqlite_writer_section
+from app.db.session import get_background_session
 from app.modules.accounts.repository import AccountIdentityConflictError, AccountsRepository
 from app.modules.oauth.repository import (
     OAuthFlowRecord,
@@ -74,7 +69,7 @@ _ACCOUNT_IDENTITY_CONFLICT_MESSAGE = (
 )
 _REAUTH_SEAT_MISMATCH_MESSAGE = (
     "The account you signed in as is not the one being re-authenticated. "
-    "No changes were made. Sign out of ChatGPT (or use a private window), then re-run "
+    "No changes were made. Sign out of Claude (or use a private window), then re-run "
     "reauthentication and log in as the exact account that needs repair."
 )
 
@@ -355,29 +350,6 @@ class OauthService:
             await repo.purge_expired(terminal_keep=_MAX_RETAINED_TERMINAL_OAUTH_FLOWS)
             await repo.create(record)
 
-    async def _claim_device_slot(self, flow_id: str) -> None:
-        """Atomically make ``flow_id`` the single current device flow, superseding
-        any prior one. Serialized in-process for SQLite; the single UPSERT is
-        atomic across replicas/processes on both backends."""
-
-        async with sqlite_writer_section():
-            async with get_background_session() as session:
-                await OAuthFlowRepository(session, self._encryptor).claim_device_slot(flow_id)
-
-    async def _consume_device_slot(self, flow_id: str | None) -> bool:
-        """Atomically consume the device slot iff ``flow_id`` still holds it.
-
-        The poller's point of no return before persisting tokens: returns False
-        (and the poller aborts without persisting) when the flow was superseded
-        by a newer device start, which atomically UPSERTed the slot to a
-        different ``flow_id``."""
-
-        if flow_id is None:
-            return False
-        async with sqlite_writer_section():
-            async with get_background_session() as session:
-                return await OAuthFlowRepository(session, self._encryptor).consume_device_slot(flow_id)
-
     async def _persist_flow_status(self, flow_id: str, *, status: str, error_message: str | None) -> bool:
         """Write a durable status transition. Returns whether it was applied; a
         non-success write is rejected (``False``) by the monotonic guard when the
@@ -486,18 +458,19 @@ class OauthService:
                 return OauthStartResponse(method="browser")
 
         if force_method == "device":
-            if intended_account_id:
-                return await self._start_device_flow(intended_account_id=intended_account_id)
-            return await self._start_device_flow()
+            raise OAuthError(
+                "device_flow_unsupported",
+                "Anthropic OAuth has no device flow; use the browser or manual-callback login.",
+            )
 
         try:
             if intended_account_id:
                 return await self._start_browser_flow(intended_account_id=intended_account_id)
             return await self._start_browser_flow()
-        except OSError:
-            if intended_account_id:
-                return await self._start_device_flow(intended_account_id=intended_account_id)
-            return await self._start_device_flow()
+        except OSError as exc:
+            # Anthropic has no device flow to fall back to: a busy callback port
+            # is fatal for the browser flow (the manual-callback path still works).
+            raise OAuthError("callback_server_unavailable", str(exc)) from exc
 
     async def oauth_status(self, flow_id: str | None = None) -> OauthStatusResponse:
         if flow_id is not None:
@@ -655,12 +628,21 @@ class OauthService:
         """
         from urllib.parse import parse_qs, urlparse
 
-        parsed = urlparse(callback_url)
-        params = parse_qs(parsed.query)
-
-        error = params.get("error", [None])[0]
-        code = params.get("code", [None])[0]
-        state = params.get("state", [None])[0]
+        stripped = callback_url.strip()
+        if "://" not in stripped:
+            # Anthropic's copy/paste flow yields a bare ``CODE#STATE`` value.
+            code, state = split_pasted_callback(stripped)
+            error = None
+        else:
+            parsed = urlparse(callback_url)
+            query = parse_qs(parsed.query)
+            error = query.get("error", [None])[0]
+            code = query.get("code", [None])[0]
+            state = query.get("state", [None])[0]
+            if not code and parsed.fragment:
+                # The redirect may carry ``CODE#STATE`` in the URL fragment.
+                code, fragment_state = split_pasted_callback(parsed.fragment)
+                state = state or fragment_state
 
         if state is not None:
             # Durable status is authoritative: the reconciliation gate hydrates
@@ -741,67 +723,9 @@ class OauthService:
             return ManualCallbackResponse(status="error", error_message=message)
 
     async def _start_device_flow(self, *, intended_account_id: str | None = None) -> OauthStartResponse:
-        flow_id = secrets.token_urlsafe(12)
-        try:
-            route = await _oauth_route()
-            device = await request_device_code(route=route, allow_direct_egress=route is None)
-        except OAuthError as exc:
-            await self._set_error(exc.message)
-            raise
-
-        expires_at = time.time() + device.expires_in_seconds
-        flow = OAuthState(
-            flow_id=flow_id,
-            status="pending",
-            method="device",
-            device_auth_id=device.device_auth_id,
-            user_code=device.user_code,
-            interval_seconds=device.interval_seconds,
-            intended_account_id=intended_account_id,
-            expires_at=expires_at,
-        )
-        async with self._store.lock:
-            self._store.remove_pending_device_flows_locked()
-            self._store.remember_flow_locked(flow)
-
-        # Persist the durable row BEFORE claiming the single-active slot and
-        # starting the sole poll task, so the poller's slot consume never races a
-        # not-yet-written row.
-        await self._persist_flow_record(
-            OAuthFlowRecord(
-                flow_id=flow_id,
-                method="device",
-                status="pending",
-                device_auth_id=device.device_auth_id,
-                user_code=device.user_code,
-                interval_seconds=device.interval_seconds,
-                intended_account_id=intended_account_id,
-                expires_at=epoch_to_naive_utc(expires_at),
-            )
-        )
-
-        async with self._store.lock:
-            # A later device start on THIS replica may have superseded this flow
-            # while its row was being persisted (the newer start removed it from
-            # the local store). Claim the single-active slot and start the sole
-            # poll task ONLY if this is still the current local device flow, and
-            # do so while holding the store lock: the claim then happens under the
-            # lock a competing start must also acquire, so claim order follows
-            # supersession order and a superseded start can neither install a
-            # stale slot pointer nor start a duplicate poller. A superseded start
-            # still returns its device code to its caller but does not poll.
-            if self._store.get_flow_locked(flow_id) is flow:
-                await self._claim_device_slot(flow_id)
-                self._ensure_device_poll_task_locked(flow)
-
-        return OauthStartResponse(
-            flow_id=flow_id,
-            method="device",
-            verification_url=device.verification_url,
-            user_code=device.user_code,
-            device_auth_id=device.device_auth_id,
-            interval_seconds=device.interval_seconds,
-            expires_in_seconds=device.expires_in_seconds,
+        raise OAuthError(
+            "device_flow_unsupported",
+            "Anthropic OAuth has no device flow; use the browser or manual-callback login.",
         )
 
     async def _handle_callback(self, request: web.Request) -> web.Response:
@@ -881,104 +805,33 @@ class OauthService:
         asyncio.create_task(self._stop_callback_server_if_idle())
         return self._html_response(html)
 
-    async def _poll_device_tokens(self, flow_id: str | None, context: "DevicePollContext") -> None:
-        # Slot ownership is the single authority for who may complete a device
-        # flow. Only the poller that atomically consumed the current device slot
-        # may persist an account OR write ANY terminal status (success or error).
-        # A poller that does not hold/win the slot writes NOTHING: this prevents a
-        # losing/duplicate poller that received ``invalid_grant`` for the consumed
-        # code from writing ``error`` during the winner's persist window (which
-        # would stop the dashboard polling before the winner's success lands).
-        consumed = False
-        try:
-            while time.time() < context.expires_at:
-                route = await _oauth_route()
-                tokens = await exchange_device_token(
-                    device_auth_id=context.device_auth_id,
-                    user_code=context.user_code,
-                    route=route,
-                    allow_direct_egress=route is None,
-                )
-                if tokens:
-                    # Point of no return: consume the single-active slot. If a
-                    # newer start superseded this flow, the consume matches zero
-                    # rows and we abort WITHOUT persisting or writing anything.
-                    consumed = await self._consume_device_slot(flow_id)
-                    if not consumed:
-                        return
-                    await self._persist_tokens(tokens, intended_account_id=context.intended_account_id)
-                    await self._set_success(flow_id)
-                    return
-                await _async_sleep(context.interval_seconds)
-            # Code expired: only the slot holder may record the terminal error.
-            if consumed or await self._consume_device_slot(flow_id):
-                await self._set_error("Device code expired.", flow_id=flow_id)
-        except OAuthError as exc:
-            if consumed or await self._consume_device_slot(flow_id):
-                await self._set_error(exc.message, flow_id=flow_id)
-        except ReauthSeatMismatchError:
-            if consumed or await self._consume_device_slot(flow_id):
-                await self._set_error(_REAUTH_SEAT_MISMATCH_MESSAGE, flow_id=flow_id)
-        except AccountIdentityConflictError:
-            if consumed or await self._consume_device_slot(flow_id):
-                await self._set_error(_ACCOUNT_IDENTITY_CONFLICT_MESSAGE, flow_id=flow_id)
-        finally:
-            async with self._store.lock:
-                flow = self._store.get_flow_locked(flow_id)
-                current = asyncio.current_task()
-                if flow is not None and flow.poll_task is current:
-                    flow.poll_task = None
-                    self._store.set_latest_flow_locked(flow)
-
-    def _ensure_device_poll_task_locked(self, state: OAuthState) -> bool:
-        if state.poll_task and not state.poll_task.done():
-            return True
-        if not state.device_auth_id or not state.user_code or not state.expires_at:
-            return False
-
-        interval = state.interval_seconds if state.interval_seconds is not None else 0
-        poll_context = DevicePollContext(
-            device_auth_id=state.device_auth_id,
-            user_code=state.user_code,
-            interval_seconds=max(interval, 0),
-            expires_at=state.expires_at,
-            intended_account_id=state.intended_account_id,
-        )
-        state.poll_task = asyncio.create_task(self._poll_device_tokens(state.flow_id, poll_context))
-        return True
-
     async def _persist_tokens(
         self,
         tokens: OAuthTokens,
         *,
         intended_account_id: str | None = None,
     ) -> None:
-        claims = extract_id_token_claims(tokens.id_token)
-        auth_claims = claims.auth or OpenAIAuthClaims()
-        raw_account_id = auth_claims.chatgpt_account_id or claims.chatgpt_account_id
-        chatgpt_user_id = resolve_seat_identity(claims, auth_claims)
-        email = claims.email or DEFAULT_EMAIL
-        workspace_id = clean_account_identity_part(auth_claims.workspace_id or claims.workspace_id)
-        workspace_label = clean_account_identity_part(auth_claims.workspace_label or claims.workspace_label)
-        seat_type = normalize_seat_type(auth_claims.seat_type or claims.seat_type)
-        account_id = generate_unique_account_id(raw_account_id, email, workspace_id, workspace_label)
-        plan_type = coerce_account_plan_type(
-            auth_claims.chatgpt_plan_type or claims.chatgpt_plan_type,
-            DEFAULT_PLAN,
-        )
+        # Anthropic issues no id_token; identity arrives on the token response
+        # as organization/account uuid fields. Plan stays ``unknown`` until a
+        # profile/organization lookup provides evidence (routable either way).
+        email = tokens.email or DEFAULT_EMAIL
+        account_id = generate_unique_account_id(tokens.account_id, email)
+
+        token_expires_at: int | None = None
+        if tokens.expires_in is not None and tokens.expires_in > 0:
+            token_expires_at = naive_utc_to_epoch(utcnow()) + int(tokens.expires_in)
 
         account = Account(
             id=intended_account_id or account_id,
-            chatgpt_account_id=raw_account_id,
-            chatgpt_user_id=chatgpt_user_id,
+            pool_class="oauth_seat",
+            anthropic_account_id=tokens.account_id,
+            anthropic_organization_id=tokens.organization_id,
+            token_expires_at=token_expires_at,
             email=email,
-            workspace_id=workspace_id,
-            workspace_label=workspace_label,
-            seat_type=seat_type,
-            plan_type=plan_type,
+            plan_type=coerce_account_plan_type(None, DEFAULT_PLAN),
             access_token_encrypted=self._encryptor.encrypt(tokens.access_token),
-            refresh_token_encrypted=self._encryptor.encrypt(tokens.refresh_token),
-            id_token_encrypted=self._encryptor.encrypt(tokens.id_token),
+            refresh_token_encrypted=self._encryptor.encrypt(tokens.refresh_token or ""),
+            id_token_encrypted=None,
             last_refresh=utcnow(),
             status=AccountStatus.ACTIVE,
             deactivation_reason=None,
@@ -1016,50 +869,13 @@ class OauthService:
         if intended is None:
             raise ReauthSeatMismatchError(None, account.email)
 
-        intended_user_id = intended.chatgpt_user_id
-        intended_claims = None
-        if intended_user_id is None:
-            try:
-                intended_token = self._encryptor.decrypt(intended.id_token_encrypted)
-                intended_claims = extract_id_token_claims(intended_token)
-                intended_user_id = resolve_seat_identity(intended_claims, intended_claims.auth)
-            except Exception:
-                intended_user_id = None
-        if intended_claims is None:
-            try:
-                intended_claims = extract_id_token_claims(self._encryptor.decrypt(intended.id_token_encrypted))
-            except Exception:
-                intended_claims = None
-
-        intended_workspace = clean_account_identity_part(intended.workspace_id or intended.workspace_label)
-        callback_workspace = clean_account_identity_part(account.workspace_id or account.workspace_label)
-        callback_claims = None
-        try:
-            callback_claims = extract_id_token_claims(self._encryptor.decrypt(account.id_token_encrypted))
-        except Exception:
-            callback_claims = None
-
-        intended_seat_ids = {
-            clean_account_identity_part(value)
-            for value in (intended_user_id, intended_claims.sub if intended_claims else None)
-            if clean_account_identity_part(value)
-        }
-        callback_seat_ids = {
-            clean_account_identity_part(value)
-            for value in (
-                account.chatgpt_user_id,
-                callback_claims.sub if callback_claims else None,
-            )
-            if clean_account_identity_part(value)
-        }
-
-        workspace_matches = (
-            intended.chatgpt_account_id is None or intended.chatgpt_account_id == account.chatgpt_account_id
-        )
-        if workspace_matches and intended.chatgpt_account_id is None and intended_workspace is not None:
-            workspace_matches = bool(callback_workspace is not None and callback_workspace == intended_workspace)
-        seat_matches = bool(intended_seat_ids & callback_seat_ids)
-        if not workspace_matches or not seat_matches:
+        # Claude personal accounts have one seat per account: the anthropic
+        # account uuid is the seat identity. Only a *differing known* uuid is a
+        # mismatch; unknown uuids on either side stay permissive so an operator
+        # can still repair a row whose identity fields never populated.
+        intended_seat = clean_account_identity_part(intended.anthropic_account_id)
+        callback_seat = clean_account_identity_part(account.anthropic_account_id)
+        if intended_seat and callback_seat and intended_seat != callback_seat:
             raise ReauthSeatMismatchError(intended.email, account.email)
 
         saved = await repo.replace_reauthorized(intended_account_id, account)
@@ -1173,15 +989,6 @@ class OauthService:
     @staticmethod
     def _html_response(html: str) -> web.Response:
         return web.Response(text=html, content_type="text/html")
-
-
-@dataclass(frozen=True)
-class DevicePollContext:
-    device_auth_id: str
-    user_code: str
-    interval_seconds: int
-    expires_at: float
-    intended_account_id: str | None = None
 
 
 def _success_html() -> str:

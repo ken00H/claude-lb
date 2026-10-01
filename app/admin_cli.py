@@ -65,7 +65,7 @@ _SQLITE_BUSY_TIMEOUT_SECONDS = 30
 _MAX_PASSWORD_BYTES = 72
 
 _SCHEMA_MISSING_HINT = (
-    "This database has no codex-lb schema yet. Run `claude-lb-db upgrade` (or start the server once) and try again."
+    "This database has no claude-lb schema yet. Run `claude-lb-db upgrade` (or start the server once) and try again."
 )
 
 _CACHE_CONVERGENCE = "a running server picks this up within about five seconds; no restart needed"

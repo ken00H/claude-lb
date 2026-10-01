@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 import logging
 from datetime import timedelta
@@ -90,6 +91,10 @@ PROBE_CONNECT_TIMEOUT_SECONDS = 10.0
 # return.
 PROBE_NETWORK_FAILURE_STATUS = 0
 IMPORT_PROXY_REQUIRED_PAUSE_REASON = "upstream_proxy_required_on_import"
+
+
+class InvalidApiKeyError(Exception):
+    """Raised when an API-key import payload is not a usable Anthropic key."""
 
 
 class InvalidAuthJsonError(Exception):
@@ -533,6 +538,41 @@ class AccountsService:
         if import_usage_refresh_allowed and self._usage_repo and self._usage_updater:
             latest_usage = await self._usage_repo.latest_by_account(window="primary")
             await self._usage_updater.refresh_accounts([saved], latest_usage)
+        if saved.status == AccountStatus.ACTIVE:
+            clear_account_routing_unavailable(saved.id)
+        get_account_selection_cache().invalidate()
+        return AccountImportResponse(
+            account_id=saved.id,
+            email=saved.email,
+            workspace_id=saved.workspace_id,
+            workspace_label=saved.workspace_label,
+            seat_type=saved.seat_type,
+            plan_type=saved.plan_type,
+            status=saved.status,
+        )
+
+    async def import_api_key(self, api_key: str, alias: str | None = None) -> AccountImportResponse:
+        """Register a static Anthropic API key as an ``api_key`` pool account."""
+        cleaned = api_key.strip()
+        if not cleaned.startswith("sk-ant-") or len(cleaned) < 20:
+            raise InvalidApiKeyError("An Anthropic API key (sk-ant-…) is required.")
+        key_digest = hashlib.sha256(cleaned.encode("utf-8")).hexdigest()[:12]
+        email = f"api-key-{key_digest}@local"
+        account = Account(
+            id=f"apikey_{key_digest}",
+            pool_class="api_key",
+            email=email,
+            alias=alias or None,
+            plan_type="console",
+            access_token_encrypted=self._encryptor.encrypt(cleaned),
+            # api_key rows have nothing to refresh; columns are non-null.
+            refresh_token_encrypted=self._encryptor.encrypt(""),
+            id_token_encrypted=None,
+            last_refresh=utcnow(),
+            status=AccountStatus.ACTIVE,
+            deactivation_reason=None,
+        )
+        saved = await self._repo.upsert_account_slot(account)
         if saved.status == AccountStatus.ACTIVE:
             clear_account_routing_unavailable(saved.id)
         get_account_selection_cache().invalidate()

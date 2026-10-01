@@ -147,7 +147,7 @@ def test_a_database_without_a_schema_explains_itself(tmp_path: Path, monkeypatch
         _run("admin", "local-login", "enable")
 
     message = str(refused.value)
-    assert "no codex-lb schema" in message and "codex-lb-db upgrade" in message
+    assert "no claude-lb schema" in message and "claude-lb-db upgrade" in message
     get_settings.cache_clear()
 
 

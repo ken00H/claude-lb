@@ -11,6 +11,7 @@ import aiohttp
 from pydantic import ValidationError
 
 from app.core.auth import (
+    IdTokenClaims,
     OpenAIAuthClaims,
     clean_account_identity_part,
     extract_id_token_claims,
@@ -27,7 +28,7 @@ from app.core.clients.codex import (
 )
 from app.core.clients.http import _safe_json, lease_http_session
 from app.core.clients.oauth import _extract_error_code, _extract_error_message
-from app.core.config.settings import AUTH_BASE_URL, OAUTH_CLIENT_ID, OAUTH_SCOPE
+from app.core.config.settings import AUTH_BASE_URL, OAUTH_CLIENT_ID, OAUTH_TOKEN_PATH
 from app.core.resilience.network_recovery import (
     PROCESS_NETWORK_UNAVAILABLE_CODE,
     is_pre_dispatch_connection_failure,
@@ -59,8 +60,8 @@ _TOKEN_REFRESH_TIMEOUT_OVERRIDE: contextvars.ContextVar[float | None] = contextv
 @dataclass(frozen=True)
 class TokenRefreshResult:
     access_token: str
-    refresh_token: str
-    id_token: str
+    refresh_token: str | None
+    id_token: str | None
     account_id: str | None
     plan_type: str | None
     email: str | None
@@ -68,6 +69,7 @@ class TokenRefreshResult:
     workspace_label: str | None = None
     seat_type: str | None = None
     chatgpt_user_id: str | None = None
+    expires_in: int | None = None
 
 
 class RefreshError(Exception):
@@ -219,12 +221,11 @@ async def refresh_access_token(
     codex_client: CodexClient | None = None,
     allow_direct_egress: bool = False,
 ) -> TokenRefreshResult:
-    url = f"{AUTH_BASE_URL}/oauth/token"
+    url = f"{AUTH_BASE_URL.rstrip('/')}{OAUTH_TOKEN_PATH}"
     payload = {
         "grant_type": "refresh_token",
         "client_id": OAUTH_CLIENT_ID,
         "refresh_token": refresh_token,
-        "scope": OAUTH_SCOPE,
     }
     timeout = aiohttp.ClientTimeout(total=_effective_token_refresh_timeout())
 
@@ -306,14 +307,17 @@ async def refresh_access_token(
             failed_session=failed_session if route is None else None,
         ) from exc
 
-    if not payload_data.access_token or not payload_data.refresh_token or not payload_data.id_token:
+    if not payload_data.access_token:
         raise RefreshError("invalid_response", "Refresh response missing tokens", False)
 
-    claims = extract_id_token_claims(payload_data.id_token)
+    # Anthropic issues no id_token; identity comes from the token response's
+    # organization/account fields. An id_token (if a future response shape
+    # includes one) is still parsed for email/plan evidence.
+    claims = extract_id_token_claims(payload_data.id_token) if payload_data.id_token else IdTokenClaims()
     auth_claims = claims.auth or OpenAIAuthClaims()
-    account_id = auth_claims.chatgpt_account_id or claims.chatgpt_account_id
+    account_id = payload_data.account_uuid or auth_claims.chatgpt_account_id or claims.chatgpt_account_id
     plan_type = auth_claims.chatgpt_plan_type or claims.chatgpt_plan_type
-    email = claims.email
+    email = claims.email or payload_data.email
     workspace_id = clean_account_identity_part(auth_claims.workspace_id or claims.workspace_id)
     workspace_label = clean_account_identity_part(auth_claims.workspace_label or claims.workspace_label)
     seat_type = normalize_seat_type(auth_claims.seat_type or claims.seat_type)
@@ -321,6 +325,8 @@ async def refresh_access_token(
 
     return TokenRefreshResult(
         access_token=payload_data.access_token,
+        # Anthropic may omit rotation (no new refresh token): None tells the
+        # caller to retain the previously stored refresh token.
         refresh_token=payload_data.refresh_token,
         id_token=payload_data.id_token,
         account_id=account_id,
@@ -330,6 +336,7 @@ async def refresh_access_token(
         workspace_label=workspace_label,
         seat_type=seat_type,
         chatgpt_user_id=chatgpt_user_id,
+        expires_in=payload_data.expires_in,
     )
 
 

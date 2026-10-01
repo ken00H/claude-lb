@@ -81,6 +81,20 @@ class Account(Base):
     __tablename__ = "accounts"
 
     id: Mapped[str] = mapped_column(String, primary_key=True)
+    # Which upstream pool this credential belongs to: "oauth_seat" (claude.ai
+    # subscription credential with refreshable tokens) or "api_key" (static
+    # Anthropic API credential, no refresh).
+    pool_class: Mapped[str] = mapped_column(
+        String,
+        default="oauth_seat",
+        server_default=text("'oauth_seat'"),
+        nullable=False,
+    )
+    anthropic_organization_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    anthropic_account_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    # Absolute access-token expiry (epoch seconds) from the OAuth response's
+    # ``expires_in``. Anthropic access tokens are not claim-parsed for exp.
+    token_expires_at: Mapped[int | None] = mapped_column(Integer, nullable=True)
     chatgpt_account_id: Mapped[str | None] = mapped_column(String, nullable=True)
     # Stable per-seat OpenAI principal identity (chatgpt_user_id / auth sub).
     # Distinct from chatgpt_account_id, which is the shared Team/Business
@@ -108,7 +122,9 @@ class Account(Base):
 
     access_token_encrypted: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
     refresh_token_encrypted: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
-    id_token_encrypted: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    # Anthropic's OAuth flow issues no id_token; nullable since the
+    # add-anthropic-account-model migration. api_key rows store a sentinel.
+    id_token_encrypted: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)
 
     last_refresh: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)

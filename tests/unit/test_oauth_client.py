@@ -6,8 +6,7 @@ import urllib.parse
 
 import pytest
 
-from app.core.clients.oauth import build_authorization_url, pkce_challenge
-from app.core.config.settings import get_settings
+from app.core.clients.oauth import build_authorization_url, pkce_challenge, split_pasted_callback
 
 pytestmark = pytest.mark.unit
 
@@ -23,64 +22,37 @@ def test_build_authorization_url_contains_required_params():
     url = build_authorization_url(
         state="state_123",
         code_challenge="challenge_456",
-        base_url="https://auth.openai.com",
+        authorize_url="https://claude.ai/oauth/authorize",
         client_id="client_id",
-        redirect_uri="http://localhost:1455/auth/callback",
-        scope="openid profile email offline_access",
+        redirect_uri="https://console.anthropic.com/oauth/code/callback",
+        scope="user:inference",
     )
 
     parsed = urllib.parse.urlparse(url)
     assert parsed.scheme == "https"
-    assert parsed.netloc == "auth.openai.com"
+    assert parsed.netloc == "claude.ai"
     assert parsed.path == "/oauth/authorize"
 
     query = urllib.parse.parse_qs(parsed.query)
     assert query["response_type"] == ["code"]
     assert query["client_id"] == ["client_id"]
-    assert query["redirect_uri"] == ["http://localhost:1455/auth/callback"]
-    assert query["scope"] == ["openid profile email offline_access"]
+    assert query["redirect_uri"] == ["https://console.anthropic.com/oauth/code/callback"]
+    assert query["scope"] == ["user:inference"]
     assert query["code_challenge"] == ["challenge_456"]
     assert query["code_challenge_method"] == ["S256"]
     assert query["state"] == ["state_123"]
-    assert query["id_token_add_organizations"] == ["true"]
-    assert query["codex_cli_simplified_flow"] == ["true"]
-    assert query["originator"] == ["codex_chatgpt_desktop"]
+    # Copy/paste callback mode: the browser shows the code instead of calling
+    # a local redirect server.
+    assert query["code"] == ["true"]
 
 
-def test_build_authorization_url_ignores_removed_originator_env(monkeypatch: pytest.MonkeyPatch):
-    # CODEX_LB_OAUTH_ORIGINATOR was removed from the settings surface
-    # (issue #1340); the originator is a fixed protocol constant now.
-    monkeypatch.setenv("CODEX_LB_OAUTH_ORIGINATOR", "codex_cli_rs")
-    get_settings.cache_clear()
-
-    try:
-        url = build_authorization_url(
-            state="state_123",
-            code_challenge="challenge_456",
-            base_url="https://auth.openai.com",
-            client_id="client_id",
-            redirect_uri="http://localhost:1455/auth/callback",
-            scope="openid profile email offline_access",
-        )
-    finally:
-        get_settings.cache_clear()
-
-    parsed = urllib.parse.urlparse(url)
-    query = urllib.parse.parse_qs(parsed.query)
-    assert query["originator"] == ["codex_chatgpt_desktop"]
+def test_split_pasted_callback_code_state():
+    assert split_pasted_callback("abc#def") == ("abc", "def")
 
 
-def test_build_authorization_url_allows_explicit_originator_override():
-    url = build_authorization_url(
-        state="state_123",
-        code_challenge="challenge_456",
-        base_url="https://auth.openai.com",
-        client_id="client_id",
-        originator="codex_cli_rs",
-        redirect_uri="http://localhost:1455/auth/callback",
-        scope="openid profile email offline_access",
-    )
+def test_split_pasted_callback_bare_code():
+    assert split_pasted_callback("abc") == ("abc", None)
 
-    parsed = urllib.parse.urlparse(url)
-    query = urllib.parse.parse_qs(parsed.query)
-    assert query["originator"] == ["codex_cli_rs"]
+
+def test_split_pasted_callback_strips_whitespace():
+    assert split_pasted_callback("  abc#def  ") == ("abc", "def")

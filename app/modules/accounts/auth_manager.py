@@ -359,6 +359,10 @@ class AuthManager:
         return value
 
     async def refresh_account(self, account: Account) -> Account:
+        if account.pool_class == "api_key":
+            # Static Anthropic API keys never refresh; the key itself is the
+            # access credential and does not expire on a schedule.
+            return account
         claims = self._refresh_claims if self._refresh_claims is not None else get_refresh_claim_coordinator()
         if claims is None:
             requested_fingerprint = _refresh_token_material_fingerprint(
@@ -595,8 +599,21 @@ class AuthManager:
             raise
 
         new_access_token_encrypted = self._encryptor.encrypt(result.access_token)
-        new_refresh_token_encrypted = self._encryptor.encrypt(result.refresh_token)
-        new_id_token_encrypted = self._encryptor.encrypt(result.id_token)
+        # Anthropic may omit rotation: a refresh response without a refresh
+        # token retains the previously stored (still-valid) refresh token.
+        new_refresh_token_encrypted = (
+            self._encryptor.encrypt(result.refresh_token)
+            if result.refresh_token is not None
+            else refresh_token_encrypted
+        )
+        # Anthropic issues no id_token; keep whatever identity token exists.
+        new_id_token_encrypted = (
+            self._encryptor.encrypt(result.id_token) if result.id_token is not None else account.id_token_encrypted
+        )
+        if result.expires_in is not None and result.expires_in > 0:
+            new_token_expires_at = int(utcnow().timestamp()) + int(result.expires_in)
+        else:
+            new_token_expires_at = account.token_expires_at
         new_last_refresh = utcnow()
         new_chatgpt_account_id = result.account_id or account.chatgpt_account_id
         new_chatgpt_user_id = result.chatgpt_user_id or account.chatgpt_user_id
@@ -675,6 +692,7 @@ class AuthManager:
         account.access_token_encrypted = new_access_token_encrypted
         account.refresh_token_encrypted = new_refresh_token_encrypted
         account.id_token_encrypted = new_id_token_encrypted
+        account.token_expires_at = new_token_expires_at
         account.last_refresh = new_last_refresh
         account.chatgpt_account_id = new_chatgpt_account_id
         account.chatgpt_user_id = new_chatgpt_user_id

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pydantic import AliasChoices, BaseModel, ConfigDict, Field, StrictStr, field_validator
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, StrictStr, field_validator, model_validator
 
 from app.core.types import JsonObject
 
@@ -19,6 +19,41 @@ class OAuthTokenPayload(BaseModel):
     error_code: StrictStr | None = None
     code: StrictStr | None = None
     status: StrictStr | None = None
+    # Anthropic token-response extensions: identity arrives as organization /
+    # account uuid fields, expiry as a relative ``expires_in`` (seconds).
+    expires_in: int | None = None
+    scope: StrictStr | None = None
+    organization_uuid: StrictStr | None = Field(
+        default=None,
+        validation_alias=AliasChoices("organization_uuid", "organizationId"),
+    )
+    account_uuid: StrictStr | None = Field(
+        default=None,
+        validation_alias=AliasChoices("account_uuid", "accountId"),
+    )
+    email: StrictStr | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def _flatten_anthropic_identity(cls, data: object) -> object:
+        """Accept Anthropic's nested identity shape.
+
+        Sources disagree between flat ``organization_uuid``/``account_uuid``
+        fields and nested ``organization: {uuid}`` / ``account: {uuid}``
+        objects; flatten the nested form before validation."""
+        if not isinstance(data, dict):
+            return data
+        flattened = dict(data)
+        organization = flattened.pop("organization", None)
+        if isinstance(organization, dict) and flattened.get("organization_uuid") is None:
+            flattened["organization_uuid"] = organization.get("uuid")
+        account = flattened.pop("account", None)
+        if isinstance(account, dict):
+            if flattened.get("account_uuid") is None:
+                flattened["account_uuid"] = account.get("uuid")
+            if flattened.get("email") is None:
+                flattened["email"] = account.get("email")
+        return flattened
 
 
 class DeviceCodePayload(BaseModel):

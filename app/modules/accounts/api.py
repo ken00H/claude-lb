@@ -46,12 +46,14 @@ from app.modules.accounts.schemas import (
     AccountUsageResetConsumeRequest,
     AccountUsageResetConsumeResponse,
     AccountUsageResetCreditsResponse,
+    ApiKeyImportRequest,
 )
 from app.modules.accounts.service import (
     AccountNotProbableError,
     AccountStateTransitionError,
     AccountUsageResetConsumeUnavailableError,
     AccountUsageResetCreditsUnavailableError,
+    InvalidApiKeyError,
     InvalidAuthJsonError,
 )
 
@@ -105,6 +107,19 @@ async def list_accounts(
         redact_identity=not principal.has(Permission.ACCOUNTS_WRITE),
     )
     return AccountsResponse(accounts=accounts)
+
+
+@router.post("/import-api-key", response_model=AccountImportResponse)
+async def import_api_key(
+    request: ApiKeyImportRequest,
+    principal: DashboardPrincipal = Depends(require_dashboard_permission(Permission.ACCOUNTS_WRITE)),
+    context: AccountsContext = Depends(get_accounts_context),
+) -> AccountImportResponse:
+    _ = principal
+    try:
+        return await context.service.import_api_key(request.api_key, request.alias)
+    except InvalidApiKeyError as exc:
+        raise DashboardBadRequestError(str(exc)) from exc
 
 
 @router.get("/{account_id}/trends", response_model=AccountTrendsResponse)

@@ -145,6 +145,11 @@ class AccountImportResponse(DashboardModel):
     status: str
 
 
+class ApiKeyImportRequest(DashboardModel):
+    api_key: str
+    alias: str | None = None
+
+
 class OpenCodeOAuthAuth(DashboardModel):
     type: str = "oauth"
     refresh: str

@@ -50,16 +50,22 @@ def _resolve_env_files() -> tuple[Path, ...]:
 
 ENV_FILES = _resolve_env_files()
 
-# OAuth protocol constants. These values identify codex-lb to OpenAI's OAuth
-# endpoints exactly like the Codex CLI; they are protocol constants, not
-# deployment tunables, and changing any of them breaks login
+# OAuth protocol constants. These values identify claude-lb to Anthropic's
+# OAuth endpoints exactly like the Claude Code CLI; they are protocol
+# constants, not deployment tunables, and changing any of them breaks login
 # (PRINCIPLES.md P2, issue #1340).
-AUTH_BASE_URL = "https://auth.openai.com"
-OAUTH_CLIENT_ID = "app_EMoamEEZ73f0CkXaXp7hrann"
-OAUTH_ORIGINATOR = "codex_chatgpt_desktop"
-OAUTH_SCOPE = "openid profile email"
-OAUTH_REDIRECT_URI = "http://localhost:1455/auth/callback"
-OAUTH_CALLBACK_PORT = 1455  # Do not change the port. OpenAI dislikes changes.
+#
+# Anthropic migrated console.anthropic.com to platform.claude.com (probed
+# 2026-10-01: console token paths 301 there). The token path itself is not yet
+# live-verified (/v1/ vs /api/ — see openspec change add-anthropic-account-model
+# design.md); it is a single constant here so one probe flips it.
+OAUTH_AUTHORIZE_URL = "https://claude.ai/oauth/authorize"
+AUTH_BASE_URL = "https://platform.claude.com"
+OAUTH_TOKEN_PATH = "/v1/oauth/token"
+OAUTH_CLIENT_ID = "9d1c250a-e61b-44d9-88ed-5944d1962f5e"
+OAUTH_SCOPE = "user:inference user:profile"
+OAUTH_REDIRECT_URI = "https://console.anthropic.com/oauth/code/callback"
+OAUTH_CALLBACK_PORT = 1455  # Unused by the Anthropic copy/paste flow; kept for the callback-server shim.
 
 # Env names of settings removed from the Settings surface (issue #1340,
 # PRINCIPLES.md P2). ``extra="ignore"`` already makes them harmless; startup
