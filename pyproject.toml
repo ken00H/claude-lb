@@ -1,7 +1,7 @@
 [project]
-name = "codex-lb"
+name = "claude-lb"
 version = "1.25.0-beta.9"
-description = "Codex load balancer and proxy for ChatGPT accounts with usage dashboard"
+description = "Claude/Anthropic account load balancer and proxy with usage dashboard"
 readme = "README.md"
 license = { file = "LICENSE" }
 authors = [{ name = "Soju06", email = "qlskssk@gmail.com" }]
@@ -11,11 +11,11 @@ maintainers = [
     { name = "aaiyer", email = "aaiyer0@proton.me" },
 ]
 keywords = [
-    "codex",
+    "claude",
     "load-balancer",
     "proxy",
     "fastapi",
-    "chatgpt",
+    "anthropic",
     "rate-limit",
     "usage",
     "dashboard",
@@ -133,8 +133,8 @@ exclude = [".agents/hooks/"]
 python-version = "3.13"
 
 [project.scripts]
-codex-lb = "app.cli:main"
-codex-lb-db = "app.db.migrate:main"
+claude-lb = "app.cli:main"
+claude-lb-db = "app.db.migrate:main"
 
 [build-system]
 requires = ["hatchling==1.32.0"]

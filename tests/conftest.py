@@ -12,6 +12,15 @@ import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import text
 
+# POSIX-only test modules (uvloop, fcntl) never collect on Windows.
+collect_ignore: list[str] = []
+if os.name == "nt":
+    collect_ignore += [
+        "unit/test_runtime_logging_loop_handler.py",
+        "unit/test_traffic_canary_runner.py",
+    ]
+
+
 TEST_DB_DIR = Path(tempfile.mkdtemp(prefix="codex-lb-tests-"))
 TEST_DB_PATH = TEST_DB_DIR / "codex-lb.db"
 

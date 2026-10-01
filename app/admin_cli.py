@@ -65,7 +65,7 @@ _SQLITE_BUSY_TIMEOUT_SECONDS = 30
 _MAX_PASSWORD_BYTES = 72
 
 _SCHEMA_MISSING_HINT = (
-    "This database has no codex-lb schema yet. Run `codex-lb-db upgrade` (or start the server once) and try again."
+    "This database has no codex-lb schema yet. Run `claude-lb-db upgrade` (or start the server once) and try again."
 )
 
 _CACHE_CONVERGENCE = "a running server picks this up within about five seconds; no restart needed"
@@ -85,7 +85,7 @@ class _Report:
 
 
 def run_admin_command(args: argparse.Namespace) -> None:
-    """Dispatch one ``codex-lb admin`` sub-command and print what it did."""
+    """Dispatch one ``claude-lb admin`` sub-command and print what it did."""
 
     command = getattr(args, "admin_command", None)
     if command == "reset-password":
@@ -290,7 +290,7 @@ def _disable_provider(provider_id: str) -> _Report:
         if provider.kind == AuthProviderKind.PASSWORD.value:
             raise SystemExit(
                 "That is the local password provider. Disabling it would remove the recovery path itself; "
-                "use `codex-lb admin local-login enable` to re-open local sign-in instead."
+                "use `claude-lb admin local-login enable` to re-open local sign-in instead."
             )
         was_enabled = provider.enabled
         provider.enabled = False
@@ -359,7 +359,7 @@ def _reset_login_policy() -> _Report:
 
 @contextmanager
 def _transaction() -> Iterator[Session]:
-    """One engine, one transaction, disposed on the way out (as ``codex-lb-db`` does)."""
+    """One engine, one transaction, disposed on the way out (as ``claude-lb-db`` does)."""
 
     url = to_sync_database_url(get_settings().database_url)
     connect_args: dict[str, object] = {"timeout": _SQLITE_BUSY_TIMEOUT_SECONDS} if url.startswith("sqlite") else {}
@@ -450,7 +450,7 @@ def _audit(
 def _prompt_new_password() -> str:
     if not sys.stdin.isatty():
         raise SystemExit(
-            "Run `codex-lb admin reset-password` from a terminal (docker exec -it ...): "
+            "Run `claude-lb admin reset-password` from a terminal (docker exec -it ...): "
             "the new password is prompted for, never taken from the command line."
         )
     password = getpass.getpass("New password: ")

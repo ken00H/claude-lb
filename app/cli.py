@@ -23,7 +23,7 @@ class _CliHelpFormatter(argparse.HelpFormatter):
 
 def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Run the codex-lb API server.",
+        description="Run the claude-lb API server.",
         formatter_class=_CliHelpFormatter,
     )
     subparsers = parser.add_subparsers(dest="command")
