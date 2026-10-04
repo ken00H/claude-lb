@@ -70,6 +70,7 @@ class TokenRefreshResult:
     seat_type: str | None = None
     chatgpt_user_id: str | None = None
     expires_in: int | None = None
+    organization_id: str | None = None
 
 
 class RefreshError(Exception):
@@ -337,6 +338,7 @@ async def refresh_access_token(
         seat_type=seat_type,
         chatgpt_user_id=chatgpt_user_id,
         expires_in=payload_data.expires_in,
+        organization_id=payload_data.organization_uuid,
     )
 
 

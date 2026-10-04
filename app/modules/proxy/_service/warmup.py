@@ -123,7 +123,7 @@ class _WarmupAccountSnapshot:
     plan_type: str
     access_token_encrypted: bytes
     refresh_token_encrypted: bytes
-    id_token_encrypted: bytes
+    id_token_encrypted: bytes | None
     last_refresh: datetime
     status: AccountStatus
     deactivation_reason: str | None

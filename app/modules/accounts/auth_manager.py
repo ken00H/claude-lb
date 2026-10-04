@@ -31,7 +31,7 @@ from app.core.crypto import TokenEncryptor
 from app.core.plan_types import coerce_account_plan_type
 from app.core.upstream_proxy import UpstreamProxyRouteError, resolve_upstream_route
 from app.core.utils.shared_future import wait_on_shared_future
-from app.core.utils.time import utcnow
+from app.core.utils.time import naive_utc_to_epoch, utcnow
 from app.db.models import Account, AccountProxyBinding, AccountStatus
 from app.db.session import get_background_session
 from app.modules.accounts.refresh_claims import RefreshClaimCoordinatorPort, get_refresh_claim_coordinator
@@ -71,7 +71,7 @@ class AccountsRepositoryPort(Protocol):
         account_id: str,
         access_token_encrypted: bytes,
         refresh_token_encrypted: bytes,
-        id_token_encrypted: bytes,
+        id_token_encrypted: bytes | None,
         last_refresh: datetime,
         *,
         expected_refresh_token_encrypted: bytes,
@@ -82,6 +82,9 @@ class AccountsRepositoryPort(Protocol):
         workspace_id: str | None = None,
         workspace_label: str | None = None,
         seat_type: str | None = None,
+        token_expires_at: int | None = None,
+        anthropic_account_id: str | None = None,
+        anthropic_organization_id: str | None = None,
     ) -> bool: ...
 
     async def update_account_metadata(
@@ -611,9 +614,21 @@ class AuthManager:
             self._encryptor.encrypt(result.id_token) if result.id_token is not None else account.id_token_encrypted
         )
         if result.expires_in is not None and result.expires_in > 0:
-            new_token_expires_at = int(utcnow().timestamp()) + int(result.expires_in)
+            # ``utcnow()`` is naive UTC: convert through ``naive_utc_to_epoch``
+            # (a bare ``.timestamp()`` would read it as LOCAL time and skew the
+            # epoch by the host's UTC offset).
+            new_token_expires_at = naive_utc_to_epoch(utcnow()) + int(result.expires_in)
         else:
             new_token_expires_at = account.token_expires_at
+        # ``TokenRefreshResult.account_id`` layers the Anthropic account uuid
+        # over legacy ChatGPT claim fallbacks, so it is only trustworthy as an
+        # Anthropic seat identity on ``oauth_seat`` rows.
+        if account.pool_class == "oauth_seat":
+            new_anthropic_account_id = result.account_id
+            new_anthropic_organization_id = result.organization_id
+        else:
+            new_anthropic_account_id = None
+            new_anthropic_organization_id = None
         new_last_refresh = utcnow()
         new_chatgpt_account_id = result.account_id or account.chatgpt_account_id
         new_chatgpt_user_id = result.chatgpt_user_id or account.chatgpt_user_id
@@ -677,6 +692,9 @@ class AuthManager:
                 workspace_id=next_workspace_id,
                 workspace_label=new_workspace_label,
                 seat_type=new_seat_type,
+                token_expires_at=new_token_expires_at,
+                anthropic_account_id=new_anthropic_account_id,
+                anthropic_organization_id=new_anthropic_organization_id,
                 expected_refresh_token_encrypted=expected_refresh_token_encrypted,
             )
 
@@ -693,6 +711,10 @@ class AuthManager:
         account.refresh_token_encrypted = new_refresh_token_encrypted
         account.id_token_encrypted = new_id_token_encrypted
         account.token_expires_at = new_token_expires_at
+        if new_anthropic_account_id is not None:
+            account.anthropic_account_id = new_anthropic_account_id
+        if new_anthropic_organization_id is not None:
+            account.anthropic_organization_id = new_anthropic_organization_id
         account.last_refresh = new_last_refresh
         account.chatgpt_account_id = new_chatgpt_account_id
         account.chatgpt_user_id = new_chatgpt_user_id
@@ -1288,6 +1310,9 @@ class AuthManager:
 
     async def _ensure_chatgpt_account_id(self, account: Account) -> Account:
         if account.chatgpt_account_id:
+            return account
+        if account.id_token_encrypted is None:
+            # Anthropic OAuth seats carry no id_token at all.
             return account
         try:
             id_token = self._encryptor.decrypt(account.id_token_encrypted)

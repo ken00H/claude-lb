@@ -63,7 +63,7 @@ ACCOUNT_PENDING_DELETION_REASON = "pending_deletion"
 def credentials_replaced_since_wipe(
     access_token_encrypted: bytes,
     refresh_token_encrypted: bytes,
-    id_token_encrypted: bytes,
+    id_token_encrypted: bytes | None,
 ) -> bool:
     """True when a marked account's token ciphertext is no longer the
     empty-credential wipe stamped by :meth:`AccountsRepository.begin_delete`.
@@ -82,6 +82,10 @@ def credentials_replaced_since_wipe(
     """
     encryptor = TokenEncryptor()
     for ciphertext in (access_token_encrypted, refresh_token_encrypted, id_token_encrypted):
+        if ciphertext is None:
+            # The wipe stamps ``encrypt("")`` on every field; a NULL id_token
+            # (Anthropic seats carry none) is not our own wipe.
+            return True
         try:
             if encryptor.decrypt(ciphertext) != "":
                 return True
@@ -1229,7 +1233,7 @@ class AccountsRepository:
         account_id: str,
         access_token_encrypted: bytes,
         refresh_token_encrypted: bytes,
-        id_token_encrypted: bytes,
+        id_token_encrypted: bytes | None,
         last_refresh: datetime,
         *,
         expected_refresh_token_encrypted: bytes,
@@ -1240,6 +1244,9 @@ class AccountsRepository:
         workspace_id: str | None = None,
         workspace_label: str | None = None,
         seat_type: str | None = None,
+        token_expires_at: int | None = None,
+        anthropic_account_id: str | None = None,
+        anthropic_organization_id: str | None = None,
     ) -> bool:
         """Persist rotated access/refresh/id token ciphertext under a mandatory
         compare-and-set on the refresh-token ciphertext.
@@ -1258,7 +1265,7 @@ class AccountsRepository:
         async with sqlite_writer_section():
             if self._dialect_name() == "postgresql":
                 await self._lock_postgresql_account_identity_membership(account_id, chatgpt_account_id)
-            values: dict[str, bytes | datetime | str] = {
+            values: dict[str, bytes | datetime | int | str | None] = {
                 "access_token_encrypted": access_token_encrypted,
                 "refresh_token_encrypted": refresh_token_encrypted,
                 "id_token_encrypted": id_token_encrypted,
@@ -1278,6 +1285,15 @@ class AccountsRepository:
                 values["workspace_label"] = workspace_label
             if seat_type is not None:
                 values["seat_type"] = seat_type
+            # Anthropic OAuth seats: expiry and identity co-written with the
+            # rotated tokens (same write-only-when-present convention; a None
+            # value leaves the stored column untouched).
+            if token_expires_at is not None:
+                values["token_expires_at"] = token_expires_at
+            if anthropic_account_id is not None:
+                values["anthropic_account_id"] = anthropic_account_id
+            if anthropic_organization_id is not None:
+                values["anthropic_organization_id"] = anthropic_organization_id
             stmt = (
                 update(Account)
                 .where(Account.id == account_id)
@@ -1567,6 +1583,16 @@ def _apply_account_updates(target: Account, source: Account) -> None:
         target.chatgpt_account_id = source.chatgpt_account_id
     if source.chatgpt_user_id is not None:
         target.chatgpt_user_id = source.chatgpt_user_id
+    # Anthropic identity travels with the replacement credential; absent
+    # values keep the stored columns (legacy rows may have none).
+    if source.pool_class is not None:
+        target.pool_class = source.pool_class
+    if source.anthropic_account_id is not None:
+        target.anthropic_account_id = source.anthropic_account_id
+    if source.anthropic_organization_id is not None:
+        target.anthropic_organization_id = source.anthropic_organization_id
+    if source.token_expires_at is not None:
+        target.token_expires_at = source.token_expires_at
     target.email = source.email
     if source.workspace_id is not None or target.workspace_id is None:
         target.workspace_id = source.workspace_id

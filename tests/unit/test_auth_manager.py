@@ -109,6 +109,9 @@ class _DummyRepo:
         workspace_id: str | None = None,
         workspace_label: str | None = None,
         seat_type: str | None = None,
+        token_expires_at: int | None = None,
+        anthropic_account_id: str | None = None,
+        anthropic_organization_id: str | None = None,
     ) -> bool:
         self.tokens_payload = {
             "account_id": account_id,
@@ -123,6 +126,9 @@ class _DummyRepo:
             "workspace_id": workspace_id,
             "workspace_label": workspace_label,
             "seat_type": seat_type,
+            "token_expires_at": token_expires_at,
+            "anthropic_account_id": anthropic_account_id,
+            "anthropic_organization_id": anthropic_organization_id,
             "expected_refresh_token_encrypted": expected_refresh_token_encrypted,
         }
         return True
@@ -1233,6 +1239,9 @@ class _TokenCasMissRepo(_DummyRepo):
         workspace_id: str | None = None,
         workspace_label: str | None = None,
         seat_type: str | None = None,
+        token_expires_at: int | None = None,
+        anthropic_account_id: str | None = None,
+        anthropic_organization_id: str | None = None,
     ) -> bool:
         self.update_attempts.append(expected_refresh_token_encrypted)
         stored = self._latest.refresh_token_encrypted
@@ -1252,6 +1261,9 @@ class _TokenCasMissRepo(_DummyRepo):
             workspace_id=workspace_id,
             workspace_label=workspace_label,
             seat_type=seat_type,
+            token_expires_at=token_expires_at,
+            anthropic_account_id=anthropic_account_id,
+            anthropic_organization_id=anthropic_organization_id,
             expected_refresh_token_encrypted=expected_refresh_token_encrypted,
         )
 
@@ -1409,6 +1421,9 @@ class _TokenCasAlwaysMissRepo(_DummyRepo):
         workspace_id: str | None = None,
         workspace_label: str | None = None,
         seat_type: str | None = None,
+        token_expires_at: int | None = None,
+        anthropic_account_id: str | None = None,
+        anthropic_organization_id: str | None = None,
     ) -> bool:
         self.update_attempts.append(expected_refresh_token_encrypted)
         if expected_refresh_token_encrypted is None:
@@ -1428,6 +1443,9 @@ class _TokenCasAlwaysMissRepo(_DummyRepo):
                 workspace_id=workspace_id,
                 workspace_label=workspace_label,
                 seat_type=seat_type,
+                token_expires_at=token_expires_at,
+                anthropic_account_id=anthropic_account_id,
+                anthropic_organization_id=anthropic_organization_id,
                 expected_refresh_token_encrypted=expected_refresh_token_encrypted,
             )
         # Conditional CAS: always missed by the same-plaintext re-encryption.
@@ -1494,6 +1512,9 @@ class _TokenCasPeerRotationAtExhaustionRepo(_DummyRepo):
         workspace_id: str | None = None,
         workspace_label: str | None = None,
         seat_type: str | None = None,
+        token_expires_at: int | None = None,
+        anthropic_account_id: str | None = None,
+        anthropic_organization_id: str | None = None,
     ) -> bool:
         self.update_attempts.append(expected_refresh_token_encrypted)
         if expected_refresh_token_encrypted is None:
@@ -1511,6 +1532,9 @@ class _TokenCasPeerRotationAtExhaustionRepo(_DummyRepo):
                 workspace_id=workspace_id,
                 workspace_label=workspace_label,
                 seat_type=seat_type,
+                token_expires_at=token_expires_at,
+                anthropic_account_id=anthropic_account_id,
+                anthropic_organization_id=anthropic_organization_id,
                 expected_refresh_token_encrypted=expected_refresh_token_encrypted,
             )
         return False
@@ -1822,6 +1846,9 @@ class _TokenCasStabilizesOnSecondFinalAttemptRepo(_DummyRepo):
         workspace_id: str | None = None,
         workspace_label: str | None = None,
         seat_type: str | None = None,
+        token_expires_at: int | None = None,
+        anthropic_account_id: str | None = None,
+        anthropic_organization_id: str | None = None,
     ) -> bool:
         self.update_attempts.append(expected_refresh_token_encrypted)
         if expected_refresh_token_encrypted is None:
@@ -1840,6 +1867,9 @@ class _TokenCasStabilizesOnSecondFinalAttemptRepo(_DummyRepo):
                 workspace_id=workspace_id,
                 workspace_label=workspace_label,
                 seat_type=seat_type,
+                token_expires_at=token_expires_at,
+                anthropic_account_id=anthropic_account_id,
+                anthropic_organization_id=anthropic_organization_id,
                 expected_refresh_token_encrypted=expected_refresh_token_encrypted,
             )
         self._writes += 1
@@ -1868,6 +1898,9 @@ class _TokenCasStabilizesOnSecondFinalAttemptRepo(_DummyRepo):
             workspace_id=workspace_id,
             workspace_label=workspace_label,
             seat_type=seat_type,
+            token_expires_at=token_expires_at,
+            anthropic_account_id=anthropic_account_id,
+            anthropic_organization_id=anthropic_organization_id,
             expected_refresh_token_encrypted=expected_refresh_token_encrypted,
         )
 
@@ -1979,6 +2012,9 @@ class _TokenCasLandsOnFinalGuardedPersistRepo(_DummyRepo):
         workspace_id: str | None = None,
         workspace_label: str | None = None,
         seat_type: str | None = None,
+        token_expires_at: int | None = None,
+        anthropic_account_id: str | None = None,
+        anthropic_organization_id: str | None = None,
     ) -> bool:
         self.update_attempts.append(expected_refresh_token_encrypted)
         if expected_refresh_token_encrypted is not None and expected_refresh_token_encrypted != self._db_ciphertext:
@@ -1997,6 +2033,9 @@ class _TokenCasLandsOnFinalGuardedPersistRepo(_DummyRepo):
             workspace_id=workspace_id,
             workspace_label=workspace_label,
             seat_type=seat_type,
+            token_expires_at=token_expires_at,
+            anthropic_account_id=anthropic_account_id,
+            anthropic_organization_id=anthropic_organization_id,
             expected_refresh_token_encrypted=expected_refresh_token_encrypted,
         )
 
@@ -2110,6 +2149,9 @@ class _TokenCasPeerRotationOnFinalPersistRepo(_DummyRepo):
         workspace_id: str | None = None,
         workspace_label: str | None = None,
         seat_type: str | None = None,
+        token_expires_at: int | None = None,
+        anthropic_account_id: str | None = None,
+        anthropic_organization_id: str | None = None,
     ) -> bool:
         self.update_attempts.append(expected_refresh_token_encrypted)
         if expected_refresh_token_encrypted is not None and expected_refresh_token_encrypted != self._db_ciphertext:
@@ -2128,6 +2170,9 @@ class _TokenCasPeerRotationOnFinalPersistRepo(_DummyRepo):
             workspace_id=workspace_id,
             workspace_label=workspace_label,
             seat_type=seat_type,
+            token_expires_at=token_expires_at,
+            anthropic_account_id=anthropic_account_id,
+            anthropic_organization_id=anthropic_organization_id,
             expected_refresh_token_encrypted=expected_refresh_token_encrypted,
         )
 
@@ -2259,6 +2304,9 @@ class _TokenCasPeerRotationInReadWriteGapRepo(_DummyRepo):
         workspace_id: str | None = None,
         workspace_label: str | None = None,
         seat_type: str | None = None,
+        token_expires_at: int | None = None,
+        anthropic_account_id: str | None = None,
+        anthropic_organization_id: str | None = None,
     ) -> bool:
         self.update_attempts.append(expected_refresh_token_encrypted)
         if expected_refresh_token_encrypted is not None and expected_refresh_token_encrypted != self._db_ciphertext:
@@ -2279,6 +2327,9 @@ class _TokenCasPeerRotationInReadWriteGapRepo(_DummyRepo):
             workspace_id=workspace_id,
             workspace_label=workspace_label,
             seat_type=seat_type,
+            token_expires_at=token_expires_at,
+            anthropic_account_id=anthropic_account_id,
+            anthropic_organization_id=anthropic_organization_id,
             expected_refresh_token_encrypted=expected_refresh_token_encrypted,
         )
 
@@ -2382,6 +2433,9 @@ class _TokenCasSamePlaintextInReadWriteGapRepo(_DummyRepo):
         workspace_id: str | None = None,
         workspace_label: str | None = None,
         seat_type: str | None = None,
+        token_expires_at: int | None = None,
+        anthropic_account_id: str | None = None,
+        anthropic_organization_id: str | None = None,
     ) -> bool:
         self.update_attempts.append(expected_refresh_token_encrypted)
         if expected_refresh_token_encrypted is not None and expected_refresh_token_encrypted != self._db_ciphertext:
@@ -2400,6 +2454,9 @@ class _TokenCasSamePlaintextInReadWriteGapRepo(_DummyRepo):
             workspace_id=workspace_id,
             workspace_label=workspace_label,
             seat_type=seat_type,
+            token_expires_at=token_expires_at,
+            anthropic_account_id=anthropic_account_id,
+            anthropic_organization_id=anthropic_organization_id,
             expected_refresh_token_encrypted=expected_refresh_token_encrypted,
         )
 
@@ -2911,3 +2968,178 @@ async def test_refresh_account_requires_reauth_when_upstream_session_is_invalid(
     reason = repo.status_payload["deactivation_reason"]
     assert isinstance(reason, str)
     assert "re-login" in reason.lower() or "expired" in reason.lower()
+
+
+@pytest.mark.asyncio
+async def test_refresh_account_persists_anthropic_expiry_and_identity(monkeypatch):
+    """An OAuth-seat refresh must persist the Anthropic seat identity and the
+    token expiry alongside the rotated tokens (otherwise ``token_expires_at``
+    stays at its creation-time value forever)."""
+
+    async def _fake_refresh(_: str, **_kwargs: object) -> TokenRefreshResult:
+        return TokenRefreshResult(
+            access_token="new-access",
+            refresh_token="new-refresh",
+            id_token=None,
+            account_id="anth-seat-refresh",
+            plan_type=None,
+            email="seat-refresh@example.com",
+            expires_in=3600,
+            organization_id="org-seat-refresh",
+        )
+
+    monkeypatch.setattr(auth_manager_module, "refresh_access_token", _fake_refresh)
+
+    encryptor = TokenEncryptor()
+    account = Account(
+        id="acc_seat_refresh",
+        pool_class="oauth_seat",
+        anthropic_account_id=None,
+        anthropic_organization_id=None,
+        email="seat-refresh@example.com",
+        plan_type="unknown",
+        access_token_encrypted=encryptor.encrypt("access-old"),
+        refresh_token_encrypted=encryptor.encrypt("refresh-old"),
+        id_token_encrypted=None,
+        token_expires_at=None,
+        last_refresh=utcnow(),
+        status=AccountStatus.ACTIVE,
+        deactivation_reason=None,
+    )
+    repo = _DummyRepo()
+    manager = AuthManager(cast(AccountsRepositoryPort, repo))
+
+    updated = await manager.refresh_account(account)
+
+    assert repo.tokens_payload is not None
+    persisted_expiry = repo.tokens_payload["token_expires_at"]
+    assert isinstance(persisted_expiry, int)
+    assert persisted_expiry > int(time.time())
+    assert repo.tokens_payload["anthropic_account_id"] == "anth-seat-refresh"
+    assert repo.tokens_payload["anthropic_organization_id"] == "org-seat-refresh"
+    assert updated.anthropic_account_id == "anth-seat-refresh"
+    assert updated.anthropic_organization_id == "org-seat-refresh"
+    assert updated.token_expires_at == persisted_expiry
+
+
+@pytest.mark.asyncio
+async def test_refresh_account_does_not_write_anthropic_identity_for_legacy_rows(monkeypatch):
+    """``TokenRefreshResult.account_id`` layers ChatGPT claim fallbacks under
+    the Anthropic uuid, so a legacy (non oauth_seat) row must never persist it
+    as an Anthropic seat identity."""
+
+    async def _fake_refresh(_: str, **_kwargs: object) -> TokenRefreshResult:
+        return TokenRefreshResult(
+            access_token="new-access",
+            refresh_token="new-refresh",
+            id_token=None,
+            account_id="chatgpt-legacy-id",
+            plan_type="team",
+            email="legacy@example.com",
+            expires_in=3600,
+        )
+
+    monkeypatch.setattr(auth_manager_module, "refresh_access_token", _fake_refresh)
+
+    encryptor = TokenEncryptor()
+    account = Account(
+        id="acc_legacy_refresh",
+        email="legacy@example.com",
+        plan_type="plus",
+        access_token_encrypted=encryptor.encrypt("access-old"),
+        refresh_token_encrypted=encryptor.encrypt("refresh-old"),
+        id_token_encrypted=encryptor.encrypt("id-old"),
+        last_refresh=utcnow(),
+        status=AccountStatus.ACTIVE,
+        deactivation_reason=None,
+    )
+    repo = _DummyRepo()
+    manager = AuthManager(cast(AccountsRepositoryPort, repo))
+
+    await manager.refresh_account(account)
+
+    assert repo.tokens_payload is not None
+    assert repo.tokens_payload["anthropic_account_id"] is None
+    assert repo.tokens_payload["anthropic_organization_id"] is None
+    assert repo.tokens_payload["token_expires_at"] is not None
+
+
+@pytest.mark.asyncio
+async def test_refresh_account_retains_tokens_when_anthropic_omits_rotation(monkeypatch):
+    """Anthropic may omit rotation: a refresh response without a refresh token
+    (and without an id_token) retains the previously stored material."""
+
+    async def _fake_refresh(_: str, **_kwargs: object) -> TokenRefreshResult:
+        return TokenRefreshResult(
+            access_token="new-access-only",
+            refresh_token=None,
+            id_token=None,
+            account_id="anth-omit",
+            plan_type=None,
+            email="omit@example.com",
+        )
+
+    monkeypatch.setattr(auth_manager_module, "refresh_access_token", _fake_refresh)
+
+    encryptor = TokenEncryptor()
+    old_refresh_encrypted = encryptor.encrypt("refresh-old")
+    old_id_encrypted = encryptor.encrypt("id-old")
+    account = Account(
+        id="acc_omit_rotation",
+        pool_class="oauth_seat",
+        anthropic_account_id="anth-omit",
+        email="omit@example.com",
+        plan_type="max",
+        access_token_encrypted=encryptor.encrypt("access-old"),
+        refresh_token_encrypted=old_refresh_encrypted,
+        id_token_encrypted=old_id_encrypted,
+        last_refresh=utcnow(),
+        status=AccountStatus.ACTIVE,
+        deactivation_reason=None,
+    )
+    repo = _DummyRepo()
+    manager = AuthManager(cast(AccountsRepositoryPort, repo))
+
+    updated = await manager.refresh_account(account)
+
+    assert repo.tokens_payload is not None
+    # Retained (not replaced) refresh + id token ciphertext...
+    assert repo.tokens_payload["refresh_token_encrypted"] == old_refresh_encrypted
+    assert repo.tokens_payload["id_token_encrypted"] == old_id_encrypted
+    # ...while the fresh access token did rotate.
+    assert encryptor.decrypt(updated.access_token_encrypted) == "new-access-only"
+    assert updated.refresh_token_encrypted == old_refresh_encrypted
+    assert updated.id_token_encrypted == old_id_encrypted
+
+
+@pytest.mark.asyncio
+async def test_refresh_account_noops_for_api_key_pool(monkeypatch):
+    """Static Anthropic API keys never refresh: the account object is returned
+    untouched and no upstream exchange or token write happens."""
+
+    async def _unexpected_refresh(_: str, **_kwargs: object) -> TokenRefreshResult:
+        raise AssertionError("api_key accounts must never reach the token exchange")
+
+    monkeypatch.setattr(auth_manager_module, "refresh_access_token", _unexpected_refresh)
+
+    encryptor = TokenEncryptor()
+    account = Account(
+        id="acc_api_key",
+        pool_class="api_key",
+        email="api-key@example.com",
+        plan_type="console",
+        access_token_encrypted=encryptor.encrypt("sk-ant-static"),
+        refresh_token_encrypted=encryptor.encrypt(""),
+        id_token_encrypted=None,
+        last_refresh=utcnow(),
+        status=AccountStatus.ACTIVE,
+        deactivation_reason=None,
+    )
+    repo = _DummyRepo()
+    manager = AuthManager(cast(AccountsRepositoryPort, repo))
+
+    updated = await manager.refresh_account(account)
+
+    assert updated is account
+    assert repo.tokens_payload is None
+    assert repo.status_payload is None
