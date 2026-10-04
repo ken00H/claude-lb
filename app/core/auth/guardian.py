@@ -314,6 +314,10 @@ def _auth_guardian_account_is_stale_eligible(
     now: datetime,
     max_age_seconds: int,
 ) -> bool:
+    if account.pool_class == "api_key":
+        # Static Anthropic API keys never rotate, so they are never stale: the
+        # sweep must not even select them (refresh_account would no-op anyway).
+        return False
     if account.status not in _AUTH_GUARDIAN_ELIGIBLE_STATUSES:
         return False
     age = to_utc_naive(now) - to_utc_naive(account.last_refresh)

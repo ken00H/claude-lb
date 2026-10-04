@@ -22,13 +22,20 @@ from app.modules.accounts.repository import AccountsRepository
 pytestmark = pytest.mark.unit
 
 
-def _account(account_id: str, *, status: AccountStatus, last_refresh: datetime) -> Account:
+def _account(
+    account_id: str,
+    *,
+    status: AccountStatus,
+    last_refresh: datetime,
+    pool_class: str | None = None,
+) -> Account:
     return Account(
         id=account_id,
         chatgpt_account_id=f"workspace-{account_id}",
         email=f"{account_id}@example.com",
         alias=None,
         plan_type="plus",
+        pool_class=pool_class,
         access_token_encrypted=b"access",
         refresh_token_encrypted=b"refresh",
         id_token_encrypted=b"id",
@@ -90,6 +97,14 @@ def test_select_auth_guardian_candidates_returns_stale_eligible_accounts_only() 
         _account("deactivated", status=AccountStatus.DEACTIVATED, last_refresh=now - timedelta(hours=24)),
         _account("rate-limited", status=AccountStatus.RATE_LIMITED, last_refresh=now - timedelta(hours=24)),
         _account("quota-exceeded", status=AccountStatus.QUOTA_EXCEEDED, last_refresh=now - timedelta(hours=24)),
+        # Static Anthropic API keys never refresh: however stale, they must not
+        # be selected by the sweep at all.
+        _account(
+            "stale-api-key",
+            status=AccountStatus.ACTIVE,
+            last_refresh=now - timedelta(hours=48),
+            pool_class="api_key",
+        ),
     ]
 
     selected = select_auth_guardian_candidates(accounts, now=now, max_age_seconds=12 * 3600, limit=10)
