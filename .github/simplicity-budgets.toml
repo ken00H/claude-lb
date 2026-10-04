@@ -70,6 +70,7 @@ max = 96
 # check. Keep the list sorted.
 allowed = [
   ".agents",
+  ".ai",
   ".all-contributorsrc",
   ".claude",
   ".coderabbit.yaml",
