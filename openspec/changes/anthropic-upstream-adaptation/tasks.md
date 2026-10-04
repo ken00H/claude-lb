@@ -12,11 +12,16 @@
 
 ## 2. Anthropic account model
 
-- [ ] 2.1 Research + document claude.ai OAuth (PKCE) flow and token refresh endpoints; document API-key account differences
-- [ ] 2.2 Alembic revision(s): account type discriminator, credential fields, plan/seat metadata; single-head topology checked with `scripts/check_migration_topology.py`
-- [ ] 2.3 Replace `app/modules/oauth` ChatGPT flow with Anthropic OAuth; add API-key account import path
-- [ ] 2.4 Adapt account settings/validation (`app/core/config`, settings tiers) for new credential fields
-- [ ] 2.5 Tests: OAuth round-trip, refresh failure handling, API-key import, migration up/down
+> Landed as the `add-anthropic-account-model` change (commit 57a511c6 + the
+> 2026-10-04 close-out). Live verification (token-path capture, Pro/Max limit
+> evidence) remains parked until a Claude account is available; see that
+> change's `tasks.md` and `notes.md` for the deferral record.
+
+- [ ] 2.1 Research + document claude.ai OAuth (PKCE) flow and token refresh endpoints; document API-key account differences *(flow documented in the change's `design.md`, but the token endpoint path is unresolved pending a live capture — parked)*
+- [x] 2.2 Alembic revision(s): account type discriminator, credential fields, plan/seat metadata; single-head topology checked with `scripts/check_migration_topology.py` *(additive; legacy column drops deferred to 3.5)*
+- [x] 2.3 Replace `app/modules/oauth` ChatGPT flow with Anthropic OAuth; add API-key account import path *(dashboard "Add API key" UI remains a follow-up frontend slice)*
+- [x] 2.4 Adapt account settings/validation (`app/core/config`, settings tiers) for new credential fields
+- [x] 2.5 Tests: OAuth round-trip, refresh failure handling, API-key import, migration up/down
 
 ## 3. Proxy core rewrite
 
