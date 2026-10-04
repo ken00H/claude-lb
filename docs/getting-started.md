@@ -19,9 +19,23 @@ uvx codex-lb
 nix run github:Soju06/codex-lb
 ```
 
-Open [localhost:2455](http://localhost:2455) → Add account → Done.
+Open [localhost:2455](http://localhost:2455) → **Add account**:
 
-Next: point your coding agent at codex-lb — see [Client Setup](client-setup.md).
+- **Claude OAuth seat** — start the login from the dashboard, complete it at
+  claude.ai, and paste the `CODE#STATE` callback value back into the dashboard.
+  The copy/paste callback is the primary flow (Anthropic's authorize page shows
+  the code instead of redirecting); a localhost callback listener is also
+  started as a convenience when reachable from your browser.
+- **Anthropic API key** — import a `sk-ant-…` key with
+  `POST /api/accounts/import-api-key` (a dashboard import path is planned).
+
+> **Fork status:** claude-lb is a work-in-progress fork of codex-lb. Account
+> pooling (OAuth seats + API keys) is implemented; the `/v1/messages` proxy
+> surface lands with roadmap increment 3
+> (`openspec/changes/anthropic-upstream-adaptation/`). Until then the bundled
+> Codex proxy core is inert reference code.
+
+Next: point your coding agent at the proxy — see [Client Setup](client-setup.md) *(Codex-era page; being re-scoped with the proxy rewrite)*.
 
 ## Remote setup (bootstrap token)
 

@@ -15,7 +15,7 @@ Settings are environment variables with the `CODEX_LB_` prefix, or a `.env.local
 | `CODEX_LB_DASHBOARD_AUTH_MODE` | `standard` | `trusted_header` / `disabled` — see [Authentication](authentication.md) |
 | `CODEX_LB_FIREWALL_TRUST_PROXY_HEADERS` | `false` | Behind a reverse proxy — see [Remote Access](deployment/remote.md) |
 | `CODEX_LB_FIREWALL_TRUSTED_PROXY_CIDRS` | `127.0.0.1/32,::1/128` | CIDRs allowed to set `X-Forwarded-For` |
-| `CODEX_LB_OAUTH_CALLBACK_HOST` | auto-detected (`0.0.0.0` in containers) | Rarely — bind the OAuth login callback explicitly |
+| `CODEX_LB_OAUTH_CALLBACK_HOST` | auto-detected (`0.0.0.0` in containers) | Rarely — bind the local OAuth login callback listener explicitly. The Claude login itself is copy/paste-primary (`CODE#STATE` pasted into the dashboard); the listener is a convenience for browsers that can reach it |
 
 ## Everything else
 

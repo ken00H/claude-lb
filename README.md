@@ -15,10 +15,12 @@ tracking, failover, and usage reporting.
 Work in progress. The adaptation roadmap lives in
 `openspec/changes/anthropic-upstream-adaptation/`:
 
-1. ~~Fork scaffold: rebrand, strip Codex-only machinery~~ (this increment)
-2. Anthropic account model — claude.ai OAuth (PKCE) accounts + Anthropic API key accounts
+1. ~~Fork scaffold: rebrand, strip Codex-only machinery~~ (landed)
+2. ~~Anthropic account model — claude.ai OAuth (PKCE) accounts + Anthropic API key accounts~~
+   (landed — live token-endpoint verification pending until a Claude account is available;
+   see `openspec/changes/add-anthropic-account-model/`)
 3. Proxy core rewrite — `/v1/messages` downstream, account-pool load balancing, 5-hour-window
-   rate limiting, SSE streaming, failover invariants
+   rate limiting, SSE streaming, failover invariants *(next)*
 4. Usage tracking + dashboard adaptation
 
 Until increment 3 lands, the bundled Codex proxy core is inert reference code, not a
