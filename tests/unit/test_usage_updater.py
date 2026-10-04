@@ -2903,7 +2903,7 @@ class StubAccountsRepository:
         account_id: str,
         access_token_encrypted: bytes,
         refresh_token_encrypted: bytes,
-        id_token_encrypted: bytes,
+        id_token_encrypted: bytes | None,
         last_refresh: datetime,
         *,
         expected_refresh_token_encrypted: bytes,
@@ -2914,6 +2914,9 @@ class StubAccountsRepository:
         workspace_id: str | None = None,
         workspace_label: str | None = None,
         seat_type: str | None = None,
+        token_expires_at: int | None = None,
+        anthropic_account_id: str | None = None,
+        anthropic_organization_id: str | None = None,
     ) -> bool:
         # The usage updater never rotates token material through its accounts
         # repo (that path lives in AuthManager). Present only to satisfy the

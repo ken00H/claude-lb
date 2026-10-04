@@ -245,6 +245,7 @@ async def test_begin_delete_preserves_seat_identity_before_token_wipe(db_setup):
     row = await _account_row("acc_bg_seat")
     assert row is not None
     # The ciphertext is wiped (no usable credentials remain on the row)...
+    assert row.id_token_encrypted is not None
     assert encryptor.decrypt(row.id_token_encrypted) == ""
     # ...but the seat identity survives in the non-secret column.
     assert row.chatgpt_user_id == "user-legacy-seat"
@@ -264,6 +265,7 @@ async def test_marked_account_wipes_tokens_and_rejects_stale_status_writes(db_se
     encryptor = TokenEncryptor()
     assert encryptor.decrypt(row.access_token_encrypted) == ""
     assert encryptor.decrypt(row.refresh_token_encrypted) == ""
+    assert row.id_token_encrypted is not None
     assert encryptor.decrypt(row.id_token_encrypted) == ""
 
     # Stale in-flight settlements (e.g. a late 429 for a request selected

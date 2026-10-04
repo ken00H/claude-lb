@@ -112,3 +112,63 @@ def test_http_bridge_rejects_expired_reauth_session() -> None:
     )
 
     assert not _http_bridge_session_account_active(cast(Any, session))
+
+
+class _StubModelRegistry:
+    """Minimal registry seam: models absent from the map have no catalog
+    entry (``plan_types_for_model`` returns None)."""
+
+    def __init__(self, plans_by_model: dict[str, frozenset[str]]) -> None:
+        self._plans_by_model = plans_by_model
+
+    def plan_types_for_model(self, model: str) -> frozenset[str] | None:
+        return self._plans_by_model.get(model)
+
+
+def _plan_candidate(account_id: str, plan_type: str | None) -> Account:
+    return Account(
+        id=account_id,
+        pool_class="oauth_seat",
+        email=f"{account_id}@example.com",
+        plan_type=plan_type,
+        access_token_encrypted=b"access",
+        refresh_token_encrypted=b"refresh",
+        last_refresh=datetime(2026, 1, 1),
+        status=AccountStatus.ACTIVE,
+    )
+
+
+def test_unknown_plan_is_routable_only_without_catalog_plan_restrictions() -> None:
+    """Current pinned semantics (see add-anthropic-account-model): an
+    ``unknown``-plan OAuth seat routes when the model has no catalog entry
+    (no allowed-plans restriction), but is excluded when the catalog lists
+    allowed plans that do not literally include ``unknown``. Aligning the
+    filter with the spec delta's "unknown is routable" requirement is a
+    deliberately deferred decision recorded in the change notes."""
+    from app.modules.proxy._load_balancer.model_eligibility import _filter_accounts_for_model
+
+    registry = _StubModelRegistry({"catalog-model": frozenset({"plus", "team"})})
+    unknown_seat = _plan_candidate("unknown-seat", "unknown")
+    plus_seat = _plan_candidate("plus-seat", "plus")
+
+    uncatalogued = _filter_accounts_for_model(
+        [unknown_seat, plus_seat],
+        "model-not-in-catalog",
+        registry=cast(Any, registry),
+    )
+    assert [account.id for account in uncatalogued] == ["unknown-seat", "plus-seat"]
+
+    catalogued = _filter_accounts_for_model(
+        [unknown_seat, plus_seat],
+        "catalog-model",
+        registry=cast(Any, registry),
+    )
+    assert [account.id for account in catalogued] == ["plus-seat"]
+
+    explicitly_allowed = _StubModelRegistry({"catalog-model": frozenset({"unknown"})})
+    admitted = _filter_accounts_for_model(
+        [unknown_seat],
+        "catalog-model",
+        registry=cast(Any, explicitly_allowed),
+    )
+    assert [account.id for account in admitted] == ["unknown-seat"]

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import base64
 import contextlib
 import json
 import logging
@@ -18,9 +17,8 @@ from fastapi.responses import JSONResponse
 
 import app.modules.oauth.service as oauth_module
 from app.core.auth import generate_unique_account_id
-from app.core.clients.oauth import DeviceCode, OAuthError, OAuthTokens
+from app.core.clients.oauth import OAuthError, OAuthTokens
 from app.core.crypto import TokenEncryptor
-from app.core.upstream_proxy import UpstreamProxyRouteError
 from app.core.utils.time import utcnow
 from app.db.models import Account, AccountStatus, OAuthFlowState
 from app.db.session import SessionLocal
@@ -92,12 +90,6 @@ async def _isolate_global_oauth_store():
     await _drain_global_oauth_store()
     yield
     await _drain_global_oauth_store()
-
-
-def _encode_jwt(payload: dict) -> str:
-    raw = json.dumps(payload, separators=(",", ":")).encode("utf-8")
-    body = base64.urlsafe_b64encode(raw).rstrip(b"=").decode("ascii")
-    return f"header.{body}.sig"
 
 
 def _oauth_state_token(authorization_url: str) -> str:
@@ -211,136 +203,76 @@ def test_oauth_error_html_escapes_message():
 
 
 @pytest.mark.asyncio
-async def test_device_oauth_flow_creates_account(async_client, monkeypatch):
-    email = "device@example.com"
-    raw_account_id = "acc_device"
+async def test_browser_oauth_flow_creates_oauth_seat_account(async_client, monkeypatch):
+    """Full browser + manual-callback round trip against mocked Anthropic
+    endpoints, using the copy/paste ``CODE#STATE`` callback form (Anthropic's
+    primary flow; the device flow no longer exists)."""
 
-    async def fake_device_code(**_):
-        return DeviceCode(
-            verification_url="https://auth.openai.com/codex/device",
-            user_code="ABCD-EFGH",
-            device_auth_id="dev_123",
-            interval_seconds=1,
-            expires_in_seconds=30,
-        )
-
-    async def fake_exchange_device_token(**_):
-        payload = {
-            "email": email,
-            "chatgpt_account_id": raw_account_id,
-            "https://api.openai.com/auth": {"chatgpt_plan_type": "plus"},
-        }
-        return OAuthTokens(
-            access_token="access-token",
-            refresh_token="refresh-token",
-            id_token=_encode_jwt(payload),
-        )
-
-    async def fake_sleep(_: float) -> None:
+    async def fake_callback_server_start(self) -> None:
         return None
 
-    monkeypatch.setattr(oauth_module, "request_device_code", fake_device_code)
-    monkeypatch.setattr(oauth_module, "exchange_device_token", fake_exchange_device_token)
-    monkeypatch.setattr(oauth_module, "_async_sleep", fake_sleep)
+    async def fake_oauth_route():
+        return None
 
-    start = await async_client.post("/api/oauth/start", json={"forceMethod": "device"})
-    assert start.status_code == 200
-    assert start.json()["method"] == "device"
-
-    await asyncio.sleep(0)
-
-    payload = None
-    for _ in range(20):
-        status = await async_client.get("/api/oauth/status")
-        assert status.status_code == 200
-        payload = status.json()
-        if payload["status"] == "success":
-            break
-        await asyncio.sleep(0.05)
-    assert payload and payload["status"] == "success"
-
-    expected_account_id = generate_unique_account_id(raw_account_id, email)
-    accounts = await async_client.get("/api/accounts")
-    assert accounts.status_code == 200
-    data = accounts.json()["accounts"]
-    assert any(account["accountId"] == expected_account_id for account in data)
-
-
-@pytest.mark.asyncio
-async def test_starting_new_device_flow_cancels_previous_pending_poll(async_client, monkeypatch):
-    issued = 0
-    first_poll_started = asyncio.Event()
-    first_poll_cancelled = asyncio.Event()
-
-    async def fake_device_code(**_):
-        nonlocal issued
-        issued += 1
-        return DeviceCode(
-            verification_url="https://auth.openai.com/codex/device",
-            user_code=f"CODE-{issued}",
-            device_auth_id=f"dev_{issued}",
-            interval_seconds=30,
-            expires_in_seconds=300,
+    async def fake_exchange_authorization_code(**_):
+        return OAuthTokens(
+            access_token="seat-access-token",
+            refresh_token="seat-refresh-token",
+            id_token=None,
+            expires_in=3600,
+            scope="user:inference user:profile",
+            organization_id="org-seat",
+            account_id="acc_seat",
+            email="seat@example.com",
         )
 
-    async def fake_exchange_device_token(*, device_auth_id: str, **_):
-        if device_auth_id == "dev_1":
-            first_poll_started.set()
-            try:
-                await asyncio.Event().wait()
-            except asyncio.CancelledError:
-                first_poll_cancelled.set()
-                raise
-        await asyncio.Event().wait()
-        raise AssertionError("device token polling should not complete in this test")
+    monkeypatch.setattr(oauth_module.OAuthCallbackServer, "start", fake_callback_server_start)
+    monkeypatch.setattr(oauth_module, "_oauth_route", fake_oauth_route)
+    monkeypatch.setattr(oauth_module, "exchange_authorization_code", fake_exchange_authorization_code)
 
-    monkeypatch.setattr(oauth_module, "request_device_code", fake_device_code)
-    monkeypatch.setattr(oauth_module, "exchange_device_token", fake_exchange_device_token)
-
-    first = await async_client.post("/api/oauth/start", json={"forceMethod": "device"})
-    assert first.status_code == 200
-    await asyncio.wait_for(first_poll_started.wait(), timeout=1)
-    async with oauth_module._OAUTH_STORE.lock:
-        first_flow_id = first.json()["flowId"]
-        first_flow = oauth_module._OAUTH_STORE.get_flow_locked(first_flow_id)
-        assert first_flow is not None
-        first_task = first_flow.poll_task
-        assert first_task is not None
-
-    second = await async_client.post("/api/oauth/start", json={"forceMethod": "device"})
-    assert second.status_code == 200
-    second_flow_id = second.json()["flowId"]
-    await asyncio.sleep(0)
+    start = await async_client.post("/api/oauth/start", json={"forceMethod": "browser"})
+    assert start.status_code == 200
+    payload = start.json()
+    assert payload["method"] == "browser"
 
     async with oauth_module._OAUTH_STORE.lock:
-        pending_device_flows = [
-            flow
-            for flow in oauth_module._OAUTH_STORE._flows.values()
-            if flow.method == "device" and flow.status == "pending"
-        ]
-        assert [flow.flow_id for flow in pending_device_flows] == [second_flow_id]
-        assert oauth_module._OAUTH_STORE.get_flow_locked(first_flow_id) is None
-    await asyncio.wait_for(first_poll_cancelled.wait(), timeout=1)
-    assert first_task.cancelled()
+        state_token = oauth_module._OAUTH_STORE.state.state_token
+
+    response = await async_client.post(
+        "/api/oauth/manual-callback",
+        json={"callbackUrl": f"code-seat#{state_token}"},
+    )
+    assert response.status_code == 200
+    assert response.json() == {"status": "success", "errorMessage": None}
+
+    status = await async_client.get("/api/oauth/status")
+    assert status.status_code == 200
+    assert status.json()["status"] == "success"
+
+    expected_account_id = generate_unique_account_id("acc_seat", "seat@example.com")
+    async with SessionLocal() as session:
+        stored = await AccountsRepository(session).get_by_id(expected_account_id)
+    assert stored is not None
+    assert stored.pool_class == "oauth_seat"
+    assert stored.anthropic_account_id == "acc_seat"
+    assert stored.anthropic_organization_id == "org-seat"
+    assert stored.token_expires_at is not None and stored.token_expires_at > int(time.time())
+    assert stored.id_token_encrypted is None
 
 
 @pytest.mark.asyncio
-async def test_device_oauth_reauth_reuses_existing_row_for_same_chatgpt_identity(
+async def test_browser_oauth_reauth_reuses_existing_row_for_same_anthropic_identity(
     async_client,
     monkeypatch,
 ):
-    """OAuth reauth for the same ChatGPT identity must reuse the existing
+    """OAuth reauth for the same Anthropic identity must reuse the existing
     local row even when ``importWithoutOverwrite`` is enabled.
 
     Before #788, this code path created an ``__copyN`` row whenever the
     operator had toggled ``importWithoutOverwrite`` on, because the
     dashboard's side-by-side import setting was incorrectly conflated
-    with reauth.
-
-    The ``importWithoutOverwrite`` setting now governs the dashboard
-    import path only (side-by-side rows when importing twice). The
-    reauth path always reconciles to one local row per upstream
-    ChatGPT identity, so a refresh-token-revoked account picks up the
+    with reauth. The reauth path always reconciles to one local row per
+    upstream identity, so a refresh-token-revoked account picks up the
     new tokens onto its historical row instead of forking a duplicate.
     """
 
@@ -356,177 +288,63 @@ async def test_device_oauth_reauth_reuses_existing_row_for_same_chatgpt_identity
     assert settings.status_code == 200
     assert settings.json()["importWithoutOverwrite"] is True
 
-    email = "device-reauth@example.com"
-    raw_account_id = "acc_device_reauth"
-
-    async def fake_device_code(**_):
-        return DeviceCode(
-            verification_url="https://auth.openai.com/codex/device",
-            user_code="ABCD-EFGH",
-            device_auth_id="dev_sep",
-            interval_seconds=1,
-            expires_in_seconds=30,
-        )
-
+    email = "reauth@example.com"
+    raw_account_id = "acc_reauth"
     call_count = {"value": 0}
 
-    async def fake_exchange_device_token(**_):
+    async def fake_callback_server_start(self) -> None:
+        return None
+
+    async def fake_exchange_authorization_code(**_):
         call_count["value"] += 1
-        plan_type = "plus" if call_count["value"] == 1 else "team"
-        payload = {
-            "email": email,
-            "chatgpt_account_id": raw_account_id,
-            "https://api.openai.com/auth": {"chatgpt_plan_type": plan_type},
-        }
         return OAuthTokens(
             access_token=f"access-token-{call_count['value']}",
             refresh_token=f"refresh-token-{call_count['value']}",
-            id_token=_encode_jwt(payload),
+            id_token=None,
+            expires_in=3600,
+            organization_id="org-reauth",
+            account_id=raw_account_id,
+            email=email,
         )
 
-    async def fake_sleep(_: float) -> None:
-        return None
+    monkeypatch.setattr(oauth_module.OAuthCallbackServer, "start", fake_callback_server_start)
+    monkeypatch.setattr(oauth_module, "exchange_authorization_code", fake_exchange_authorization_code)
 
-    monkeypatch.setattr(oauth_module, "request_device_code", fake_device_code)
-    monkeypatch.setattr(oauth_module, "exchange_device_token", fake_exchange_device_token)
-    monkeypatch.setattr(oauth_module, "_async_sleep", fake_sleep)
-
-    async def _run_device_flow_once() -> None:
-        start = await async_client.post("/api/oauth/start", json={"forceMethod": "device"})
+    async def _run_flow_once() -> None:
+        start = await async_client.post("/api/oauth/start", json={"forceMethod": "browser"})
         assert start.status_code == 200
-        assert start.json()["method"] == "device"
+        assert start.json()["method"] == "browser"
         flow_id = start.json()["flowId"]
+        async with oauth_module._OAUTH_STORE.lock:
+            state_token = oauth_module._OAUTH_STORE.state.state_token
+        response = await async_client.post(
+            "/api/oauth/manual-callback",
+            json={"callbackUrl": f"code-reauth-{flow_id}#{state_token}"},
+        )
+        assert response.status_code == 200
+        assert response.json() == {"status": "success", "errorMessage": None}
 
-        complete = await async_client.post("/api/oauth/complete", json={})
-        assert complete.status_code == 200
-        assert complete.json()["status"] == "pending"
+    await _run_flow_once()
+    await _run_flow_once()
 
-        await asyncio.sleep(0)
-
-        # Poll THIS flow's status (like the dashboard does): the flowId-less
-        # endpoint reads the store's "latest flow" pointer, which a finishing
-        # neighbor poller's cleanup can re-latch to its own already-successful
-        # flow -- reporting success before this flow's poller persisted.
-        payload = None
-        for _ in range(20):
-            status = await async_client.get("/api/oauth/status", params={"flowId": flow_id})
-            assert status.status_code == 200
-            payload = status.json()
-            if payload["status"] == "success":
-                break
-            await asyncio.sleep(0.05)
-        assert payload and payload["status"] == "success"
-
-    await _run_device_flow_once()
-    await _run_device_flow_once()
-
-    accounts = await async_client.get("/api/accounts")
-    assert accounts.status_code == 200
-    data = [account for account in accounts.json()["accounts"] if account["email"] == email]
-    assert len(data) == 1
-    base_id = generate_unique_account_id(raw_account_id, email)
-    assert data[0]["accountId"] == base_id
-    # Second reauth carried the team plan; it must be applied to the
-    # existing row rather than a new __copy row.
-    assert data[0]["planType"] == "team"
-
-
-@pytest.mark.asyncio
-async def test_device_oauth_flow_heals_deactivated_account_when_import_without_overwrite_enabled(
-    async_client,
-    monkeypatch,
-):
-    settings = await async_client.put(
-        "/api/settings",
-        json={
-            "stickyThreadsEnabled": False,
-            "preferEarlierResetAccounts": False,
-            "importWithoutOverwrite": True,
-            "totpRequiredOnLogin": False,
-        },
-    )
-    assert settings.status_code == 200
-    assert settings.json()["importWithoutOverwrite"] is True
-
-    email = "device-reauth@example.com"
-    raw_account_id = "acc_device_reauth"
-    account_id = generate_unique_account_id(raw_account_id, email)
-
-    encryptor = TokenEncryptor()
-    existing = Account(
-        id=account_id,
-        chatgpt_account_id=raw_account_id,
-        email=email,
-        plan_type="plus",
-        routing_policy="preserve",
-        access_token_encrypted=encryptor.encrypt("old-access"),
-        refresh_token_encrypted=encryptor.encrypt("old-refresh"),
-        id_token_encrypted=encryptor.encrypt("old-id"),
-        last_refresh=utcnow(),
-        status=AccountStatus.DEACTIVATED,
-        deactivation_reason="refresh_failed",
-    )
+    expected_account_id = generate_unique_account_id(raw_account_id, email)
     async with SessionLocal() as session:
-        repo = AccountsRepository(session)
-        await repo.upsert(existing, merge_by_email=False)
-
-    async def fake_device_code(**_):
-        return DeviceCode(
-            verification_url="https://auth.openai.com/codex/device",
-            user_code="ABCD-EFGH",
-            device_auth_id="dev_reauth",
-            interval_seconds=1,
-            expires_in_seconds=30,
-        )
-
-    async def fake_exchange_device_token(**_):
-        payload = {
-            "email": email,
-            "chatgpt_account_id": raw_account_id,
-            "https://api.openai.com/auth": {"chatgpt_plan_type": "pro"},
-        }
-        return OAuthTokens(
-            access_token="new-access-token",
-            refresh_token="new-refresh-token",
-            id_token=_encode_jwt(payload),
-        )
-
-    async def fake_sleep(_: float) -> None:
-        return None
-
-    monkeypatch.setattr(oauth_module, "request_device_code", fake_device_code)
-    monkeypatch.setattr(oauth_module, "exchange_device_token", fake_exchange_device_token)
-    monkeypatch.setattr(oauth_module, "_async_sleep", fake_sleep)
-
-    start = await async_client.post("/api/oauth/start", json={"forceMethod": "device"})
-    assert start.status_code == 200
-
-    complete = await async_client.post("/api/oauth/complete", json={})
-    assert complete.status_code == 200
-    assert complete.json()["status"] == "pending"
-
-    await asyncio.sleep(0)
-
-    payload = None
-    for _ in range(20):
-        status = await async_client.get("/api/oauth/status")
-        assert status.status_code == 200
-        payload = status.json()
-        if payload["status"] == "success":
-            break
-        await asyncio.sleep(0.05)
-    assert payload and payload["status"] == "success"
+        stored = await AccountsRepository(session).get_by_id(expected_account_id)
+        assert stored is not None
+        # The second flow's rotated tokens landed on the historical row...
+        assert TokenEncryptor().decrypt(stored.access_token_encrypted) == "access-token-2"
+        assert TokenEncryptor().decrypt(stored.refresh_token_encrypted) == "refresh-token-2"
+        # ...and its Anthropic identity survived the replacement merge.
+        assert stored.pool_class == "oauth_seat"
+        assert stored.anthropic_account_id == raw_account_id
+        assert stored.status == AccountStatus.ACTIVE
+        assert stored.deactivation_reason is None
 
     accounts = await async_client.get("/api/accounts")
     assert accounts.status_code == 200
     data = [account for account in accounts.json()["accounts"] if account["email"] == email]
     assert len(data) == 1
-    healed = data[0]
-    assert healed["accountId"] == account_id
-    assert healed["status"] == "active"
-    assert healed["deactivationReason"] is None
-    assert healed["planType"] == "pro"
-    assert healed["routingPolicy"] == "preserve"
+    assert data[0]["accountId"] == expected_account_id
 
 
 @pytest.mark.asyncio
@@ -556,17 +374,13 @@ async def test_oauth_persist_tokens_invalidates_routing_caches_after_identity_me
     monkeypatch.setattr(oauth_module, "get_cache_invalidation_poller", lambda: poller, raising=False)
     monkeypatch.setattr(oauth_module, "NAMESPACE_API_KEY", "api_key", raising=False)
 
-    payload = {
-        "email": "reauth-cache@example.com",
-        "chatgpt_account_id": "acc_reauth_cache",
-        "https://api.openai.com/auth": {"chatgpt_plan_type": "plus"},
-    }
-
     await service._persist_tokens(
         OAuthTokens(
             access_token="access-token",
             refresh_token="refresh-token",
-            id_token=_encode_jwt(payload),
+            id_token=None,
+            account_id="acc_reauth_cache",
+            email="reauth-cache@example.com",
         )
     )
 
@@ -582,72 +396,22 @@ async def test_oauth_persist_tokens_invalidates_routing_caches_after_identity_me
 
 
 @pytest.mark.asyncio
-async def test_oauth_persist_tokens_uses_slot_upsert_for_label_only_workspace(monkeypatch):
-    repo = AsyncMock()
-    service = oauth_module.OauthService(repo)
-    monkeypatch.setattr(
-        oauth_module,
-        "get_account_selection_cache",
-        lambda: SimpleNamespace(invalidate=lambda: None),
-        raising=False,
-    )
-    monkeypatch.setattr(oauth_module, "get_api_key_cache", lambda: SimpleNamespace(clear=lambda: None), raising=False)
-    monkeypatch.setattr(oauth_module, "get_cache_invalidation_poller", lambda: None, raising=False)
-
-    payload = {
-        "email": "label-workspace@example.com",
-        "chatgpt_account_id": "acc_label_workspace",
-        "https://api.openai.com/auth": {
-            "workspace_label": "Label Only Workspace",
-            "chatgpt_plan_type": "plus",
-        },
-    }
-
-    await service._persist_tokens(
-        OAuthTokens(
-            access_token="access-token",
-            refresh_token="refresh-token",
-            id_token=_encode_jwt(payload),
-        )
-    )
-
-    repo.upsert.assert_not_awaited()
-    repo.upsert_account_slot.assert_awaited_once()
-    saved_account = repo.upsert_account_slot.await_args.args[0]
-    assert saved_account.workspace_label == "Label Only Workspace"
-    assert repo.upsert_account_slot.await_args.kwargs == {
-        "preserve_unknown_workspace_duplicates": False,
-        "preserve_identity_slots": True,
-    }
-
-
-@pytest.mark.asyncio
-async def test_targeted_reauth_replaces_only_matching_team_seat(monkeypatch):
+async def test_targeted_reauth_replaces_matching_anthropic_seat(monkeypatch):
     repo = AsyncMock()
     service = oauth_module.OauthService(repo)
     monkeypatch.setattr(oauth_module, "get_account_selection_cache", lambda: SimpleNamespace(invalidate=lambda: None))
     monkeypatch.setattr(oauth_module, "get_api_key_cache", lambda: SimpleNamespace(clear=lambda: None))
     monkeypatch.setattr(oauth_module, "get_cache_invalidation_poller", lambda: None)
 
-    target_id = "shared-workspace_seat-a"
-    existing_token = _encode_jwt(
-        {
-            "email": "seat-a@example.com",
-            "sub": "auth0|seat-a",
-            "https://api.openai.com/auth": {
-                "chatgpt_account_id": "shared-workspace",
-                "chatgpt_user_id": "user-seat-a",
-            },
-        }
-    )
+    target_id = "anth-seat-a"
     intended = Account(
         id=target_id,
-        chatgpt_account_id="shared-workspace",
+        pool_class="oauth_seat",
+        anthropic_account_id="anth-seat-a",
         email="seat-a@example.com",
-        plan_type="team",
+        plan_type="max",
         access_token_encrypted=service._encryptor.encrypt("old-access"),
         refresh_token_encrypted=service._encryptor.encrypt("old-refresh"),
-        id_token_encrypted=service._encryptor.encrypt(existing_token),
         last_refresh=utcnow(),
         status=AccountStatus.REAUTH_REQUIRED,
     )
@@ -658,17 +422,11 @@ async def test_targeted_reauth_replaces_only_matching_team_seat(monkeypatch):
         OAuthTokens(
             access_token="new-access",
             refresh_token="new-refresh",
-            id_token=_encode_jwt(
-                {
-                    "email": "seat-a@example.com",
-                    "sub": "auth0|seat-a",
-                    "https://api.openai.com/auth": {
-                        "chatgpt_account_id": "shared-workspace",
-                        "chatgpt_user_id": "user-seat-a",
-                        "chatgpt_plan_type": "team",
-                    },
-                }
-            ),
+            id_token=None,
+            expires_in=3600,
+            organization_id="org-seat-a",
+            account_id="anth-seat-a",
+            email="seat-a@example.com",
         ),
         intended_account_id=target_id,
     )
@@ -676,24 +434,24 @@ async def test_targeted_reauth_replaces_only_matching_team_seat(monkeypatch):
     repo.replace_reauthorized.assert_awaited_once()
     assert repo.replace_reauthorized.await_args.args[0] == target_id
     saved = repo.replace_reauthorized.await_args.args[1]
-    assert saved.chatgpt_user_id == "user-seat-a"
+    assert saved.anthropic_account_id == "anth-seat-a"
+    assert saved.pool_class == "oauth_seat"
     repo.upsert_account_slot.assert_not_awaited()
 
 
 @pytest.mark.asyncio
-async def test_targeted_reauth_rejects_other_seat_in_same_team_workspace(monkeypatch):
+async def test_targeted_reauth_rejects_different_known_anthropic_seat(monkeypatch):
     repo = AsyncMock()
     service = oauth_module.OauthService(repo)
-    target_id = "shared-workspace_seat-a"
+    target_id = "anth-seat-a"
     intended = Account(
         id=target_id,
-        chatgpt_account_id="shared-workspace",
-        chatgpt_user_id="user-seat-a",
+        pool_class="oauth_seat",
+        anthropic_account_id="anth-seat-a",
         email="seat-a@example.com",
-        plan_type="team",
+        plan_type="max",
         access_token_encrypted=service._encryptor.encrypt("old-access"),
         refresh_token_encrypted=service._encryptor.encrypt("old-refresh"),
-        id_token_encrypted=service._encryptor.encrypt("unused"),
         last_refresh=utcnow(),
         status=AccountStatus.REAUTH_REQUIRED,
     )
@@ -704,16 +462,11 @@ async def test_targeted_reauth_rejects_other_seat_in_same_team_workspace(monkeyp
             OAuthTokens(
                 access_token="other-access",
                 refresh_token="other-refresh",
-                id_token=_encode_jwt(
-                    {
-                        "email": "seat-b@example.com",
-                        "sub": "google-oauth2|seat-b",
-                        "https://api.openai.com/auth": {
-                            "chatgpt_account_id": "shared-workspace",
-                            "chatgpt_user_id": "user-seat-b",
-                        },
-                    }
-                ),
+                id_token=None,
+                expires_in=3600,
+                organization_id="org-seat-b",
+                account_id="anth-seat-b",
+                email="seat-b@example.com",
             ),
             intended_account_id=target_id,
         )
@@ -723,275 +476,92 @@ async def test_targeted_reauth_rejects_other_seat_in_same_team_workspace(monkeyp
 
 
 @pytest.mark.asyncio
-async def test_targeted_reauth_rejects_missing_workspace_for_known_team_seat():
-    repo = AsyncMock()
-    service = oauth_module.OauthService(repo)
-    target_id = "shared-workspace_seat-a"
-    intended = Account(
-        id=target_id,
-        chatgpt_account_id="shared-workspace",
-        chatgpt_user_id="user-seat-a",
-        email="seat-a@example.com",
-        plan_type="team",
-        access_token_encrypted=service._encryptor.encrypt("old-access"),
-        refresh_token_encrypted=service._encryptor.encrypt("old-refresh"),
-        id_token_encrypted=service._encryptor.encrypt("unused"),
-        last_refresh=utcnow(),
-        status=AccountStatus.REAUTH_REQUIRED,
-    )
-    repo.get_by_id.return_value = intended
+async def test_targeted_reauth_allows_unknown_seat_uuid_on_either_side(monkeypatch):
+    """A missing uuid on the intended row (identity never populated) or on the
+    callback stays permissive so an operator can still repair the row; only a
+    *differing known* uuid is a mismatch."""
 
-    with pytest.raises(oauth_module.ReauthSeatMismatchError):
-        await service._persist_tokens(
-            OAuthTokens(
-                access_token="personal-access",
-                refresh_token="personal-refresh",
-                id_token=_encode_jwt(
-                    {
-                        "email": "seat-a@example.com",
-                        "sub": "auth0|seat-a",
-                        "https://api.openai.com/auth": {
-                            "chatgpt_user_id": "user-seat-a",
-                        },
-                    }
-                ),
-            ),
-            intended_account_id=target_id,
-        )
-
-    repo.replace_reauthorized.assert_not_awaited()
-    repo.upsert_account_slot.assert_not_awaited()
-
-
-@pytest.mark.asyncio
-async def test_targeted_reauth_allows_legacy_sub_match_for_new_chatgpt_user_id(monkeypatch):
     repo = AsyncMock()
     service = oauth_module.OauthService(repo)
     monkeypatch.setattr(oauth_module, "get_account_selection_cache", lambda: SimpleNamespace(invalidate=lambda: None))
     monkeypatch.setattr(oauth_module, "get_api_key_cache", lambda: SimpleNamespace(clear=lambda: None))
     monkeypatch.setattr(oauth_module, "get_cache_invalidation_poller", lambda: None)
 
-    target_id = "shared-workspace_legacy-seat-a"
-    existing_token = _encode_jwt(
-        {
-            "email": "seat-a@example.com",
-            "sub": "auth0|legacy-seat-a",
-            "https://api.openai.com/auth": {
-                "chatgpt_account_id": "shared-workspace",
-            },
-        }
-    )
-    intended = Account(
-        id=target_id,
-        chatgpt_account_id="shared-workspace",
-        email="seat-a@example.com",
-        plan_type="team",
+    # Intended row with no stored uuid.
+    intended_without_uuid = Account(
+        id="anth-unknown-seat",
+        pool_class="oauth_seat",
+        email="unknown-seat@example.com",
+        plan_type="unknown",
         access_token_encrypted=service._encryptor.encrypt("old-access"),
         refresh_token_encrypted=service._encryptor.encrypt("old-refresh"),
-        id_token_encrypted=service._encryptor.encrypt(existing_token),
         last_refresh=utcnow(),
         status=AccountStatus.REAUTH_REQUIRED,
     )
-    repo.get_by_id.return_value = intended
+    repo.get_by_id.return_value = intended_without_uuid
     repo.replace_reauthorized.side_effect = lambda _account_id, account: account
 
     await service._persist_tokens(
         OAuthTokens(
             access_token="new-access",
             refresh_token="new-refresh",
-            id_token=_encode_jwt(
-                {
-                    "email": "seat-a@example.com",
-                    "sub": "auth0|legacy-seat-a",
-                    "https://api.openai.com/auth": {
-                        "chatgpt_account_id": "shared-workspace",
-                        "chatgpt_user_id": "user-seat-a",
-                        "chatgpt_plan_type": "team",
-                    },
-                }
-            ),
+            id_token=None,
+            account_id="anth-fresh-uuid",
+            email="unknown-seat@example.com",
         ),
-        intended_account_id=target_id,
+        intended_account_id="anth-unknown-seat",
     )
-
     repo.replace_reauthorized.assert_awaited_once()
-    assert repo.replace_reauthorized.await_args.args[0] == target_id
-    saved = repo.replace_reauthorized.await_args.args[1]
-    assert saved.chatgpt_user_id == "user-seat-a"
+
+    # Callback carrying no uuid against a known intended seat.
+    repo.replace_reauthorized.reset_mock()
+    intended_with_uuid = Account(
+        id="anth-known-seat",
+        pool_class="oauth_seat",
+        anthropic_account_id="anth-known-seat-uuid",
+        email="known-seat@example.com",
+        plan_type="max",
+        access_token_encrypted=service._encryptor.encrypt("old-access"),
+        refresh_token_encrypted=service._encryptor.encrypt("old-refresh"),
+        last_refresh=utcnow(),
+        status=AccountStatus.REAUTH_REQUIRED,
+    )
+    repo.get_by_id.return_value = intended_with_uuid
+
+    await service._persist_tokens(
+        OAuthTokens(
+            access_token="new-access",
+            refresh_token="new-refresh",
+            id_token=None,
+            account_id=None,
+            email="known-seat@example.com",
+        ),
+        intended_account_id="anth-known-seat",
+    )
+    repo.replace_reauthorized.assert_awaited_once()
     repo.upsert_account_slot.assert_not_awaited()
 
 
 @pytest.mark.asyncio
-async def test_targeted_reauth_rejects_workspace_mismatch_when_chatgpt_account_id_is_missing(monkeypatch):
+async def test_targeted_reauth_rejects_missing_intended_account():
     repo = AsyncMock()
     service = oauth_module.OauthService(repo)
-    monkeypatch.setattr(oauth_module, "get_account_selection_cache", lambda: SimpleNamespace(invalidate=lambda: None))
-    monkeypatch.setattr(oauth_module, "get_api_key_cache", lambda: SimpleNamespace(clear=lambda: None))
-    monkeypatch.setattr(oauth_module, "get_cache_invalidation_poller", lambda: None)
-
-    target_id = "legacy-workspace_seat-a"
-    existing_token = _encode_jwt(
-        {
-            "email": "seat-a@example.com",
-            "sub": "auth0|legacy-seat-a",
-        }
-    )
-    intended = Account(
-        id=target_id,
-        chatgpt_account_id=None,
-        chatgpt_user_id=None,
-        workspace_id="legacy-workspace-a",
-        email="seat-a@example.com",
-        plan_type="team",
-        access_token_encrypted=service._encryptor.encrypt("old-access"),
-        refresh_token_encrypted=service._encryptor.encrypt("old-refresh"),
-        id_token_encrypted=service._encryptor.encrypt(existing_token),
-        last_refresh=utcnow(),
-        status=AccountStatus.REAUTH_REQUIRED,
-    )
-    repo.get_by_id.return_value = intended
+    repo.get_by_id.return_value = None
 
     with pytest.raises(oauth_module.ReauthSeatMismatchError):
         await service._persist_tokens(
             OAuthTokens(
                 access_token="new-access",
                 refresh_token="new-refresh",
-                id_token=_encode_jwt(
-                    {
-                        "email": "seat-a@example.com",
-                        "sub": "auth0|legacy-seat-a",
-                        "https://api.openai.com/auth": {
-                            "chatgpt_user_id": "user-seat-a",
-                            "workspace_id": "legacy-workspace-b",
-                            "chatgpt_plan_type": "team",
-                        },
-                    }
-                ),
+                id_token=None,
+                account_id="anth-vanished",
+                email="vanishing@example.com",
             ),
-            intended_account_id=target_id,
+            intended_account_id="anth-vanished-seat",
         )
 
     repo.replace_reauthorized.assert_not_awaited()
     repo.upsert_account_slot.assert_not_awaited()
-
-
-@pytest.mark.asyncio
-async def test_device_oauth_flow_keeps_same_email_distinct_upstream_identities_in_overwrite_mode(
-    async_client,
-    monkeypatch,
-):
-    enable_separate = await async_client.put(
-        "/api/settings",
-        json={
-            "stickyThreadsEnabled": False,
-            "preferEarlierResetAccounts": False,
-            "importWithoutOverwrite": True,
-            "totpRequiredOnLogin": False,
-        },
-    )
-    assert enable_separate.status_code == 200
-    assert enable_separate.json()["importWithoutOverwrite"] is True
-
-    email = "oauth-conflict@example.com"
-
-    async def fake_device_code(**_):
-        return DeviceCode(
-            verification_url="https://auth.openai.com/codex/device",
-            user_code="ABCD-EFGH",
-            device_auth_id="dev_conflict",
-            interval_seconds=1,
-            expires_in_seconds=30,
-        )
-
-    call_count = {"value": 0}
-
-    async def fake_exchange_device_token(**_):
-        # Each of the first two flows uses a *different* upstream
-        # chatgpt_account_id so that identity-aware reauth treats them
-        # as distinct upstream identities and keeps both local rows.
-        # The third flow then introduces a third upstream id under the
-        # same email. OAuth/reauth is keyed by upstream identity rather
-        # than email, so the overwrite-by-email import setting must not
-        # collapse this credential slot.
-        call_count["value"] += 1
-        if call_count["value"] == 1:
-            account_id = "acc_oauth_conflict_one"
-            plan_type = "plus"
-        elif call_count["value"] == 2:
-            account_id = "acc_oauth_conflict_two"
-            plan_type = "team"
-        else:
-            account_id = "acc_oauth_conflict_new"
-            plan_type = "pro"
-        payload = {
-            "email": email,
-            "chatgpt_account_id": account_id,
-            "https://api.openai.com/auth": {"chatgpt_plan_type": plan_type},
-        }
-        return OAuthTokens(
-            access_token=f"access-token-{call_count['value']}",
-            refresh_token=f"refresh-token-{call_count['value']}",
-            id_token=_encode_jwt(payload),
-        )
-
-    async def fake_sleep(_: float) -> None:
-        return None
-
-    monkeypatch.setattr(oauth_module, "request_device_code", fake_device_code)
-    monkeypatch.setattr(oauth_module, "exchange_device_token", fake_exchange_device_token)
-    monkeypatch.setattr(oauth_module, "_async_sleep", fake_sleep)
-
-    async def _run_device_flow_once() -> dict[str, str | None]:
-        start = await async_client.post("/api/oauth/start", json={"forceMethod": "device"})
-        assert start.status_code == 200
-        assert start.json()["method"] == "device"
-        flow_id = start.json()["flowId"]
-
-        complete = await async_client.post("/api/oauth/complete", json={})
-        assert complete.status_code == 200
-        assert complete.json()["status"] == "pending"
-
-        await asyncio.sleep(0)
-
-        # Poll THIS flow's status; see the reauth test above for why the
-        # flowId-less "latest flow" endpoint is racy across sequential flows.
-        payload: dict[str, str | None] | None = None
-        for _ in range(20):
-            status = await async_client.get("/api/oauth/status", params={"flowId": flow_id})
-            assert status.status_code == 200
-            payload = status.json()
-            if payload["status"] in {"success", "error"}:
-                break
-            await asyncio.sleep(0.05)
-        assert payload is not None
-        return payload
-
-    assert (await _run_device_flow_once())["status"] == "success"
-    assert (await _run_device_flow_once())["status"] == "success"
-
-    enable_overwrite = await async_client.put(
-        "/api/settings",
-        json={
-            "stickyThreadsEnabled": False,
-            "preferEarlierResetAccounts": False,
-            "importWithoutOverwrite": False,
-            "totpRequiredOnLogin": False,
-        },
-    )
-    assert enable_overwrite.status_code == 200
-    assert enable_overwrite.json()["importWithoutOverwrite"] is False
-
-    result = await _run_device_flow_once()
-    assert result["status"] == "success"
-
-    accounts = await async_client.get("/api/accounts")
-    assert accounts.status_code == 200
-    matching_accounts = [account for account in accounts.json()["accounts"] if account["email"] == email]
-    assert {account["accountId"] for account in matching_accounts} == {
-        generate_unique_account_id("acc_oauth_conflict_one", email),
-        generate_unique_account_id("acc_oauth_conflict_two", email),
-        generate_unique_account_id("acc_oauth_conflict_new", email),
-    }
 
 
 @pytest.mark.asyncio
@@ -1292,47 +862,26 @@ async def test_callback_server_remains_reserved_until_stop_completes():
 
 
 @pytest.mark.asyncio
-async def test_oauth_start_falls_back_to_device_on_os_error(async_client, monkeypatch):
-    async def fake_browser_flow(self):
+async def test_oauth_start_reports_callback_server_unavailable_on_os_error(async_client, monkeypatch):
+    """Anthropic has no device flow to fall back to: a busy callback port is a
+    hard error for the browser flow (the manual-callback path still works)."""
+
+    async def fake_browser_flow(self, *, intended_account_id=None):
         raise OSError("no port")
 
-    async def fake_device_code(**_):
-        return DeviceCode(
-            verification_url="https://auth.openai.com/codex/device",
-            user_code="ABCD-EFGH",
-            device_auth_id="dev_fallback",
-            interval_seconds=1,
-            expires_in_seconds=30,
-        )
-
-    # Park the spawned device poller instead of letting it hit the REAL token
-    # exchange client (this test only asserts the browser->device fallback);
-    # the autouse store fence cancels and awaits it at teardown.
-    async def fake_exchange_device_token(**_):
-        await asyncio.Event().wait()
-
     monkeypatch.setattr(oauth_module.OauthService, "_start_browser_flow", fake_browser_flow)
-    monkeypatch.setattr(oauth_module, "request_device_code", fake_device_code)
-    monkeypatch.setattr(oauth_module, "exchange_device_token", fake_exchange_device_token)
 
-    start = await async_client.post("/api/oauth/start", json={})
-    assert start.status_code == 200
-    payload = start.json()
-    assert payload["method"] == "device"
-    assert payload["deviceAuthId"] == "dev_fallback"
+    start = await async_client.post("/api/oauth/start", json={"forceMethod": "browser"})
+    assert start.status_code == 502
+    assert start.json()["error"]["code"] == "callback_server_unavailable"
 
 
 @pytest.mark.asyncio
-async def test_device_oauth_flow_reports_proxy_route_errors(async_client, monkeypatch):
-    async def fake_oauth_route(*_args, **_kwargs):
-        raise UpstreamProxyRouteError("default_pool_unconfigured", account_id=None)
-
-    monkeypatch.setattr(oauth_module, "resolve_upstream_route", fake_oauth_route)
-
+async def test_oauth_start_rejects_removed_device_flow(async_client):
     start = await async_client.post("/api/oauth/start", json={"forceMethod": "device"})
 
     assert start.status_code == 502
-    assert start.json()["error"]["code"] == "default_pool_unconfigured"
+    assert start.json()["error"]["code"] == "device_flow_unsupported"
 
 
 @pytest.mark.asyncio
@@ -1344,15 +893,14 @@ async def test_manual_callback_returns_success_and_creates_account(async_client,
     raw_account_id = "acc_manual"
 
     async def fake_exchange_authorization_code(**_):
-        payload = {
-            "email": email,
-            "chatgpt_account_id": raw_account_id,
-            "https://api.openai.com/auth": {"chatgpt_plan_type": "plus"},
-        }
         return OAuthTokens(
             access_token="manual-access-token",
             refresh_token="manual-refresh-token",
-            id_token=_encode_jwt(payload),
+            id_token=None,
+            expires_in=3600,
+            organization_id="org_manual",
+            account_id=raw_account_id,
+            email=email,
         )
 
     monkeypatch.setattr(oauth_module.OAuthCallbackServer, "start", fake_callback_server_start)
@@ -1623,15 +1171,14 @@ async def test_concurrent_browser_oauth_flows_keep_callbacks_isolated(async_clie
 
     async def fake_exchange_authorization_code(**kwargs):
         code = kwargs["code"]
-        payload = {
-            "email": f"{code}@example.com",
-            "chatgpt_account_id": f"acc_{code}",
-            "https://api.openai.com/auth": {"chatgpt_plan_type": "plus"},
-        }
         return OAuthTokens(
             access_token=f"access-{code}",
             refresh_token=f"refresh-{code}",
-            id_token=_encode_jwt(payload),
+            id_token=None,
+            expires_in=3600,
+            organization_id=f"org_{code}",
+            account_id=f"acc_{code}",
+            email=f"{code}@example.com",
         )
 
     monkeypatch.setattr(oauth_module.OAuthCallbackServer, "start", fake_callback_server_start)
@@ -1806,15 +1353,13 @@ async def test_manual_callback_idempotent_success_requires_requested_flow(async_
     async def fake_exchange_authorization_code(**kwargs):
         code = kwargs["code"]
         exchange_calls.append(code)
-        payload = {
-            "email": f"{code}@example.com",
-            "chatgpt_account_id": f"acc_{code}",
-            "https://api.openai.com/auth": {"chatgpt_plan_type": "plus"},
-        }
         return OAuthTokens(
             access_token=f"access-{code}",
             refresh_token=f"refresh-{code}",
-            id_token=_encode_jwt(payload),
+            id_token=None,
+            expires_in=3600,
+            account_id=f"acc_{code}",
+            email=f"{code}@example.com",
         )
 
     monkeypatch.setattr(oauth_module.OAuthCallbackServer, "start", fake_callback_server_start)
@@ -1904,15 +1449,14 @@ async def test_browser_oauth_flow_completes_on_replica_that_did_not_start_it(mon
     raw_account_id = "acc_cross_replica"
 
     async def fake_exchange_authorization_code(**_):
-        payload = {
-            "email": email,
-            "chatgpt_account_id": raw_account_id,
-            "https://api.openai.com/auth": {"chatgpt_plan_type": "plus"},
-        }
         return OAuthTokens(
             access_token="cross-access",
             refresh_token="cross-refresh",
-            id_token=_encode_jwt(payload),
+            id_token=None,
+            expires_in=3600,
+            organization_id="org_cross_replica",
+            account_id=raw_account_id,
+            email=email,
         )
 
     async def fake_oauth_route():
@@ -1944,6 +1488,10 @@ async def test_browser_oauth_flow_completes_on_replica_that_did_not_start_it(mon
     async with SessionLocal() as session:
         stored = await AccountsRepository(session).get_by_id(expected_account_id)
     assert stored is not None
+    assert stored.pool_class == "oauth_seat"
+    assert stored.anthropic_account_id == raw_account_id
+    assert stored.anthropic_organization_id == "org_cross_replica"
+    assert stored.token_expires_at is not None
 
     # Replica A, still holding a stale in-memory pending flow, must report the
     # authoritative success written by replica B to the shared DB.
@@ -2104,11 +1652,10 @@ async def test_set_status_success_is_not_overwritten_by_later_error():
         await repo.create(
             oauth_module.OAuthFlowRecord(
                 flow_id="mono-flow",
-                method="device",
+                method="browser",
                 status="pending",
-                device_auth_id="dev-mono",
-                user_code="MONO-CODE",
-                interval_seconds=1,
+                state_token="mono-state",
+                code_verifier="mono-verifier",
                 expires_at=utcnow() + timedelta(hours=1),
             )
         )
@@ -2129,7 +1676,7 @@ async def test_set_status_success_is_not_overwritten_by_later_error():
         await repo.create(
             oauth_module.OAuthFlowRecord(
                 flow_id="err-then-ok",
-                method="device",
+                method="browser",
                 status="error",
                 error_message="transient",
                 expires_at=utcnow() + timedelta(hours=1),
@@ -2156,11 +1703,10 @@ async def test_set_status_success_is_atomic_across_concurrent_sessions():
         await oauth_module.OAuthFlowRepository(seed_session, encryptor).create(
             oauth_module.OAuthFlowRecord(
                 flow_id="race-flow",
-                method="device",
+                method="browser",
                 status="pending",
-                device_auth_id="dev-race",
-                user_code="RACE-CODE",
-                interval_seconds=1,
+                state_token="race-state",
+                code_verifier="race-verifier",
                 expires_at=utcnow() + timedelta(hours=1),
             )
         )
@@ -2192,194 +1738,6 @@ async def test_set_status_success_is_atomic_across_concurrent_sessions():
         assert record is not None
         assert record.status == "success"
         assert record.error_message is None
-
-
-@pytest.mark.asyncio
-async def test_device_complete_ack_stays_pending_when_own_poller_already_succeeded():
-    """Device same-replica ``/complete`` contract: the fire-and-forget
-    acknowledgement (no ``flow_id``) must report ``pending`` even when this
-    flow's own in-process poller has already raced to ``success`` (the DB/store
-    already shows success). This deterministically reproduces the CI race where
-    the instant device-token exchange completed before ``/complete`` was read,
-    and must NOT spawn a second poll of the consumed device code.
-    """
-
-    async with SessionLocal() as session:
-        service = oauth_module.OauthService(AccountsRepository(session))
-
-        async with oauth_module._OAUTH_STORE.lock:
-            flow = oauth_module.OAuthState(
-                flow_id="device-raced",
-                status="pending",
-                method="device",
-                device_auth_id="dev-raced",
-                user_code="RACED-CODE",
-                interval_seconds=1,
-                expires_at=time.time() + 30,
-            )
-            oauth_module._OAUTH_STORE.remember_flow_locked(flow)
-            # The flow's own poller has already written success.
-            oauth_module._OAUTH_STORE.set_flow_status_locked(flow, status="success", error_message=None)
-
-        response = await service.complete_oauth(oauth_module.OauthCompleteRequest())
-        assert response.status == "pending"
-
-        async with oauth_module._OAUTH_STORE.lock:
-            done = oauth_module._OAUTH_STORE.get_flow_locked("device-raced")
-            assert done is not None
-            # No second poller was started for the already-consumed device code.
-            assert done.poll_task is None
-
-
-@pytest.mark.asyncio
-async def test_superseded_device_poller_does_not_persist_account(monkeypatch):
-    """Liveness race: a device flow's in-process poller is superseded by a newer
-    device start (which atomically re-claims the single-active slot) in the
-    window between the exchange and the account write. The abandoned poller must
-    lose the atomic slot consume and abort before doing durable damage: no
-    account is added and no terminal status is written for the abandoned attempt.
-    """
-
-    email = "superseded-device@example.com"
-    raw_account_id = "acc_superseded_device"
-
-    exchange_started = asyncio.Event()
-    release_exchange = asyncio.Event()
-
-    async def fake_device_code(**_):
-        return DeviceCode(
-            verification_url="https://auth.openai.com/codex/device",
-            user_code="SUPER-CODE",
-            device_auth_id="dev-super",
-            interval_seconds=0,
-            expires_in_seconds=300,
-        )
-
-    async def fake_exchange_device_token(**_):
-        exchange_started.set()
-        await release_exchange.wait()
-        return OAuthTokens(
-            access_token="super-access",
-            refresh_token="super-refresh",
-            id_token=_encode_jwt(
-                {
-                    "email": email,
-                    "chatgpt_account_id": raw_account_id,
-                    "https://api.openai.com/auth": {"chatgpt_plan_type": "plus"},
-                }
-            ),
-        )
-
-    async def fake_oauth_route():
-        return None
-
-    monkeypatch.setattr(oauth_module, "request_device_code", fake_device_code)
-    monkeypatch.setattr(oauth_module, "exchange_device_token", fake_exchange_device_token)
-    monkeypatch.setattr(oauth_module, "_oauth_route", fake_oauth_route)
-
-    replica = _make_replica_service(oauth_module.OAuthStateStore())
-    start = await replica.start_oauth(oauth_module.OauthStartRequest(force_method="device"))
-    assert start.flow_id is not None
-
-    # The poller is now blocked mid-exchange, holding the (about-to-be-consumed)
-    # device code, and it holds the single-active device slot.
-    await asyncio.wait_for(exchange_started.wait(), timeout=2)
-    async with SessionLocal() as session:
-        assert await OAuthFlowRepository(session, TokenEncryptor()).current_device_slot_flow_id() == start.flow_id
-
-    # A replacement device start (another replica) atomically re-claims the slot
-    # in the window between the exchange and the abandoned poller's account write.
-    async with SessionLocal() as session:
-        await OAuthFlowRepository(session, TokenEncryptor()).claim_device_slot("replacement-flow")
-
-    async with replica._store.lock:
-        flow = replica._store.get_flow_locked(start.flow_id)
-        assert flow is not None
-        poll_task = flow.poll_task
-        assert poll_task is not None
-
-    # Let the abandoned exchange complete; the poller must lose the atomic slot
-    # consume and abort rather than persist the account.
-    release_exchange.set()
-    await asyncio.wait_for(poll_task, timeout=2)
-
-    expected_account_id = generate_unique_account_id(raw_account_id, email)
-    async with SessionLocal() as session:
-        stored = await AccountsRepository(session).get_by_id(expected_account_id)
-    assert stored is None
-
-    # No terminal status was written for the superseded flow; the replacement
-    # still holds the slot.
-    async with SessionLocal() as session:
-        repo = OAuthFlowRepository(session, TokenEncryptor())
-        record = await repo.get_by_flow_id(start.flow_id)
-        assert record is not None and record.status == "pending"
-        assert await repo.current_device_slot_flow_id() == "replacement-flow"
-
-
-@pytest.mark.asyncio
-async def test_concurrent_device_starts_leave_exactly_one_current_flow(monkeypatch):
-    """Two replicas starting device OAuth "simultaneously" must leave exactly ONE
-    current device flow (the atomic slot UPSERT), and only the poller that still
-    holds the slot may persist -- the other's consume matches zero rows.
-    """
-
-    async def fake_device_code(**_):
-        return DeviceCode(
-            verification_url="https://auth.openai.com/codex/device",
-            user_code="RACE-CODE",
-            device_auth_id="dev-race",
-            interval_seconds=30,
-            expires_in_seconds=300,
-        )
-
-    # Never returns tokens: keep both pollers pending so we can assert the slot
-    # invariant deterministically without either completing.
-    async def fake_exchange_device_token(**_):
-        await asyncio.Event().wait()
-
-    async def fake_oauth_route():
-        return None
-
-    monkeypatch.setattr(oauth_module, "request_device_code", fake_device_code)
-    monkeypatch.setattr(oauth_module, "exchange_device_token", fake_exchange_device_token)
-    monkeypatch.setattr(oauth_module, "_oauth_route", fake_oauth_route)
-
-    replica_a = _make_replica_service(oauth_module.OAuthStateStore())
-    replica_b = _make_replica_service(oauth_module.OAuthStateStore())
-
-    start_a, start_b = await asyncio.gather(
-        replica_a.start_oauth(oauth_module.OauthStartRequest(force_method="device")),
-        replica_b.start_oauth(oauth_module.OauthStartRequest(force_method="device")),
-    )
-    assert start_a.flow_id is not None and start_b.flow_id is not None
-    assert start_a.flow_id != start_b.flow_id
-
-    # Exactly one flow holds the single-active slot.
-    async with SessionLocal() as session:
-        current = await OAuthFlowRepository(session, TokenEncryptor()).current_device_slot_flow_id()
-    assert current in {start_a.flow_id, start_b.flow_id}
-
-    # Only the current flow can consume the slot; the other loses.
-    async with SessionLocal() as session:
-        repo = OAuthFlowRepository(session, TokenEncryptor())
-        other = start_b.flow_id if current == start_a.flow_id else start_a.flow_id
-        assert await repo.consume_device_slot(other) is False
-    async with SessionLocal() as session:
-        repo = OAuthFlowRepository(session, TokenEncryptor())
-        assert await repo.consume_device_slot(current) is True
-        # Once consumed, neither can consume again (no double-persist).
-        assert await repo.consume_device_slot(current) is False
-
-    # Clean up the parked poll tasks.
-    for replica, start in ((replica_a, start_a), (replica_b, start_b)):
-        async with replica._store.lock:
-            flow = replica._store.get_flow_locked(start.flow_id)
-            task = flow.poll_task if flow is not None else None
-        if task is not None:
-            task.cancel()
-            with contextlib.suppress(asyncio.CancelledError):
-                await task
 
 
 @pytest.mark.asyncio
@@ -2429,13 +1787,13 @@ async def test_expired_local_browser_flow_callback_is_rejected_on_origin_replica
     assert exchange_calls == []
 
 
-@pytest.mark.parametrize("entry_point", ["status", "complete", "manual_callback", "handle_callback", "device_complete"])
+@pytest.mark.parametrize("entry_point", ["status", "complete", "manual_callback", "handle_callback"])
 @pytest.mark.asyncio
 async def test_entry_points_honor_durable_terminal_over_local_pending(monkeypatch, entry_point):
     """Root-consolidation regression: EVERY entry point that resolves a flow from
     local state must consult the DB-authoritative status first, so a durable
     terminal written by another replica wins over this replica's stale local
-    ``pending`` -- and a consumed authorization / device code is never replayed.
+    ``pending`` -- and a consumed authorization code is never replayed.
     """
 
     from aiohttp.test_utils import make_mocked_request
@@ -2452,31 +1810,14 @@ async def test_entry_points_honor_durable_terminal_over_local_pending(monkeypatc
         exchange_calls.append(kwargs.get("code"))
         raise AssertionError("a durable-terminal flow must never re-exchange the code")
 
-    async def fake_device_code(**_):
-        return DeviceCode(
-            verification_url="https://auth.openai.com/codex/device",
-            user_code="TERM-CODE",
-            device_auth_id="dev-term",
-            interval_seconds=30,
-            expires_in_seconds=300,
-        )
-
-    async def fake_exchange_device_token(**_):
-        # The device poll task legitimately calls this once at start; it is not a
-        # replay. Only authorization-code exchanges are tracked in exchange_calls.
-        await asyncio.Event().wait()
-
     monkeypatch.setattr(oauth_module.OAuthCallbackServer, "start", fake_callback_server_start)
     monkeypatch.setattr(oauth_module, "_oauth_route", fake_oauth_route)
     monkeypatch.setattr(oauth_module, "exchange_authorization_code", fake_exchange_authorization_code)
-    monkeypatch.setattr(oauth_module, "request_device_code", fake_device_code)
-    monkeypatch.setattr(oauth_module, "exchange_device_token", fake_exchange_device_token)
 
     replica = _make_replica_service(oauth_module.OAuthStateStore())
-    force_method = "device" if entry_point == "device_complete" else "browser"
-    start = await replica.start_oauth(oauth_module.OauthStartRequest(force_method=force_method))
+    start = await replica.start_oauth(oauth_module.OauthStartRequest(force_method="browser"))
     assert start.flow_id is not None
-    state_token = _oauth_state_token(start.authorization_url or "") if force_method == "browser" else None
+    state_token = _oauth_state_token(start.authorization_url or "")
 
     # Origin replica still holds the flow as pending in memory.
     async with replica._store.lock:
@@ -2492,7 +1833,7 @@ async def test_entry_points_honor_durable_terminal_over_local_pending(monkeypatc
     if entry_point == "status":
         resp = await replica.oauth_status(start.flow_id)
         assert resp.status == "success"
-    elif entry_point in ("complete", "device_complete"):
+    elif entry_point == "complete":
         resp = await replica.complete_oauth(oauth_module.OauthCompleteRequest(flow_id=start.flow_id))
         assert resp.status == "success"
     elif entry_point == "manual_callback":
@@ -2512,17 +1853,8 @@ async def test_entry_points_honor_durable_terminal_over_local_pending(monkeypatc
         local = replica._store.get_flow_locked(start.flow_id)
         assert local is not None and local.status == "success"
 
-    # The consumed authorization / device code was never re-exchanged.
+    # The consumed authorization code was never re-exchanged.
     assert exchange_calls == []
-
-    # Clean up any parked device poll task.
-    async with replica._store.lock:
-        flow = replica._store.get_flow_locked(start.flow_id)
-        task = flow.poll_task if flow is not None else None
-    if task is not None:
-        task.cancel()
-        with contextlib.suppress(asyncio.CancelledError):
-            await task
 
 
 @pytest.mark.asyncio
@@ -2577,203 +1909,6 @@ async def test_browser_callback_replay_on_origin_does_not_reexchange_consumed_co
     assert response.text is not None and "Login failed" not in response.text
 
     assert exchange_calls == []
-
-
-@pytest.mark.asyncio
-async def test_overlapping_same_replica_device_starts_later_start_wins_slot_and_poller(monkeypatch):
-    """Finding 1: two device starts overlap on the SAME replica; the earlier
-    start is superseded in the local store while awaiting its durable persist. It
-    must NOT install a stale slot pointer or a poll task; the later start ends up
-    as the current slot holder and the sole poller.
-    """
-
-    async def fake_device_code(**_):
-        return DeviceCode(
-            verification_url="https://auth.openai.com/codex/device",
-            user_code="OVERLAP-CODE",
-            device_auth_id="dev-overlap",
-            interval_seconds=30,
-            expires_in_seconds=300,
-        )
-
-    async def fake_exchange_device_token(**_):
-        await asyncio.Event().wait()  # never completes; keep pollers pending
-
-    async def fake_oauth_route():
-        return None
-
-    monkeypatch.setattr(oauth_module, "request_device_code", fake_device_code)
-    monkeypatch.setattr(oauth_module, "exchange_device_token", fake_exchange_device_token)
-    monkeypatch.setattr(oauth_module, "_oauth_route", fake_oauth_route)
-
-    replica = _make_replica_service(oauth_module.OAuthStateStore())
-
-    # Gate the FIRST start's durable persist so a second start can supersede it
-    # while it is parked mid-persist (after it registered locally, before it
-    # claims the slot / starts its poller).
-    original_persist = replica._persist_flow_record
-    persist_first_reached = asyncio.Event()
-    release_first_persist = asyncio.Event()
-    calls = {"n": 0}
-
-    async def gated_persist(record):
-        calls["n"] += 1
-        if calls["n"] == 1:
-            persist_first_reached.set()
-            await release_first_persist.wait()
-        await original_persist(record)
-
-    monkeypatch.setattr(replica, "_persist_flow_record", gated_persist)
-
-    first_task = asyncio.create_task(replica.start_oauth(oauth_module.OauthStartRequest(force_method="device")))
-    await asyncio.wait_for(persist_first_reached.wait(), timeout=2)
-
-    # Second start runs to completion: it supersedes the first locally, claims the
-    # slot, and starts its poller.
-    second = await replica.start_oauth(oauth_module.OauthStartRequest(force_method="device"))
-
-    # Release the first start; it resumes past its persist and must detect it was
-    # superseded (no stale claim, no poll task).
-    release_first_persist.set()
-    first = await asyncio.wait_for(first_task, timeout=2)
-
-    assert first.flow_id is not None and second.flow_id is not None and first.flow_id != second.flow_id
-
-    async with SessionLocal() as session:
-        current = await OAuthFlowRepository(session, TokenEncryptor()).current_device_slot_flow_id()
-    assert current == second.flow_id  # the later start holds the slot
-
-    async with replica._store.lock:
-        second_flow = replica._store.get_flow_locked(second.flow_id)
-        first_flow = replica._store.get_flow_locked(first.flow_id)
-        assert second_flow is not None and second_flow.poll_task is not None  # sole poller
-        # The superseded first start neither remains current nor holds a poller.
-        assert first_flow is None or first_flow.poll_task is None
-        second_task = second_flow.poll_task
-
-    if second_task is not None:
-        second_task.cancel()
-        with contextlib.suppress(asyncio.CancelledError):
-            await second_task
-
-
-@pytest.mark.asyncio
-async def test_loser_device_poller_writes_no_terminal_during_winner_persist(monkeypatch):
-    """Finding 2: only the slot holder may write a terminal status. A loser poller
-    that received ``invalid_grant`` for the consumed code (while the winner is
-    mid-persist, slot already consumed, success not yet written) MUST write NO
-    terminal (no pending->error), so the dashboard keeps polling and the winner's
-    later success is the durable outcome.
-    """
-
-    async def fake_oauth_route():
-        return None
-
-    monkeypatch.setattr(oauth_module, "_oauth_route", fake_oauth_route)
-
-    encryptor = TokenEncryptor()
-    async with SessionLocal() as session:
-        await OAuthFlowRepository(session, encryptor).create(
-            oauth_module.OAuthFlowRecord(
-                flow_id="race-terminal",
-                method="device",
-                status="pending",
-                device_auth_id="dev-rt",
-                user_code="RT-CODE",
-                interval_seconds=0,
-                expires_at=utcnow() + timedelta(hours=1),
-            )
-        )
-
-    service = _make_replica_service(oauth_module.OAuthStateStore())
-    await service._claim_device_slot("race-terminal")
-
-    # Winner consumes the slot (it is now mid-persist, success not yet written).
-    assert await service._consume_device_slot("race-terminal") is True
-
-    # Loser poll task: its exchange raises invalid_grant for the consumed code.
-    async def fake_exchange_device_token(**_):
-        raise OAuthError("invalid_grant", "Authorization code expired", status_code=400)
-
-    monkeypatch.setattr(oauth_module, "exchange_device_token", fake_exchange_device_token)
-    loser_context = oauth_module.DevicePollContext(
-        device_auth_id="dev-rt",
-        user_code="RT-CODE",
-        interval_seconds=0,
-        expires_at=time.time() + 300,
-    )
-    await service._poll_device_tokens("race-terminal", loser_context)
-
-    # The loser wrote NO terminal status; the flow is still pending.
-    async with SessionLocal() as session:
-        record = await OAuthFlowRepository(session, encryptor).get_by_flow_id("race-terminal")
-    assert record is not None and record.status == "pending"
-
-    # The winner's success (written after its persist) is the durable outcome.
-    await service._set_success("race-terminal")
-    async with SessionLocal() as session:
-        record = await OAuthFlowRepository(session, encryptor).get_by_flow_id("race-terminal")
-    assert record is not None and record.status == "success"
-
-
-@pytest.mark.asyncio
-async def test_non_originating_complete_reports_durable_status_without_second_poller(monkeypatch):
-    """Reduced duplicate-poller surface: a device ``/complete`` served on a
-    replica that did NOT originate the flow reports the durable status and does
-    NOT spawn a second poll task for the single-use device code.
-    """
-
-    async def fake_device_code(**_):
-        return DeviceCode(
-            verification_url="https://auth.openai.com/codex/device",
-            user_code="ORIG-CODE",
-            device_auth_id="dev-orig",
-            interval_seconds=30,
-            expires_in_seconds=300,
-        )
-
-    async def fake_exchange_device_token(**_):
-        await asyncio.Event().wait()
-
-    async def fake_oauth_route():
-        return None
-
-    monkeypatch.setattr(oauth_module, "request_device_code", fake_device_code)
-    monkeypatch.setattr(oauth_module, "exchange_device_token", fake_exchange_device_token)
-    monkeypatch.setattr(oauth_module, "_oauth_route", fake_oauth_route)
-
-    origin = _make_replica_service(oauth_module.OAuthStateStore())
-    other = _make_replica_service(oauth_module.OAuthStateStore())
-
-    start = await origin.start_oauth(oauth_module.OauthStartRequest(force_method="device"))
-    assert start.flow_id is not None
-
-    # The non-originating replica reports the durable pending status ...
-    resp = await other.complete_oauth(oauth_module.OauthCompleteRequest(flow_id=start.flow_id))
-    assert resp.status == "pending"
-
-    # ... and did NOT start a second poll task for the flow.
-    async with other._store.lock:
-        other_flow = other._store.get_flow_locked(start.flow_id)
-    assert other_flow is None or other_flow.poll_task is None
-
-    # Cross-replica durable terminal is still reported by /complete on the other
-    # replica once written.
-    async with SessionLocal() as session:
-        assert await OAuthFlowRepository(session, TokenEncryptor()).set_status(
-            start.flow_id, status="success", error_message=None
-        )
-    resp2 = await other.complete_oauth(oauth_module.OauthCompleteRequest(flow_id=start.flow_id))
-    assert resp2.status == "success"
-
-    # Clean up the origin's sole poll task.
-    async with origin._store.lock:
-        origin_flow = origin._store.get_flow_locked(start.flow_id)
-        task = origin_flow.poll_task if origin_flow is not None else None
-    if task is not None:
-        task.cancel()
-        with contextlib.suppress(asyncio.CancelledError):
-            await task
 
 
 @pytest.mark.parametrize("path", ["manual_callback", "handle_callback"])

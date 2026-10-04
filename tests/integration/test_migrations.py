@@ -3379,3 +3379,75 @@ async def test_bridge_continuity_abandonment_migration_upgrade_and_downgrade(tmp
 
 
 # end bridge continuity abandonment
+
+
+@pytest.mark.asyncio
+async def test_anthropic_account_identity_migration_upgrade_and_downgrade(tmp_path):
+    """Round-trip the Anthropic identity migration (add-anthropic-account-model):
+    parent -> revision adds ``pool_class`` (backfilling existing rows to
+    ``oauth_seat``), the anthropic identity columns, ``token_expires_at``, and
+    makes ``id_token_encrypted`` nullable (Anthropic issues no id_token); the
+    downgrade removes the new columns and restores the NOT NULL constraint.
+    An upgrade to head proves the revision sits on the single-head path."""
+    from alembic import command
+    from sqlalchemy import inspect as sa_inspect
+
+    from app.db.migrate import _build_alembic_config
+
+    db_url = f"sqlite+aiosqlite:///{tmp_path / 'anthropic-account-identity.sqlite'}"
+    parent_revision = "20260918_000000_merge_scim_and_overflow_heads"
+    identity_revision = "20261001_000000_add_anthropic_account_identity"
+    identity_columns = {"pool_class", "anthropic_organization_id", "anthropic_account_id", "token_expires_at"}
+
+    def _schema_state(sync_conn):
+        inspector = sa_inspect(sync_conn)
+        columns = {column["name"] for column in inspector.get_columns("accounts")}
+        id_token = next(
+            column for column in inspector.get_columns("accounts") if column["name"] == "id_token_encrypted"
+        )
+        return {
+            "columns": columns & identity_columns,
+            "id_token_nullable": bool(id_token.get("nullable", True)),
+        }
+
+    await to_thread.run_sync(lambda: run_upgrade(db_url, parent_revision, bootstrap_legacy=False))
+    engine = create_async_engine(db_url, future=True)
+    try:
+        # A legacy (pre-Anthropic) account row exists before the upgrade.
+        async with engine.begin() as conn:
+            await conn.execute(
+                text(
+                    "INSERT INTO accounts (id, codex_installation_id, email, plan_type, "
+                    "access_token_encrypted, refresh_token_encrypted, id_token_encrypted, "
+                    "last_refresh, status) "
+                    "VALUES ('acc_mig_legacy', 'install-mig-legacy', 'legacy@example.com', 'plus', "
+                    "X'00', X'00', X'00', '2026-10-01 00:00:00', 'active')"
+                )
+            )
+        async with engine.connect() as conn:
+            state = await conn.run_sync(_schema_state)
+        assert state == {"columns": set(), "id_token_nullable": False}
+
+        await to_thread.run_sync(lambda: run_upgrade(db_url, identity_revision, bootstrap_legacy=False))
+        async with engine.connect() as conn:
+            state = await conn.run_sync(_schema_state)
+        assert state == {"columns": identity_columns, "id_token_nullable": True}
+
+        # Backfill: the legacy row defaults into the oauth_seat pool class.
+        async with engine.connect() as conn:
+            pool_class = await conn.scalar(text("SELECT pool_class FROM accounts WHERE id = 'acc_mig_legacy'"))
+        assert pool_class == "oauth_seat"
+
+        await to_thread.run_sync(lambda: command.downgrade(_build_alembic_config(db_url), parent_revision))
+        async with engine.connect() as conn:
+            state = await conn.run_sync(_schema_state)
+        assert state == {"columns": set(), "id_token_nullable": False}
+
+        # Single-head path: upgrading to head from the parent must succeed and
+        # keep the identity schema in place.
+        await to_thread.run_sync(lambda: run_upgrade(db_url, "head", bootstrap_legacy=False))
+        async with engine.connect() as conn:
+            state = await conn.run_sync(_schema_state)
+        assert state == {"columns": identity_columns, "id_token_nullable": True}
+    finally:
+        await engine.dispose()
