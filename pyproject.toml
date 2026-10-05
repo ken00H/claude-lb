@@ -1,6 +1,6 @@
 [project]
 name = "claude-lb"
-version = "1.25.0-beta.9"
+version = "1.25.0-beta.1"
 description = "Claude/Anthropic account load balancer and proxy with usage dashboard"
 readme = "README.md"
 license = { file = "LICENSE" }
