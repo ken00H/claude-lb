@@ -27,7 +27,7 @@ class LimitRuleResponse(DashboardModel):
 class ApiKeyCreateRequest(DashboardModel):
     name: str = Field(min_length=1, max_length=128)
     allowed_models: list[str] | None = None
-    apply_to_codex_model: bool = False
+    apply_to_default_model: bool = False
     enforced_model: str | None = Field(default=None, min_length=1)
     enforced_reasoning_effort: str | None = Field(
         default=None, pattern=r"(?i)^(none|minimal|low|medium|high|xhigh|max|ultra)$"
@@ -48,7 +48,7 @@ class ApiKeyCreateRequest(DashboardModel):
 class ApiKeyUpdateRequest(DashboardModel):
     name: str | None = Field(default=None, min_length=1, max_length=128)
     allowed_models: list[str] | None = None
-    apply_to_codex_model: bool | None = None
+    apply_to_default_model: bool | None = None
     enforced_model: str | None = Field(default=None, min_length=1)
     enforced_reasoning_effort: str | None = Field(
         default=None, pattern=r"(?i)^(none|minimal|low|medium|high|xhigh|max|ultra)$"
@@ -80,7 +80,7 @@ class ApiKeyResponse(DashboardModel):
     name: str
     key_prefix: str
     allowed_models: list[str] | None
-    apply_to_codex_model: bool = False
+    apply_to_default_model: bool = False
     enforced_model: str | None
     enforced_reasoning_effort: str | None
     allowed_reasoning_efforts: list[str] | None

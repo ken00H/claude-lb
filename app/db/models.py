@@ -1525,7 +1525,7 @@ class DashboardSettings(Base):
         nullable=False,
     )
     # M3 codex prewarm: dashboard-managed Codex HTTP-bridge session prewarm.
-    # NULL inherits the deprecated ``CODEX_LB_*`` env alias (then the code
+    # NULL inherits the deprecated ``CLAUDE_LB_*`` env alias (then the code
     # default, off); a non-NULL value is dashboard-owned.
     http_responses_session_bridge_codex_prewarm_enabled: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     # end M3 codex prewarm
@@ -1651,26 +1651,26 @@ class DashboardSettings(Base):
         Integer,
         nullable=True,
     )
-    # C2-3 resilience toggles: NULL inherits the deprecated ``CODEX_LB_*`` env
+    # C2-3 resilience toggles: NULL inherits the deprecated ``CLAUDE_LB_*`` env
     # alias (then the code default); a non-NULL value is dashboard-owned.
     soft_drain_enabled: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     deterministic_failover_enabled: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     circuit_breaker_enabled: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
-    # M2 background jobs: NULL inherits the deprecated ``CODEX_LB_*`` env alias
+    # M2 background jobs: NULL inherits the deprecated ``CLAUDE_LB_*`` env alias
     # (then the code default); schedulers read the value at every cycle entry.
     auth_guardian_enabled: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     automations_scheduler_enabled: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     rate_limit_reset_credits_refresh_enabled: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     # end M2 background jobs
     # M5 conversation archive: NULL inherits the deprecated
-    # ``CODEX_LB_CONVERSATION_ARCHIVE_ENABLED`` env alias (then the code
+    # ``CLAUDE_LB_CONVERSATION_ARCHIVE_ENABLED`` env alias (then the code
     # default, off); a non-NULL value is dashboard-owned.
     conversation_archive_enabled: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     # end M5 conversation archive
     # R2 spool retention: how long the durable HTTP-bridge operation spool --
     # raw request payloads and their spooled response events -- is kept before
     # the retention sweep deletes it. NULL inherits the deprecated
-    # ``CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_OPERATION_SPOOL_RETENTION_SECONDS``
+    # ``CLAUDE_LB_HTTP_RESPONSES_SESSION_BRIDGE_OPERATION_SPOOL_RETENTION_SECONDS``
     # env alias (then the code default, 7 days); a non-NULL value is
     # dashboard-owned and must stay at or above the replay floor.
     http_responses_session_bridge_operation_spool_retention_seconds: Mapped[float | None] = mapped_column(
@@ -1698,7 +1698,7 @@ class DashboardSettings(Base):
 class ModelContextWindowOverride(Base):
     """One dashboard-stored context window override for a model slug.
 
-    A row wins over the ``CODEX_LB_MODEL_CONTEXT_WINDOW_OVERRIDES`` entry for
+    A row wins over the ``CLAUDE_LB_MODEL_CONTEXT_WINDOW_OVERRIDES`` entry for
     the same slug; slugs without a row inherit the environment entry (or have
     no override). The migration never copies the environment into rows.
     """
@@ -1757,7 +1757,7 @@ class ApiKey(Base):
     key_hash: Mapped[str] = mapped_column(String, nullable=False, unique=True)
     key_prefix: Mapped[str] = mapped_column(String, nullable=False)
     allowed_models: Mapped[str | None] = mapped_column(Text, nullable=True)
-    apply_to_codex_model: Mapped[bool] = mapped_column(
+    apply_to_default_model: Mapped[bool] = mapped_column(
         Boolean,
         default=False,
         server_default=false(),

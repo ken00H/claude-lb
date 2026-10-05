@@ -99,7 +99,7 @@ type ApiKeyEditDraft = {
   usageSections: string;
   limitRules: LimitRuleCreate[];
   expiresAt: Date | null;
-  applyToCodexModel: boolean;
+  applyToDefaultModel: boolean;
   enforcedModel: string;
   enforcedReasoningEffort: string;
   enforcedServiceTier: string;
@@ -117,7 +117,7 @@ function createApiKeyEditDraft(apiKey: ApiKey): ApiKeyEditDraft {
     usageSections: apiKey.usageSections,
     limitRules: limitsToCreateRules(apiKey),
     expiresAt: parseDate(apiKey.expiresAt),
-    applyToCodexModel: apiKey.applyToCodexModel,
+    applyToDefaultModel: apiKey.applyToDefaultModel,
     enforcedModel: apiKey.enforcedModel || "",
     enforcedReasoningEffort: apiKey.enforcedReasoningEffort || "none",
     enforcedServiceTier: apiKey.enforcedServiceTier || "none",
@@ -167,7 +167,7 @@ function ApiKeyEditForm({ apiKey, busy, onSubmit, onClose }: ApiKeyEditFormProps
     const payload: ApiKeyUpdateRequest = {
       name: values.name,
       allowedModels: draft.selectedModels.length > 0 ? draft.selectedModels : null,
-      applyToCodexModel: draft.applyToCodexModel,
+      applyToDefaultModel: draft.applyToDefaultModel,
       enforcedModel: draft.enforcedModel.trim() ? draft.enforcedModel.trim() : null,
       enforcedReasoningEffort:
         draft.enforcedReasoningEffort === "none" ? null : draft.enforcedReasoningEffort as ReasoningEffortType,
@@ -228,12 +228,12 @@ function ApiKeyEditForm({ apiKey, busy, onSubmit, onClose }: ApiKeyEditFormProps
 
             <div className="flex items-center gap-2 rounded-md border p-2 text-sm">
               <Checkbox
-                id="edit-api-key-apply-to-codex-model"
-                checked={draft.applyToCodexModel}
-                onCheckedChange={(checked) => updateDraft({ applyToCodexModel: checked === true })}
+                id="edit-api-key-apply-to-default-model"
+                checked={draft.applyToDefaultModel}
+                onCheckedChange={(checked) => updateDraft({ applyToDefaultModel: checked === true })}
               />
-              <label htmlFor="edit-api-key-apply-to-codex-model" className="cursor-pointer">
-                {t("apiKeys.form.applyToCodexModel")}
+              <label htmlFor="edit-api-key-apply-to-default-model" className="cursor-pointer">
+                {t("apiKeys.form.applyToDefaultModel")}
               </label>
             </div>
 

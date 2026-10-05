@@ -156,7 +156,7 @@ class _FakeApiKeysRepository(ApiKeysRepositoryProtocol):
         *,
         name: str | _Unset = _UNSET,
         allowed_models: str | None | _Unset = _UNSET,
-        apply_to_codex_model: bool | _Unset = _UNSET,
+        apply_to_default_model: bool | _Unset = _UNSET,
         enforced_model: str | None | _Unset = _UNSET,
         enforced_reasoning_effort: str | None | _Unset = _UNSET,
         allowed_reasoning_efforts: str | None | _Unset = _UNSET,
@@ -180,7 +180,7 @@ class _FakeApiKeysRepository(ApiKeysRepositoryProtocol):
         for field, value in {
             "name": name,
             "allowed_models": allowed_models,
-            "apply_to_codex_model": apply_to_codex_model,
+            "apply_to_default_model": apply_to_default_model,
             "enforced_model": enforced_model,
             "enforced_reasoning_effort": enforced_reasoning_effort,
             "allowed_reasoning_efforts": allowed_reasoning_efforts,
@@ -831,7 +831,7 @@ async def test_update_key_translates_reasoning_policy_constraint_race() -> None:
 
 
 @pytest.mark.asyncio
-async def test_create_key_persists_apply_to_codex_model_flag() -> None:
+async def test_create_key_persists_apply_to_default_model_flag() -> None:
     repo = _FakeApiKeysRepository()
     service = ApiKeysService(repo)
 
@@ -839,16 +839,16 @@ async def test_create_key_persists_apply_to_codex_model_flag() -> None:
         ApiKeyCreateData(
             name="codex-visibility-policy",
             allowed_models=["gpt-5.2"],
-            apply_to_codex_model=True,
+            apply_to_default_model=True,
             expires_at=None,
         )
     )
 
-    assert created.apply_to_codex_model is True
+    assert created.apply_to_default_model is True
 
     stored = await repo.get_by_id(created.id)
     assert stored is not None
-    assert stored.apply_to_codex_model is True
+    assert stored.apply_to_default_model is True
 
 
 @pytest.mark.asyncio
@@ -1280,7 +1280,7 @@ async def test_list_keys_keeps_scoped_empty_pool_when_assignments_are_missing() 
 
 
 @pytest.mark.asyncio
-async def test_update_key_persists_apply_to_codex_model_flag() -> None:
+async def test_update_key_persists_apply_to_default_model_flag() -> None:
     repo = _FakeApiKeysRepository()
     service = ApiKeysService(repo)
 
@@ -1295,20 +1295,20 @@ async def test_update_key_persists_apply_to_codex_model_flag() -> None:
     updated = await service.update_key(
         created.id,
         ApiKeyUpdateData(
-            apply_to_codex_model=True,
-            apply_to_codex_model_set=True,
+            apply_to_default_model=True,
+            apply_to_default_model_set=True,
         ),
     )
 
-    assert updated.apply_to_codex_model is True
+    assert updated.apply_to_default_model is True
 
     stored = await repo.get_by_id(created.id)
     assert stored is not None
-    assert stored.apply_to_codex_model is True
+    assert stored.apply_to_default_model is True
 
 
 @pytest.mark.asyncio
-async def test_update_key_ignores_null_apply_to_codex_model_patch_value() -> None:
+async def test_update_key_ignores_null_apply_to_default_model_patch_value() -> None:
     repo = _FakeApiKeysRepository()
     service = ApiKeysService(repo)
 
@@ -1316,7 +1316,7 @@ async def test_update_key_ignores_null_apply_to_codex_model_patch_value() -> Non
         ApiKeyCreateData(
             name="codex-visibility-null-update",
             allowed_models=["gpt-5.2"],
-            apply_to_codex_model=True,
+            apply_to_default_model=True,
             expires_at=None,
         )
     )
@@ -1324,16 +1324,16 @@ async def test_update_key_ignores_null_apply_to_codex_model_patch_value() -> Non
     updated = await service.update_key(
         created.id,
         ApiKeyUpdateData(
-            apply_to_codex_model=None,
-            apply_to_codex_model_set=True,
+            apply_to_default_model=None,
+            apply_to_default_model_set=True,
         ),
     )
 
-    assert updated.apply_to_codex_model is True
+    assert updated.apply_to_default_model is True
 
     stored = await repo.get_by_id(created.id)
     assert stored is not None
-    assert stored.apply_to_codex_model is True
+    assert stored.apply_to_default_model is True
 
 
 @pytest.mark.asyncio
@@ -2740,7 +2740,7 @@ async def test_update_key_usage_sections() -> None:
         key_hash="abc",
         key_prefix="sk-",
         allowed_models=None,
-        apply_to_codex_model=False,
+        apply_to_default_model=False,
         account_assignment_scope_enabled=False,
         usage_sections="upstream_limits,account_pool_usage",
         expires_at=None,

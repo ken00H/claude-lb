@@ -55,8 +55,8 @@ from app.core.cache.invalidation import NAMESPACE_RESET_CREDITS, bump_cache_inva
 from app.core.clients.files import FileProxyError
 from app.core.clients.proxy import (
     _SSE_SEPARATOR_OVERLAP,
+    CLAUDE_LB_REQUIRED_CAPABILITY_HEADER,
     CODEX_0150_RESPONSES_WEBSOCKET_WIRE_PROFILE,
-    CODEX_LB_REQUIRED_CAPABILITY_HEADER,
     MAX_SSE_EVENT_BYTES,
     CodexControlRequestPrivacyPolicy,
     CodexControlResponse,
@@ -403,7 +403,7 @@ _PUBLIC_RESPONSE_STREAM_TERMINAL_TYPES = frozenset(
 )
 _PUBLIC_RESPONSES_PRE_CREATED_BUFFER_LIMIT = 64
 _SOURCE_LIMITED_STREAM_BUFFER_BYTES = 16 * 1024 * 1024
-_PROMPT_CACHE_MODE_HEADER = "X-Codex-LB-Prompt-Cache-Mode"
+_PROMPT_CACHE_MODE_HEADER = "X-Claude-LB-Prompt-Cache-Mode"
 _SUBSCRIPTION_IMPLICIT_PROMPT_CACHE_MODE = "subscription-implicit"
 
 
@@ -3364,7 +3364,7 @@ async def v1_images_variations(
         request,
         status_code=404,
         content=images_service_module.make_not_found_error(
-            "/v1/images/variations is not supported by codex-lb. Use /v1/images/edits with an explicit prompt instead."
+            "/v1/images/variations is not supported by claude-lb. Use /v1/images/edits with an explicit prompt instead."
         ),
     )
 
@@ -4302,7 +4302,7 @@ def _to_model_list_item(
         {
             "id": slug,
             "created": created,
-            "owned_by": "codex-lb",
+            "owned_by": "claude-lb",
             "metadata": _to_model_metadata(model, context_window=context_window),
             "api_types": ["chat_completions"],
             "capabilities": _v1_model_capabilities(model, context_window=context_window),
@@ -4331,7 +4331,7 @@ def _model_list_created_at(model: UpstreamModel) -> int:
 
 
 def _codex_model_visibility_allowed_models(api_key: ApiKeyData | None) -> set[str] | None:
-    if api_key is None or not api_key.apply_to_codex_model or not api_key.allowed_models:
+    if api_key is None or not api_key.apply_to_default_model or not api_key.allowed_models:
         return None
     return _allowed_models_for_api_key(api_key)
 
@@ -4446,7 +4446,7 @@ def _to_codex_model_entry(
 async def _effective_context_window_overrides() -> Mapping[str, int]:
     # M4 model catalogue: resolved once per catalog build, outside the per-model
     # loops. Dashboard rows (cached snapshot, settings-namespace invalidation)
-    # win per slug over the deprecated CODEX_LB_MODEL_CONTEXT_WINDOW_OVERRIDES
+    # win per slug over the deprecated CLAUDE_LB_MODEL_CONTEXT_WINDOW_OVERRIDES
     # entry; a slug with neither has no override.
     dashboard = await get_model_context_window_overrides_cache().get()
     return effective_context_window_overrides(dashboard, get_settings().model_context_window_overrides)
@@ -4712,7 +4712,7 @@ async def v1_chat_completions(
             model=request_model,
             api_key=api_key,
             allowed_reasoning_effort=(
-                responses_payload._codex_lb_client_reasoning_effort
+                responses_payload._claude_lb_client_reasoning_effort
                 if api_key is not None and api_key.allowed_reasoning_efforts is not None
                 else None
             ),
@@ -5006,7 +5006,7 @@ async def _disabled_model_source_denial(
     error = openai_error(
         "model_source_disabled",
         f"The model '{matched_model}' is served by an OpenAI-compatible model source that {reason}. "
-        "Enable the source and its model in codex-lb, or request a different model.",
+        "Enable the source and its model in claude-lb, or request a different model.",
         error_type="upstream_error",
     )
     return _logged_error_json_response(request, 503, error, headers=headers)
@@ -5434,7 +5434,7 @@ def _shape_source_responses_payload(
     """Project the client body onto what the source may see (telemetry stripped, reasoning aliases resolved)."""
 
     source_payload = strip_source_telemetry(payload.model_dump_for_forwarding())
-    preserve_materialized_provider_alias = payload._codex_lb_provider_reasoning_effort_materialized and (
+    preserve_materialized_provider_alias = payload._claude_lb_provider_reasoning_effort_materialized and (
         api_key is None or (api_key.enforced_reasoning_effort is None and api_key.allowed_reasoning_efforts is None)
     )
     if preserve_materialized_provider_alias:
@@ -5447,13 +5447,13 @@ def _shape_source_responses_payload(
                 source_payload.pop("reasoning")
     if api_key is not None and (
         api_key.enforced_reasoning_effort is not None
-        or (api_key.allowed_reasoning_efforts is not None and payload._codex_lb_client_reasoning_effort is not None)
+        or (api_key.allowed_reasoning_efforts is not None and payload._claude_lb_client_reasoning_effort is not None)
     ):
         normalize_source_reasoning_aliases(source_payload)
     source_reasoning_effort = (
         api_key.enforced_reasoning_effort
         if api_key is not None and api_key.enforced_reasoning_effort is not None
-        else payload._codex_lb_client_reasoning_effort
+        else payload._claude_lb_client_reasoning_effort
     )
     if source_reasoning_effort is not None and not preserve_materialized_provider_alias:
         source_reasoning_effort = resolve_wire_reasoning_effort(source_reasoning_effort)
@@ -8616,8 +8616,8 @@ def _is_legacy_proxy_auth_override_type_error(exc: TypeError) -> bool:
 
 def _required_capability_values(headers: Mapping[str, str]) -> tuple[str, ...]:
     if isinstance(headers, Headers):
-        return tuple(headers.getlist(CODEX_LB_REQUIRED_CAPABILITY_HEADER))
-    normalized_name = CODEX_LB_REQUIRED_CAPABILITY_HEADER.lower()
+        return tuple(headers.getlist(CLAUDE_LB_REQUIRED_CAPABILITY_HEADER))
+    normalized_name = CLAUDE_LB_REQUIRED_CAPABILITY_HEADER.lower()
     return tuple(value for name, value in headers.items() if name.lower() == normalized_name)
 
 

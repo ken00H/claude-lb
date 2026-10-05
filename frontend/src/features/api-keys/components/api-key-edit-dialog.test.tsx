@@ -72,7 +72,7 @@ describe("ApiKeyEditDialog", () => {
 
     const payload = onSubmit.mock.calls[0][0];
     expect(payload.name).toBe("Renamed key");
-    expect(payload.applyToCodexModel).toBe(false);
+    expect(payload.applyToDefaultModel).toBe(false);
     expect("assignedAccountIds" in payload).toBe(false);
     expect("limits" in payload).toBe(false);
   });
@@ -464,14 +464,14 @@ describe("ApiKeyEditDialog", () => {
       />,
     );
 
-    await user.click(screen.getByRole("checkbox", { name: "Apply to codex /model" }));
+    await user.click(screen.getByRole("checkbox", { name: "Apply to default /model" }));
     await user.click(screen.getByRole("button", { name: "Save" }));
 
     await waitFor(() => {
       expect(onSubmit).toHaveBeenCalledTimes(1);
     });
 
-    expect(onSubmit.mock.calls[0][0].applyToCodexModel).toBe(true);
+    expect(onSubmit.mock.calls[0][0].applyToDefaultModel).toBe(true);
   });
 
   it("shows the stored codex /model checkbox value", () => {
@@ -479,13 +479,13 @@ describe("ApiKeyEditDialog", () => {
       <ApiKeyEditDialog
         open
         busy={false}
-        apiKey={createApiKey({ applyToCodexModel: true })}
+        apiKey={createApiKey({ applyToDefaultModel: true })}
         onOpenChange={vi.fn()}
         onSubmit={vi.fn()}
       />,
     );
 
-    expect(screen.getByRole("checkbox", { name: "Apply to codex /model" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Apply to default /model" })).toBeChecked();
   });
 
   it("submits opportunistic traffic class", async () => {

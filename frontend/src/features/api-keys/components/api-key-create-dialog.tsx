@@ -76,7 +76,7 @@ type ApiKeyCreateDraft = {
   enforcedServiceTier: string;
   trafficClass: TrafficClass;
   transportPolicyOverride: TransportPolicyOverride | null;
-  applyToCodexModel: boolean;
+  applyToDefaultModel: boolean;
 };
 
 const initialApiKeyCreateDraft: ApiKeyCreateDraft = {
@@ -92,7 +92,7 @@ const initialApiKeyCreateDraft: ApiKeyCreateDraft = {
   enforcedServiceTier: "none",
   trafficClass: "foreground",
   transportPolicyOverride: null,
-  applyToCodexModel: false,
+  applyToDefaultModel: false,
 };
 
 function apiKeyCreateDraftReducer(
@@ -119,7 +119,7 @@ function ApiKeyCreateForm({ busy, onClose, onSubmit }: ApiKeyCreateFormProps) {
     const payload: ApiKeyCreateRequest = {
       name: values.name,
       allowedModels: draft.selectedModels.length > 0 ? draft.selectedModels : undefined,
-      applyToCodexModel: draft.applyToCodexModel,
+      applyToDefaultModel: draft.applyToDefaultModel,
       ...(draft.selectedAccountIds.length > 0 ? { assignedAccountIds: draft.selectedAccountIds } : {}),
       ...(draft.selectedSourceIds.length > 0 ? { assignedSourceIds: draft.selectedSourceIds } : {}),
       usageSections: draft.usageSections,
@@ -179,12 +179,12 @@ function ApiKeyCreateForm({ busy, onClose, onSubmit }: ApiKeyCreateFormProps) {
 
             <div className="flex items-center gap-2 rounded-md border p-2 text-sm">
               <Checkbox
-                id="create-api-key-apply-to-codex-model"
-                checked={draft.applyToCodexModel}
-                onCheckedChange={(checked) => updateDraft({ applyToCodexModel: checked === true })}
+                id="create-api-key-apply-to-default-model"
+                checked={draft.applyToDefaultModel}
+                onCheckedChange={(checked) => updateDraft({ applyToDefaultModel: checked === true })}
               />
-              <label htmlFor="create-api-key-apply-to-codex-model" className="cursor-pointer">
-                {t("apiKeys.form.applyToCodexModel")}
+              <label htmlFor="create-api-key-apply-to-default-model" className="cursor-pointer">
+                {t("apiKeys.form.applyToDefaultModel")}
               </label>
             </div>
 

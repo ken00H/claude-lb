@@ -10,7 +10,7 @@
 
 - **What**: `claude-lb` — Claude/Anthropic account load balancer and proxy (`/v1/messages`) with a usage dashboard. FastAPI backend + React 19 SPA served from `app/static/`. Fork of `Soju06/codex-lb`, rebranded; adaptation roadmap: `openspec/changes/anthropic-upstream-adaptation/`.
 - **Status**: WIP — the Anthropic proxy-core rewrite (roadmap increment 3) has not landed; the bundled Codex proxy core is inert reference code, not a working proxy.
-- **Layout**: `app/core/` (reusable: balancer, settings/tiers, auth, HTTP clients, middleware) · `app/modules/` (API-facing features, each `api.py`/`service.py`/`repository.py`/`schemas.py`) · `app/db/` (models + Alembic revisions in `app/db/alembic/versions/`) · `frontend/` (React 19 + TS + Vite + Tailwind v4, **Bun**, builds into `app/static/`) · `tests/{unit,integration,e2e,simulation,load}` · `scripts/` (fitness-ratchet checkers + tooling) · `spec/` (TLA+ model) · `deploy/helm/codex-lb/` · `docs/` (mkdocs).
+- **Layout**: `app/core/` (reusable: balancer, settings/tiers, auth, HTTP clients, middleware) · `app/modules/` (API-facing features, each `api.py`/`service.py`/`repository.py`/`schemas.py`) · `app/db/` (models + Alembic revisions in `app/db/alembic/versions/`) · `frontend/` (React 19 + TS + Vite + Tailwind v4, **Bun**, builds into `app/static/`) · `tests/{unit,integration,e2e,simulation,load}` · `scripts/` (fitness-ratchet checkers + tooling) · `spec/` (TLA+ model) · `deploy/helm/claude-lb/` · `docs/` (mkdocs).
 - `CLAUDE.md` is a symlink to `AGENTS.md`; `.claude` symlinks to `.agents`.
 
 ### Commands
@@ -29,7 +29,7 @@
 
 ### Gotchas
 
-- Env prefix is still **`CODEX_LB_*`** (data dir defaults to `~/.codex-lb`) despite the claude-lb rebrand; `PORT` is the only exception.
+- Env prefix is still **`CLAUDE_LB_*`** (data dir defaults to `~/.claude-lb`) despite the claude-lb rebrand; `PORT` is the only exception.
 - `app/static/` does not exist until `make frontend-build` runs — backend test targets depend on the built dashboard.
 - New tracked root files need an entry in the `.github/simplicity-budgets.toml` root allowlist; README sections, `.env.example`, and dashboard core-nav are budgeted there too.
 - `docs/rust-architecture.md` describes the `crates/` workspace this fork deleted — no Rust code exists in the tree.
@@ -116,7 +116,7 @@ are encouraged but not substitutes for the cloud gates.
 
 ## PR Readiness / Review Trapdoors
 
-These rules encode recurring review blockers observed across codex-lb PRs.
+These rules encode recurring review blockers observed across claude-lb PRs.
 
 - OpenSpec is a hard gate for behavior, API, schema, CLI,
   dashboard-visible, proxy-routing, operator-contract, and compatibility
@@ -162,7 +162,7 @@ These rules encode recurring review blockers observed across codex-lb PRs.
   behavior the code does not implement.
 - Simplicity gates are a merge gate (`PRINCIPLES.md` +
   [CONTRIBUTING.md Simplicity gates](.github/CONTRIBUTING.md#simplicity-gates)).
-  New features must default off or work zero-config; new `CODEX_LB_*` settings
+  New features must default off or work zero-config; new `CLAUDE_LB_*` settings
   need a why-not-a-default justification in the PR body; README top-level
   sections, `.env.example`, and dashboard core-nav items are budgeted per
   `.github/simplicity-budgets.toml` and exceptions need the maintainer-applied

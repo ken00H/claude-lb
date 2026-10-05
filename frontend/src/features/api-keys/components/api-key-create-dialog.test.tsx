@@ -29,7 +29,7 @@ describe("ApiKeyCreateDialog", () => {
       />,
     );
 
-    expect(screen.getByRole("checkbox", { name: "Apply to codex /model" })).not.toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Apply to default /model" })).not.toBeChecked();
   });
 
   it("submits the codex /model checkbox value", async () => {
@@ -46,14 +46,14 @@ describe("ApiKeyCreateDialog", () => {
     );
 
     await user.type(screen.getByLabelText("Name"), "Codex key");
-    await user.click(screen.getByRole("checkbox", { name: "Apply to codex /model" }));
+    await user.click(screen.getByRole("checkbox", { name: "Apply to default /model" }));
     await user.click(screen.getByRole("button", { name: "Create" }));
 
     await waitFor(() => {
       expect(onSubmit).toHaveBeenCalledTimes(1);
     });
 
-    expect(onSubmit.mock.calls[0][0].applyToCodexModel).toBe(true);
+    expect(onSubmit.mock.calls[0][0].applyToDefaultModel).toBe(true);
   });
 
   it("submits opportunistic traffic class", async () => {
@@ -147,7 +147,7 @@ describe("ApiKeyCreateDialog", () => {
       />,
     );
 
-    const checkbox = screen.getByRole("checkbox", { name: "Apply to codex /model" });
+    const checkbox = screen.getByRole("checkbox", { name: "Apply to default /model" });
     await user.click(checkbox);
     expect(checkbox).toBeChecked();
 
@@ -169,7 +169,7 @@ describe("ApiKeyCreateDialog", () => {
       />,
     );
 
-    expect(screen.getByRole("checkbox", { name: "Apply to codex /model" })).not.toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Apply to default /model" })).not.toBeChecked();
   });
 
   it("omits assigned accounts when left at all accounts", async () => {

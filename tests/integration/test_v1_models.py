@@ -177,7 +177,7 @@ async def test_v1_models_list(async_client):
     custom_items = [item for item in data if item["id"] in {"gpt-5.2", "gpt-5.3-codex"}]
     for item in custom_items:
         assert item["object"] == "model"
-        assert item["owned_by"] == "codex-lb"
+        assert item["owned_by"] == "claude-lb"
         assert "metadata" in item
         assert item["api_types"] == ["chat_completions"]
         assert item["capabilities"]["context_length"] == item["metadata"]["input_context_window"]
@@ -907,7 +907,7 @@ async def test_backend_codex_models_data_keeps_only_list_visible_models(async_cl
     assert "gpt-visible" in data
     assert "gpt-hidden" not in data
     assert data["gpt-visible"]["object"] == "model"
-    assert data["gpt-visible"]["owned_by"] == "codex-lb"
+    assert data["gpt-visible"]["owned_by"] == "claude-lb"
 
 
 @pytest.mark.asyncio
@@ -1103,7 +1103,7 @@ async def test_backend_codex_models_rewrites_visibility_when_opted_in(async_clie
         json={
             "name": "codex-visibility",
             "allowedModels": ["gpt-5.2", "gpt-hidden"],
-            "applyToCodexModel": True,
+            "applyToDefaultModel": True,
         },
     )
     assert created.status_code == 200
@@ -1156,7 +1156,7 @@ async def test_backend_codex_models_visibility_allowlist_respects_enforced_model
         json={
             "name": "codex-visibility-enforced",
             "allowedModels": ["gpt-5.2", "gpt-5.3-codex"],
-            "applyToCodexModel": True,
+            "applyToDefaultModel": True,
             "enforcedModel": "gpt-5.3-codex",
         },
     )
@@ -1209,7 +1209,7 @@ async def test_model_catalogs_canonicalize_enforced_model_alias(async_client):
         json={
             "name": "catalog-enforced-alias",
             "allowedModels": ["gpt-5.4-mini-high"],
-            "applyToCodexModel": True,
+            "applyToDefaultModel": True,
             "enforcedModel": "gpt-5.4-mini-high",
         },
     )
@@ -1264,7 +1264,7 @@ async def test_backend_codex_models_preserves_original_flow_without_allowlist(as
         "/api/api-keys/",
         json={
             "name": "codex-visibility-no-allowlist",
-            "applyToCodexModel": True,
+            "applyToDefaultModel": True,
         },
     )
     assert created.status_code == 200
@@ -1480,7 +1480,7 @@ async def test_model_context_window_override_applies_to_codex_models_data_alias(
 
 @pytest.mark.asyncio
 async def test_dashboard_context_window_override_wins_over_environment_without_restart(async_client, monkeypatch):
-    """A dashboard row beats the CODEX_LB_MODEL_CONTEXT_WINDOW_OVERRIDES entry for
+    """A dashboard row beats the CLAUDE_LB_MODEL_CONTEXT_WINDOW_OVERRIDES entry for
     its slug on the next catalog request, and deleting the row falls back to the
     environment entry — no restart, no settings reload."""
     registry = get_model_registry()
@@ -1884,7 +1884,7 @@ async def test_raw_hidden_same_slug_source_does_not_shadow_retained_metadata(asy
         json={
             "name": "raw-hidden-source-codex-visibility",
             "allowedModels": ["gpt-5.6-sol"],
-            "applyToCodexModel": True,
+            "applyToDefaultModel": True,
         },
     )
     assert created.status_code == 200
@@ -1938,7 +1938,7 @@ async def test_list_visible_same_slug_source_wins_over_earlier_hidden_source(asy
         json={
             "name": "visible-source-precedence",
             "allowedModels": ["gpt-5.6-sol"],
-            "applyToCodexModel": True,
+            "applyToDefaultModel": True,
         },
     )
     assert created.status_code == 200
@@ -1993,7 +1993,7 @@ async def test_codex_visibility_allowlist_keeps_retained_metadata_hidden(async_c
         json={
             "name": "retained-codex-visibility",
             "allowedModels": ["gpt-5.6-terra"],
-            "applyToCodexModel": True,
+            "applyToDefaultModel": True,
         },
     )
     assert created.status_code == 200
@@ -2043,7 +2043,7 @@ async def test_hidden_same_slug_source_does_not_shadow_retained_metadata_for_cod
         json={
             "name": "retained-codex-visibility-alias",
             "allowedModels": ["gpt-5.6-sol-extra-high-fast"],
-            "applyToCodexModel": True,
+            "applyToDefaultModel": True,
         },
     )
     assert created.status_code == 200

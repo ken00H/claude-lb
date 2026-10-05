@@ -994,7 +994,7 @@ export function createDashboardSettings(
 		rateLimitResetCreditsRefreshEnabled: true,
 		// M5 conversation archive
 		conversationArchiveEnabled: false,
-		conversationArchiveDir: "/var/lib/codex-lb/conversation-archive",
+		conversationArchiveDir: "/var/lib/claude-lb/conversation-archive",
 		// R2 spool retention: the 7-day default and the floor at shipped defaults.
 		httpResponsesSessionBridgeOperationSpoolRetentionSeconds: 604800,
 		httpResponsesSessionBridgeOperationSpoolRetentionFloorSeconds: 7200,
@@ -1256,7 +1256,7 @@ export function createApiKey(overrides: Partial<ApiKey> = {}): ApiKey {
 		name: "Default key",
 		keyPrefix: "sk-test",
 		allowedModels: ["gpt-5.1"],
-		applyToCodexModel: false,
+		applyToDefaultModel: false,
 		transportPolicyOverride: null,
 		expiresAt: null,
 		isActive: true,

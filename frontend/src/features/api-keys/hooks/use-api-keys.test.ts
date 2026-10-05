@@ -39,7 +39,7 @@ describe("useApiKeys", () => {
     const created = await result.current.createMutation.mutateAsync({
       name: "Test Key",
       allowedModels: ["gpt-5.1"],
-      applyToCodexModel: true,
+      applyToDefaultModel: true,
       weeklyTokenLimit: 1000,
       expiresAt: null,
     });
