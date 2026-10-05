@@ -475,7 +475,7 @@ wheels = [
 
 [[package]]
 name = "claude-lb"
-version = "1.25.0b9"
+version = "1.25.0-beta.1"
 source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },
