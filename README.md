@@ -20,11 +20,13 @@ Work in progress. The adaptation roadmap lives in
    (landed — live token-endpoint verification pending until a Claude account is available;
    see `openspec/changes/add-anthropic-account-model/`)
 3. Proxy core rewrite — `/v1/messages` downstream, account-pool load balancing, 5-hour-window
-   rate limiting, SSE streaming, failover invariants *(next)*
+   rate limiting, SSE streaming, failover invariants *(in progress — working slice landed:
+   `/v1/messages` streaming SSE + non-streaming, bounded failover, oauth-seat token refresh,
+   Anthropic error envelope; live OAuth verification against a real Claude account pending)*
 4. Usage tracking + dashboard adaptation
 
-Until increment 3 lands, the bundled Codex proxy core is inert reference code, not a
-working proxy.
+The Anthropic proxy slice is implemented but not yet live-verified; the bundled Codex proxy
+core remains inert reference code, not a working proxy.
 
 ## License
 
