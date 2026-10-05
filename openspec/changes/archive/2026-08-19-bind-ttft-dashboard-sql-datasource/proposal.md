@@ -29,8 +29,8 @@ None.
 
 ## Impact
 
-- `deploy/helm/codex-lb/dashboards/ttft-breakdown.json`
-- `deploy/helm/codex-lb/README.md`
+- `deploy/helm/claude-lb/dashboards/ttft-breakdown.json`
+- `deploy/helm/claude-lb/README.md`
 - focused dashboard-artifact and rendered-ConfigMap tests
 
 There is no application runtime, API, database schema, chart value, sidecar

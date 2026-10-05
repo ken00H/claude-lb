@@ -7,7 +7,7 @@
 ## 2. Traced streaming response
 
 - [x] 2.1 Create `app/modules/proxy/downstream_delivery.py` with `DeliveryTracedStreamingResponse`: wrapped `send`, chunk/byte counters (non-empty chunks whose `send` returned), rolling-tail terminal-event detection on `event:` lines (anchored match at offset 0 + `bytes.find` prefilter, no regex walk over large frames), terminal held as pending after its `event:` line and committed only once the block's blank-line terminator was handed over (searched with `bytes.find` on `\n` in the bytes after the `event:` line only) and `send` returned for that chunk, `more_body=False` tracking, closed five-outcome classification, one log line + one counter increment in a synchronous `finally` (no clock reads, no awaits).
-- [x] 2.2 Register `stream_terminal_delivery_total` (`codex_lb_stream_terminal_delivery_total{surface,outcome}`) in `app/core/metrics/prometheus.py` with the `None` fallback and `__all__` entry.
+- [x] 2.2 Register `stream_terminal_delivery_total` (`claude_lb_stream_terminal_delivery_total{surface,outcome}`) in `app/core/metrics/prometheus.py` with the `None` fallback and `__all__` entry.
 - [x] 2.3 Return `DeliveryTracedStreamingResponse(stream, surface="responses", ...)` from `_stream_responses` in `app/modules/proxy/api.py`.
 
 ## 3. Tests

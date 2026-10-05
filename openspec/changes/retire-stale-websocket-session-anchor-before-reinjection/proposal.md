@@ -1,6 +1,6 @@
 ## Why
 
-On the direct Responses WebSocket surface, codex-lb injects a session-continuity
+On the direct Responses WebSocket surface, claude-lb injects a session-continuity
 `previous_response_id` (`continuity_state.last_completed_response_id`) into a
 follow-up `response.create` and trims the already-stored history prefix. When
 upstream denies that proxy-injected anchor with `previous_response_not_found`

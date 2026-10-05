@@ -575,7 +575,7 @@ class _StreamingMixin(_StreamingRetryMixin):
                 "route_trace": route_trace,
                 "codex_installation_id": account.codex_installation_id,
                 "enforce_openai_sdk_contract": enforce_openai_sdk_contract,
-                "codex_lb_account_id": account.id,
+                "claude_lb_account_id": account.id,
                 # Selected subscription Account, independent of optional legacy header.
                 "synthesize_routing_hint": True,
                 "thread_cache_identity": thread_cache_identity,

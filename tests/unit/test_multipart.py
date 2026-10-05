@@ -26,7 +26,7 @@ from app.core.multipart import (
 
 pytestmark = pytest.mark.unit
 
-_BOUNDARY = "codex-lb-boundary"
+_BOUNDARY = "claude-lb-boundary"
 _MIB = 1024 * 1024
 
 

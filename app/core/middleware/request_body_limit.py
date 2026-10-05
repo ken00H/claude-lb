@@ -31,7 +31,7 @@ _OPENAI_INGRESS_PATH_PREFIXES = (
     "/internal/bridge",
     "/v1",
 )
-_REQUEST_BODY_TOO_LARGE_STATE = "_codex_lb_request_body_too_large"
+_REQUEST_BODY_TOO_LARGE_STATE = "_claude_lb_request_body_too_large"
 
 logger = logging.getLogger(__name__)
 

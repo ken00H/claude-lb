@@ -280,7 +280,7 @@ async def test_fake_request_logs_repo_accepts_request_log_metadata_fields() -> N
         latency_ms=3,
         status="success",
         error_code=None,
-        useragent="codex-lb-limit-warmup",
+        useragent="claude-lb-limit-warmup",
         useragent_group="internal",
         client_ip="203.0.113.9",
     )
@@ -309,7 +309,7 @@ async def test_fake_request_logs_repo_accepts_request_log_metadata_fields() -> N
             "session_id": None,
             "plan_type": None,
             "source": None,
-            "useragent": "codex-lb-limit-warmup",
+            "useragent": "claude-lb-limit-warmup",
             "useragent_group": "internal",
             "client_ip": "203.0.113.9",
             "failure_phase": None,

@@ -313,7 +313,7 @@ def build_report(result: Mapping[str, Any]) -> str:
             right_label="B",
         ),
         "",
-        "The A↔B table compares direct Codex with the client-visible result through codex-lb. Attempt counts and the "
+        "The A↔B table compares direct Codex with the client-visible result through claude-lb. Attempt counts and the "
         "final outcome remain informational because the two paths are separately generated runs.",
         "",
         "### Same-run B↔C",

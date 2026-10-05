@@ -8,7 +8,7 @@ import pytest
 from starlette.datastructures import Headers
 
 from app.core.auth import dependencies as auth_dependencies
-from app.core.clients.proxy import CODEX_LB_REQUIRED_CAPABILITY_HEADER
+from app.core.clients.proxy import CLAUDE_LB_REQUIRED_CAPABILITY_HEADER
 from app.core.upstream_proxy import ResolvedProxyEndpoint, ResolvedUpstreamRoute, UpstreamProxyRouteError
 from app.core.usage.models import UsagePayload
 from app.db.models import Account, AccountStatus
@@ -23,7 +23,7 @@ async def test_validate_proxy_api_key_requires_carrier_authentication(
     principal = object()
     request = cast(
         Any,
-        SimpleNamespace(headers=Headers({CODEX_LB_REQUIRED_CAPABILITY_HEADER: "trusted_cyber"})),
+        SimpleNamespace(headers=Headers({CLAUDE_LB_REQUIRED_CAPABILITY_HEADER: "trusted_cyber"})),
     )
 
     async def required_auth(authorization: str | None) -> object:
@@ -80,7 +80,7 @@ async def test_validate_codex_provider_usage_identity_authenticates_carrier_befo
         SimpleNamespace(
             headers=Headers(
                 {
-                    CODEX_LB_REQUIRED_CAPABILITY_HEADER: "trusted_cyber",
+                    CLAUDE_LB_REQUIRED_CAPABILITY_HEADER: "trusted_cyber",
                     "Authorization": "Bearer inert-key",
                 }
             )

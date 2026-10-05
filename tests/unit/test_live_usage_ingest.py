@@ -246,7 +246,7 @@ async def test_stream_responses_tap_publishes_rate_limit_events(monkeypatch: pyt
                 {},
                 "access-token",
                 "workspace-live",
-                codex_lb_account_id="acc-internal",
+                claude_lb_account_id="acc-internal",
             )
         ]
     finally:
@@ -265,7 +265,7 @@ async def test_stream_responses_tap_publishes_rate_limit_events(monkeypatch: pyt
                 {},
                 "access-token",
                 "workspace-live",
-                codex_lb_account_id="acc-internal",
+                claude_lb_account_id="acc-internal",
                 suppress_live_usage=True,
             )
         ]

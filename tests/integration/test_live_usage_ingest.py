@@ -346,7 +346,7 @@ async def test_sse_publication_tap_settles_queued_duplicate_snapshot_under_canon
 
     async def _fake_upstream_stream(**kwargs):
         assert kwargs["account_id"] == upstream_id
-        assert kwargs["codex_lb_account_id"] == duplicate_id
+        assert kwargs["claude_lb_account_id"] == duplicate_id
         yield rate_limit_event
 
     monkeypatch.setattr(core_proxy, "lease_http_session", _fake_http_session)
@@ -371,7 +371,7 @@ async def test_sse_publication_tap_settles_queued_duplicate_snapshot_under_canon
                 "access-token",
                 upstream_id,
                 session=cast(Any, object()),
-                codex_lb_account_id=duplicate_id,
+                claude_lb_account_id=duplicate_id,
             )
         ]
         assert events == [rate_limit_event]

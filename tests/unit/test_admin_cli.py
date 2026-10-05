@@ -90,7 +90,7 @@ class _Recovery:
 
 
 def _point_settings_at(monkeypatch: pytest.MonkeyPatch, url: str) -> None:
-    monkeypatch.setenv("CODEX_LB_DATABASE_URL", url)
+    monkeypatch.setenv("CLAUDE_LB_DATABASE_URL", url)
     get_settings.cache_clear()
 
 

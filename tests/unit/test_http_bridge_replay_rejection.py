@@ -43,7 +43,7 @@ def _lookup(
         canonical_key="thread-1",
         api_key_scope="global",
         account_id="account-1",
-        owner_instance_id="codex-lb",
+        owner_instance_id="claude-lb",
         owner_epoch=1,
         lease_expires_at=None,
         state=HttpBridgeSessionState.ACTIVE,

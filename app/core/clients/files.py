@@ -7,7 +7,7 @@ ceiling on `/responses`:
 1. ``POST {base}/files`` -- register a file with ``{file_name, file_size,
    use_case}``. Upstream returns ``{file_id, upload_url}``. The
    ``upload_url`` is an Azure Blob Storage SAS link and is *not* routed
-   through codex-lb on the upload step (the client PUTs the bytes
+   through claude-lb on the upload step (the client PUTs the bytes
    directly to the blob).
 2. ``PUT {upload_url}`` (raw blob, not in this module) -- uploaded
    directly by the caller.

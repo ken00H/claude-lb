@@ -208,8 +208,8 @@ def _run(args: argparse.Namespace, report: dict[str, Any]) -> None:
 def main() -> None:
     args = _arguments()
     # Pin both routes before importing any application code or launching the CLI.
-    os.environ["CODEX_LB_DATABASE_URL"] = args.db_url
-    os.environ["CODEX_LB_TEST_DATABASE_URL"] = args.db_url
+    os.environ["CLAUDE_LB_DATABASE_URL"] = args.db_url
+    os.environ["CLAUDE_LB_TEST_DATABASE_URL"] = args.db_url
     source = _source()
     args.output.mkdir(parents=True, exist_ok=False)
     report = {

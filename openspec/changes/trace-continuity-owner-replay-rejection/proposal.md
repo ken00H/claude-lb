@@ -50,7 +50,7 @@ reconstructed.
   no raise site is instrumented individually. The `required_continuity_owner_missing`
   fail-closed raise has no exception to classify, so it calls the classifier directly and
   emits the same event with whichever reason applies.
-- **Metric.** New counter `codex_lb_continuity_replay_rejected_total{surface, reason}`
+- **Metric.** New counter `claude_lb_continuity_replay_rejected_total{surface, reason}`
   registered in `app/core/metrics/prometheus.py` with the usual `None` fallback, recorded
   through a new `_record_continuity_replay_rejected` in
   `app/modules/proxy/_service/observability.py` next to the existing
@@ -67,7 +67,7 @@ reconstructed.
   logged; widening the bridge's request-log coverage to every pre-submit failure is a separate
   concern.
 
-No new `CODEX_LB_*` setting, no migration, no `.env.example` change, no README growth. No
+No new `CLAUDE_LB_*` setting, no migration, no `.env.example` change, no README growth. No
 routing, selection, or failover decision changes: the classifier is a pure refactor of an
 existing conjunction, and the counter and log line are observational. None of the four
 ceiling-guarded proxy files (`service.py`, `load_balancer.py`,

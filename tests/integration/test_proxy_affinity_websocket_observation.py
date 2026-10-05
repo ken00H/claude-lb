@@ -118,8 +118,8 @@ def test_native_websocket_affinity_is_visible_in_request_log(app_instance, monke
 def test_http_bridge_affinity_is_visible_in_request_log(app_instance, monkeypatch, terminal):
     from app.core.config.settings import get_settings
 
-    monkeypatch.setenv("CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_ENABLED", "true")
-    monkeypatch.setenv("CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_CODEX_PREWARM_ENABLED", "false")
+    monkeypatch.setenv("CLAUDE_LB_HTTP_RESPONSES_SESSION_BRIDGE_ENABLED", "true")
+    monkeypatch.setenv("CLAUDE_LB_HTTP_RESPONSES_SESSION_BRIDGE_CODEX_PREWARM_ENABLED", "false")
     get_settings.cache_clear()
 
     async def connect(*args, **kwargs):
@@ -217,8 +217,8 @@ def test_native_websocket_turns_keep_independent_affinity_observations(app_insta
 def test_bridge_security_retry_logs_cleared_effective_affinity(app_instance, monkeypatch):
     from app.core.config.settings import get_settings
 
-    monkeypatch.setenv("CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_ENABLED", "true")
-    monkeypatch.setenv("CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_CODEX_PREWARM_ENABLED", "false")
+    monkeypatch.setenv("CLAUDE_LB_HTTP_RESPONSES_SESSION_BRIDGE_ENABLED", "true")
+    monkeypatch.setenv("CLAUDE_LB_HTTP_RESPONSES_SESSION_BRIDGE_CODEX_PREWARM_ENABLED", "false")
     get_settings.cache_clear()
 
     class SecurityRejectedUpstream(SyntheticUpstream):

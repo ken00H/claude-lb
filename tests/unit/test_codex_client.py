@@ -255,7 +255,7 @@ async def test_routed_native_request_serializes_multipart_once(route: ResolvedUp
     assert b'name="prompt"\r\n\r\nsummarize\r\n' in request.body
     assert b'name="file"; filename="audio.wav"' in request.body
     assert b"Content-Type: audio/wav\r\n\r\nRIFF-data" in request.body
-    assert request.headers["Content-Type"].startswith("multipart/form-data; boundary=codex-lb-")
+    assert request.headers["Content-Type"].startswith("multipart/form-data; boundary=claude-lb-")
 
 
 @pytest.mark.asyncio

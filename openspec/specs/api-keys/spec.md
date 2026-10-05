@@ -325,7 +325,7 @@ authenticated key.
 
 The SPA settings page SHALL include an API Key management section with: a toggle for `apiKeyAuthEnabled`, a key list table showing prefix/name/models/limit/usage/expiry/status, a create dialog (name, model selection, assigned-account selection, usage sections multi-select, weekly limit, expiry date), and key actions (edit, delete, regenerate). On key creation, the SPA MUST display the plain key in a copy-able dialog with a warning that it will not be shown again, and the copy action MUST remain functional in secure and non-secure contexts.
 
-The create and edit dialogs SHALL expose an `Apply to codex /model` checkbox directly below `Allowed models`. The checkbox SHALL default to unchecked for new keys and SHALL edit the stored API key value for existing keys.
+The create and edit dialogs SHALL expose an `Apply to default /model` checkbox directly below `Allowed models`. The checkbox SHALL default to unchecked for new keys and SHALL edit the stored API key value for existing keys.
 
 #### Scenario: Create key with optional account scoping
 
@@ -352,14 +352,14 @@ The create and edit dialogs SHALL expose an `Apply to codex /model` checkbox dir
 - **THEN** the copy operation succeeds using secure Clipboard API when available
 - **AND** falls back to dialog-scoped `execCommand("copy")` when secure Clipboard API is unavailable
 
-#### Scenario: Create key with codex model visibility option
+#### Scenario: Create key with default model visibility option
 - **WHEN** an admin opens the create API key dialog
-- **THEN** the `Apply to codex /model` checkbox appears directly below `Allowed models`
+- **THEN** the `Apply to default /model` checkbox appears directly below `Allowed models`
 - **AND** it is unchecked by default
 
-#### Scenario: Edit key with stored codex model visibility option
-- **WHEN** an admin opens the edit API key dialog for a key with `apply_to_codex_model: true`
-- **THEN** the `Apply to codex /model` checkbox is shown as checked
+#### Scenario: Edit key with stored default model visibility option
+- **WHEN** an admin opens the edit API key dialog for a key with `apply_to_default_model: true`
+- **THEN** the `Apply to default /model` checkbox is shown as checked
 
 ### Requirement: Cost accounting uses model and service-tier pricing
 When computing API key `cost_usd` usage, the system MUST price requests using the resolved model pricing and the authoritative `service_tier` reported by the upstream response when available, falling back to the forwarded request `service_tier` only when the response omits it. Requests sent with non-standard service tiers MUST use the published pricing for the tier actually used instead of falling back to standard-tier pricing.
@@ -833,7 +833,7 @@ The system MUST aggregate `accountCosts[]` from request-log rows whose `api_key_
 
 API-key usage reservation admission MUST reserve a bounded request-aware budget instead of an unconditional fixed 8192 input-token plus 8192 output-token pre-charge for every request. The reservation budget MUST be used only for admission and in-flight accounting; final usage accounting MUST continue to settle to the authoritative completed request usage and service-tier pricing.
 
-For token limits, admission MUST reserve from the request input and output token budgets. The input budget MAY be estimated from self-contained request payloads, while opaque upstream context MUST fall back to a conservative input budget. The output budget MUST use a bounded system default unless codex-lb can verify that a client-provided output cap is actually enforced upstream. For `cost_usd` limits, admission MUST compute the reservation cost from the same input and output token budgets and the effective request service tier. Reservation finalization MUST adjust every applicable reserved value to actual completed usage exactly once, including limits whose admission reservation was zero.
+For token limits, admission MUST reserve from the request input and output token budgets. The input budget MAY be estimated from self-contained request payloads, while opaque upstream context MUST fall back to a conservative input budget. The output budget MUST use a bounded system default unless claude-lb can verify that a client-provided output cap is actually enforced upstream. For `cost_usd` limits, admission MUST compute the reservation cost from the same input and output token budgets and the effective request service tier. Reservation finalization MUST adjust every applicable reserved value to actual completed usage exactly once, including limits whose admission reservation was zero.
 
 #### Scenario: Concurrent priority lanes do not require 8 × 8192 output-token headroom
 
@@ -854,7 +854,7 @@ For token limits, admission MUST reserve from the request input and output token
 - **THEN** reservation finalization increments the limit by the actual usage instead of skipping the limit
 
 ### Requirement: Map `auto`/`default` enforced service tier to outbound omission
-When a request is enforced under an API key whose `enforced_service_tier` is `auto` or `default`, the proxy MUST forward the request with `service_tier` absent (`None`) rather than as the literal string. Enforcement of `priority` and `flex` MUST continue to forward the literal value unchanged. codex-lb accepts `auto`, `default`, `priority`, and `flex` (plus the `fast` alias for `priority`) at the API-key `enforced_service_tier` surface; the ChatGPT/Codex backend rejects `auto` and `default` as literal values, since both already mean "let upstream pick".
+When a request is enforced under an API key whose `enforced_service_tier` is `auto` or `default`, the proxy MUST forward the request with `service_tier` absent (`None`) rather than as the literal string. Enforcement of `priority` and `flex` MUST continue to forward the literal value unchanged. claude-lb accepts `auto`, `default`, `priority`, and `flex` (plus the `fast` alias for `priority`) at the API-key `enforced_service_tier` surface; the ChatGPT/Codex backend rejects `auto` and `default` as literal values, since both already mean "let upstream pick".
 
 #### Scenario: Enforced service tier is `default`
 - **WHEN** a request is processed under an API key with `enforced_service_tier = "default"`
@@ -893,7 +893,7 @@ omit alias-only synthetic IDs so clients see stable model names.
 
 #### Scenario: Codex model list visibility canonicalizes Cursor aliases
 
-- **WHEN** a key with `allowed_models: ["gpt-5.4-mini-high"]`, `enforced_model: "gpt-5.4-mini-high"`, and `apply_to_codex_model=true` calls `GET /backend-api/codex/models`
+- **WHEN** a key with `allowed_models: ["gpt-5.4-mini-high"]`, `enforced_model: "gpt-5.4-mini-high"`, and `apply_to_default_model=true` calls `GET /backend-api/codex/models`
 - **THEN** the canonical `gpt-5.4-mini` entry is visible with `visibility: "list"`
 - **AND** other entries are hidden according to the API key allowlist policy
 
@@ -1090,7 +1090,7 @@ On a successful `POST /v1/reset-credit` redemption, the system SHALL invalidate 
 - **GIVEN** an eligible account has a redeemable reset credit
 - **AND** the persisted access token for that account is stale but refreshable
 - **WHEN** a client successfully calls `POST /v1/reset-credit` for that account
-- **THEN** codex-lb refreshes the account before decrypting the consume bearer token
+- **THEN** claude-lb refreshes the account before decrypting the consume bearer token
 - **AND** the upstream reset-credit consume call uses the refreshed account credentials
 
 #### Scenario: Self-service redemption surfaces refresh failures as conflicts
@@ -1098,8 +1098,8 @@ On a successful `POST /v1/reset-credit` redemption, the system SHALL invalidate 
 - **GIVEN** an eligible account has a redeemable reset credit
 - **AND** that account's credential refresh fails before the upstream consume call
 - **WHEN** a client calls `POST /v1/reset-credit` for that account
-- **THEN** codex-lb returns a conflict response in the standard `/v1/*` OpenAI error envelope
-- **AND** codex-lb does not call upstream reset-credit consume for that request
+- **THEN** claude-lb returns a conflict response in the standard `/v1/*` OpenAI error envelope
+- **AND** claude-lb does not call upstream reset-credit consume for that request
 
 #### Scenario: Fresh replica redeems a credit missing from its local snapshot
 
@@ -1132,7 +1132,7 @@ On a successful `POST /v1/reset-credit` redemption, the system SHALL invalidate 
 - **GIVEN** an eligible account has a redeemable reset credit and persisted usage/account state that still reflects a blocked window
 - **WHEN** a client successfully calls `POST /v1/reset-credit` for that account
 - **THEN** the redeemed account's cached reset-credit snapshot is invalidated
-- **AND** codex-lb forces a usage refresh for that account before returning
+- **AND** claude-lb forces a usage refresh for that account before returning
 - **AND** any account-selection cache entry derived from the stale usage state is invalidated when the refresh writes updated usage
 - **AND** the response still returns the upstream `{code, windows_reset, redeemed_at}` success payload
 
@@ -1598,19 +1598,19 @@ The dashboard API key CRUD surface MUST accept and persist `ultrafast` as a cano
 
 ### Requirement: Required-capability header authenticates through the existing proxy API-key dependency
 
-Whenever a protected proxy request carries one or more `X-Codex-LB-Required-Capability` values, the existing `validate_proxy_api_key` Security dependency MUST require a valid proxy API key before the handler runs, even when `api_key_auth_enabled` is false and the caller would otherwise qualify as local or CIDR-allowlisted. Headerless requests MUST retain the existing global-switch behavior. The capability header MUST NOT introduce a second FastAPI authentication dependency identity for ordinary proxy routes.
+Whenever a protected proxy request carries one or more `X-Claude-LB-Required-Capability` values, the existing `validate_proxy_api_key` Security dependency MUST require a valid proxy API key before the handler runs, even when `api_key_auth_enabled` is false and the caller would otherwise qualify as local or CIDR-allowlisted. Headerless requests MUST retain the existing global-switch behavior. The capability header MUST NOT introduce a second FastAPI authentication dependency identity for ordinary proxy routes.
 
 #### Scenario: Capability header requires a key while global auth is disabled
 
 - **WHEN** `api_key_auth_enabled` is false
-- **AND** a local or CIDR-allowlisted client sends a protected proxy request with `X-Codex-LB-Required-Capability`
+- **AND** a local or CIDR-allowlisted client sends a protected proxy request with `X-Claude-LB-Required-Capability`
 - **THEN** ingress requires a valid proxy API key
 - **AND** a missing or invalid key is rejected with the existing `401 invalid_api_key` error
 
 #### Scenario: Headerless requests keep the global authentication switch
 
 - **WHEN** `api_key_auth_enabled` is false
-- **AND** a local or CIDR-allowlisted client sends a protected proxy request without `X-Codex-LB-Required-Capability`
+- **AND** a local or CIDR-allowlisted client sends a protected proxy request without `X-Claude-LB-Required-Capability`
 - **THEN** the request proceeds without a new per-request API-key requirement
 
 ### Requirement: Disconnect cleanup settles source-chat reservations

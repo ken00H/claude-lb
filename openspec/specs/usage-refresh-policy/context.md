@@ -2,11 +2,11 @@
 
 ## Purpose
 
-This context explains how codex-lb derives an account's usage and status, and
-how to diagnose disagreements between codex-lb and Codex Desktop or the Codex
+This context explains how claude-lb derives an account's usage and status, and
+how to diagnose disagreements between claude-lb and Codex Desktop or the Codex
 CLI quota pill.
 
-codex-lb treats `/wham/usage` as the source of truth for account usage. Other
+claude-lb treats `/wham/usage` as the source of truth for account usage. Other
 OpenAI account surfaces can display reset state earlier than `/wham/usage`,
 especially during team reset windows, so the dashboard can temporarily show an
 account as `rate_limited` even when Codex Desktop says the quota has reset.
@@ -26,7 +26,7 @@ account before upstream I/O.
 
 ## Upstream Usage Source
 
-codex-lb refreshes account usage by calling:
+claude-lb refreshes account usage by calling:
 
 ```http
 GET https://chatgpt.com/backend-api/wham/usage
@@ -48,7 +48,7 @@ status from `primary_window.used_percent`:
 - `used_percent >= 100` on the primary rate-limit window: `RATE_LIMITED`
 - `used_percent < 100`: `ACTIVE`
 
-There is no manual reset step inside codex-lb. Recovery is driven by the next
+There is no manual reset step inside claude-lb. Recovery is driven by the next
 refresh tick that observes a sub-100 value from `/wham/usage`.
 
 ## Why Codex Settings Can Disagree
@@ -64,7 +64,7 @@ OpenAI-side data sources:
 
 During a reset window it is normal for Settings -> Account to show the reset
 state while `/wham/usage` still returns `used_percent: 100` for a short period
-afterwards. codex-lb mirrors `/wham/usage` during that window, so the account
+afterwards. claude-lb mirrors `/wham/usage` during that window, so the account
 stays `RATE_LIMITED` or `QUOTA_EXCEEDED` until upstream catches up.
 
 ## Limit Warm-Up Exhaustion Threshold
@@ -83,7 +83,7 @@ behavior can set the threshold to `100.0`.
 ## Operational Notes
 
 - Wait first. The next request through that account usually wakes the upstream
-  rate limiter; codex-lb auto-recovers on the next refresh tick after the
+  rate limiter; claude-lb auto-recovers on the next refresh tick after the
   upstream payload changes.
 - The dashboard Force Probe action fires one minimal `responses.create` against
   the selected account and immediately refreshes its usage. The probe uses a
@@ -99,19 +99,19 @@ behavior can set the threshold to `100.0`.
   snapshot load. The earlier `16` floor addressed
   [#1895](https://github.com/Soju06/codex-lb/issues/1895) when upstream still
   accepted the field; warmup/compact-404 is a separate path.
-- Do not manually flip the codex-lb account state to `ACTIVE` while
+- Do not manually flip the claude-lb account state to `ACTIVE` while
   `/wham/usage` still reports the account as fully used. That only masks the
   upstream state and can route traffic back to an account that the upstream
   limiter will reject.
 
 ## Verification Example
 
-To confirm that the disagreement is upstream rather than codex-lb's mirror,
-call `/wham/usage` directly with the same account token codex-lb is using:
+To confirm that the disagreement is upstream rather than claude-lb's mirror,
+call `/wham/usage` directly with the same account token claude-lb is using:
 
 ```bash
 ACCESS_TOKEN=...
-ACCOUNT_ID=...   # chatgpt-account-id UUID, not codex-lb's id
+ACCOUNT_ID=...   # chatgpt-account-id UUID, not claude-lb's id
 
 curl -s https://chatgpt.com/backend-api/wham/usage \
   -H "Authorization: Bearer ${ACCESS_TOKEN}" \
@@ -120,7 +120,7 @@ curl -s https://chatgpt.com/backend-api/wham/usage \
 ```
 
 If `primary_window.used_percent` is still `100` here while Settings -> Account
-shows the account as reset, codex-lb has nothing fresher to mirror. The account
+shows the account as reset, claude-lb has nothing fresher to mirror. The account
 is inside the upstream propagation window, and the practical fix is to wait or
 use the Force Probe action. Check its `probe_status_code`: a non-2xx response
 does not count as evidence that the account is healthy.

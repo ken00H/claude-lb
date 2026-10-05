@@ -518,7 +518,7 @@ for line in sys.stdin:
 
 
 def test_native_helper_is_discovered_only_by_fixed_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    helper = tmp_path / "codex-lb-native-egress"
+    helper = tmp_path / "claude-lb-native-egress"
     _write_helper(helper, "#!/bin/sh\nexit 0\n")
     monkeypatch.setenv("PATH", f"{tmp_path}{os.pathsep}{os.environ.get('PATH', '')}")
     discover_native_egress_client.cache_clear()
@@ -535,7 +535,7 @@ async def test_close_discovered_helper_awaits_process_and_clears_cache(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    helper = tmp_path / "codex-lb-native-egress"
+    helper = tmp_path / "claude-lb-native-egress"
     _write_helper(helper, _echo_helper_source())
     monkeypatch.setenv("PATH", f"{tmp_path}{os.pathsep}{os.environ.get('PATH', '')}")
     discover_native_egress_client.cache_clear()

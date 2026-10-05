@@ -83,7 +83,7 @@ def test_registry_normalizes_configured_quota_key(monkeypatch, tmp_path: Path) -
         ),
         encoding="utf-8",
     )
-    monkeypatch.setenv("CODEX_LB_ADDITIONAL_QUOTA_REGISTRY_FILE", str(registry))
+    monkeypatch.setenv("CLAUDE_LB_ADDITIONAL_QUOTA_REGISTRY_FILE", str(registry))
     get_settings.cache_clear()
     clear_additional_quota_registry_cache()
 
@@ -112,7 +112,7 @@ def test_registry_resolves_legacy_quota_key_alias(monkeypatch, tmp_path: Path) -
         ),
         encoding="utf-8",
     )
-    monkeypatch.setenv("CODEX_LB_ADDITIONAL_QUOTA_REGISTRY_FILE", str(registry))
+    monkeypatch.setenv("CLAUDE_LB_ADDITIONAL_QUOTA_REGISTRY_FILE", str(registry))
     get_settings.cache_clear()
     clear_additional_quota_registry_cache()
 
@@ -137,7 +137,7 @@ def test_routing_policy_resolves_legacy_limit_alias(monkeypatch, tmp_path: Path)
         ),
         encoding="utf-8",
     )
-    monkeypatch.setenv("CODEX_LB_ADDITIONAL_QUOTA_REGISTRY_FILE", str(registry))
+    monkeypatch.setenv("CLAUDE_LB_ADDITIONAL_QUOTA_REGISTRY_FILE", str(registry))
     get_settings.cache_clear()
     clear_additional_quota_registry_cache()
 
@@ -162,7 +162,7 @@ def test_registry_reloads_when_config_file_changes(monkeypatch, tmp_path: Path) 
         ),
         encoding="utf-8",
     )
-    monkeypatch.setenv("CODEX_LB_ADDITIONAL_QUOTA_REGISTRY_FILE", str(registry))
+    monkeypatch.setenv("CLAUDE_LB_ADDITIONAL_QUOTA_REGISTRY_FILE", str(registry))
     get_settings.cache_clear()
     clear_additional_quota_registry_cache()
 
@@ -210,7 +210,7 @@ def test_registry_rejects_duplicate_aliases(monkeypatch, tmp_path: Path) -> None
         ),
         encoding="utf-8",
     )
-    monkeypatch.setenv("CODEX_LB_ADDITIONAL_QUOTA_REGISTRY_FILE", str(registry))
+    monkeypatch.setenv("CLAUDE_LB_ADDITIONAL_QUOTA_REGISTRY_FILE", str(registry))
     get_settings.cache_clear()
     clear_additional_quota_registry_cache()
 
@@ -233,7 +233,7 @@ def test_reload_additional_quota_registry_returns_status(monkeypatch, tmp_path: 
         ),
         encoding="utf-8",
     )
-    monkeypatch.setenv("CODEX_LB_ADDITIONAL_QUOTA_REGISTRY_FILE", str(registry))
+    monkeypatch.setenv("CLAUDE_LB_ADDITIONAL_QUOTA_REGISTRY_FILE", str(registry))
     get_settings.cache_clear()
 
     status = reload_additional_quota_registry()

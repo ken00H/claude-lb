@@ -75,7 +75,7 @@ class RuntimeVersionService:
         try:
             latest_version = await self._fetch_latest_release_version()
         except Exception:
-            logger.warning("Failed to fetch latest codex-lb release from GitHub", exc_info=True)
+            logger.warning("Failed to fetch latest claude-lb release from GitHub", exc_info=True)
             return _RuntimeVersionSnapshot(
                 current_version=self._current_version,
                 latest_version=None,
@@ -97,7 +97,7 @@ class RuntimeVersionService:
         timeout = aiohttp.ClientTimeout(total=10, sock_connect=5, sock_read=5)
         headers = {
             "Accept": "application/vnd.github+json",
-            "User-Agent": f"codex-lb/{self._current_version}",
+            "User-Agent": f"claude-lb/{self._current_version}",
         }
         github_token = os.getenv(self._github_token_env_var, "").strip()
         if github_token:

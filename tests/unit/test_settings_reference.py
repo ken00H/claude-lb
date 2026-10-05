@@ -26,12 +26,12 @@ from scripts.generate_settings_reference import OUTPUT_PATH, render_settings_ref
 def _isolated_settings(**overrides: Any) -> Settings:
     """Build Settings from code defaults only.
 
-    Strips ``CODEX_LB_*`` and the bare ``PORT`` variable from the process
+    Strips ``CLAUDE_LB_*`` and the bare ``PORT`` variable from the process
     environment and disables env-file loading, so a developer's local
     ``.env.local`` or exported variables can never mask (or fake) a drift
     between ``.env.example`` and the code.
     """
-    clean = {k: v for k, v in os.environ.items() if not k.startswith("CODEX_LB_") and k != "PORT"}
+    clean = {k: v for k, v in os.environ.items() if not k.startswith("CLAUDE_LB_") and k != "PORT"}
     with mock.patch.dict(os.environ, clean, clear=True):
         # ``_env_file`` is a documented pydantic-settings initialization keyword.
         return Settings(_env_file=None, **overrides)
@@ -46,7 +46,7 @@ ENV_EXAMPLE_PATH = REPO_ROOT / ".env.example"
 # lives in .github/simplicity-budgets.toml [settings_fields] (single source,
 # also enforced by scripts/check_settings_tiers.py under `make lint`); lower it
 # when fields are removed, never raise it without a simplicity-budget
-# discussion — every new CODEX_LB_* setting needs a why-not-a-default
+# discussion — every new CLAUDE_LB_* setting needs a why-not-a-default
 # justification per CONTRIBUTING.md's simplicity gates.
 BUDGETS_PATH = REPO_ROOT / ".github" / "simplicity-budgets.toml"
 MAX_SETTINGS_FIELDS = int(tomllib.loads(BUDGETS_PATH.read_text(encoding="utf-8"))["settings_fields"]["max"])
@@ -97,8 +97,8 @@ def test_env_example_uncommented_values_match_code_defaults() -> None:
         if key == "PORT":
             assert value == "2455", f".env.example sets PORT={value}, but the code default is 2455"
             continue
-        assert key.startswith("CODEX_LB_"), f".env.example sets unknown env var {key}"
-        field_name = key.removeprefix("CODEX_LB_").lower()
+        assert key.startswith("CLAUDE_LB_"), f".env.example sets unknown env var {key}"
+        field_name = key.removeprefix("CLAUDE_LB_").lower()
         assert field_name in Settings.model_fields, f".env.example sets unknown setting {key}"
         # The raw env-file string is validated through the field's own
         # validators/coercion, exactly as pydantic-settings would apply it.

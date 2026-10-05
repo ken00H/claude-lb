@@ -20,8 +20,8 @@ pytestmark = pytest.mark.integration
 async def test_lifespan_startup_purges_abandoned_ownerless_bridge_rows(db_setup, monkeypatch) -> None:
     del db_setup
 
-    monkeypatch.setenv("CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_ENABLED", "true")
-    monkeypatch.setenv("CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_INSTANCE_ID", "startup-instance")
+    monkeypatch.setenv("CLAUDE_LB_HTTP_RESPONSES_SESSION_BRIDGE_ENABLED", "true")
+    monkeypatch.setenv("CLAUDE_LB_HTTP_RESPONSES_SESSION_BRIDGE_INSTANCE_ID", "startup-instance")
     get_settings.cache_clear()
 
     now = utcnow()

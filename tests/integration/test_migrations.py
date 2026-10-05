@@ -799,11 +799,11 @@ async def test_dashboard_settings_default_flip_migration_updates_fresh_seeded_ro
 
 @pytest.mark.asyncio
 async def test_fresh_database_bootstrap_ignores_removed_cache_affinity_env_var(tmp_path, monkeypatch):
-    # CODEX_LB_OPENAI_CACHE_AFFINITY_MAX_AGE_SECONDS was removed from Settings
+    # CLAUDE_LB_OPENAI_CACHE_AFFINITY_MAX_AGE_SECONDS was removed from Settings
     # (remove-dead-env-settings); startup warns that it is ignored, so the
     # migration chain that seeds the singleton row on a fresh database must not
     # honour it either. The column default is 1800 (20260319_100937).
-    monkeypatch.setenv("CODEX_LB_OPENAI_CACHE_AFFINITY_MAX_AGE_SECONDS", "64")
+    monkeypatch.setenv("CLAUDE_LB_OPENAI_CACHE_AFFINITY_MAX_AGE_SECONDS", "64")
     db_url = f"sqlite+aiosqlite:///{tmp_path / 'removed-affinity-env.sqlite'}"
 
     await to_thread.run_sync(lambda: run_upgrade(db_url, "head", bootstrap_legacy=True))

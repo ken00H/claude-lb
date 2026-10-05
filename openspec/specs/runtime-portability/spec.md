@@ -23,11 +23,11 @@ The resilience memory monitor MUST NOT prevent application startup on platforms 
 
 ### Requirement: Codex session provider retag CLI
 
-The `codex-lb` CLI SHALL provide a `codex-sessions retag` subcommand that rewrites local Codex session metadata from one supported model provider tag to another supported model provider tag. The command MUST support `openai` and `codex-lb` provider tags, MUST reject unknown providers, and MUST reject retag requests where `--from` and `--to` are the same provider.
+The `claude-lb` CLI SHALL provide a `codex-sessions retag` subcommand that rewrites local Codex session metadata from one supported model provider tag to another supported model provider tag. The command MUST support `openai` and `claude-lb` provider tags, MUST reject unknown providers, and MUST reject retag requests where `--from` and `--to` are the same provider.
 
 #### Scenario: Dry run previews JSONL and SQLite changes without writing
 
-- **WHEN** an operator runs `codex-lb codex-sessions retag --from openai --to codex-lb --dry-run`
+- **WHEN** an operator runs `claude-lb codex-sessions retag --from openai --to claude-lb --dry-run`
 - **THEN** the command scans JSONL session files under the selected Codex home
 - **AND** it scans `state_*.sqlite` databases that contain a `threads.model_provider` column
 - **AND** it reports the matching files and rows
@@ -35,9 +35,9 @@ The `codex-lb` CLI SHALL provide a `codex-sessions retag` subcommand that rewrit
 
 #### Scenario: Confirmed retag updates both storage formats with backup
 
-- **WHEN** an operator runs `codex-lb codex-sessions retag --from openai --to codex-lb --yes`
-- **THEN** matched JSONL session provider tags are rewritten to `codex-lb`
-- **AND** matched SQLite `threads.model_provider` rows are rewritten to `codex-lb`
+- **WHEN** an operator runs `claude-lb codex-sessions retag --from openai --to claude-lb --yes`
+- **THEN** matched JSONL session provider tags are rewritten to `claude-lb`
+- **AND** matched SQLite `threads.model_provider` rows are rewritten to `claude-lb`
 - **AND** the command creates a backup under the selected Codex home before rewriting matched metadata
 - **AND** the command reports a summary of scanned and updated JSONL files and SQLite rows
 
@@ -55,7 +55,7 @@ The `codex-lb` CLI SHALL provide a `codex-sessions retag` subcommand that rewrit
 
 ### Requirement: Server CLI validates the main listener port before startup
 
-The `codex-lb` server CLI SHALL accept integer main-listener ports in the inclusive range `0..65535` when supplied through `--port` or `PORT`, and an explicit `--port` SHALL continue to take precedence over `PORT`. The CLI SHALL reject non-integer values and integers outside that range before loading Uvicorn, importing or starting the ASGI application, running its lifespan or migrations, or creating runtime data. A rejection MUST identify `--port/PORT`, state the supported range, and include the invalid value.
+The `claude-lb` server CLI SHALL accept integer main-listener ports in the inclusive range `0..65535` when supplied through `--port` or `PORT`, and an explicit `--port` SHALL continue to take precedence over `PORT`. The CLI SHALL reject non-integer values and integers outside that range before loading Uvicorn, importing or starting the ASGI application, running its lifespan or migrations, or creating runtime data. A rejection MUST identify `--port/PORT`, state the supported range, and include the invalid value.
 
 #### Scenario: Out-of-range command-line port is rejected before startup
 

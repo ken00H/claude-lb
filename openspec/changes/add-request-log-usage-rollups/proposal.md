@@ -27,5 +27,5 @@ None.
 
 - Affected code: `app/db/models.py` (three new models, one state column), one new Alembic revision, new fold module under `app/modules/accounts/`, `app/modules/accounts/usage_rollup_scheduler.py` (call the hourly pass after the lifetime pass), `app/modules/accounts/repository.py` (delete/consolidation mirroring), `app/core/retention/job.py` (min-watermark gate), read-path repositories: `app/modules/request_logs/repository.py`, `app/modules/quota_planner/repository.py`, `app/modules/api_keys/repository.py`, plus a shared merge helper module.
 - Affected tests: new fold/idempotency/lifecycle integration tests, a legacy-vs-rollup parity harness over the six switched read paths, retention gate tests, migration round-trip tests; all registered in `POSTGRES_PYTEST_TARGETS` for both backends.
-- No API request/response schema change, no frontend change, no new settings or `CODEX_LB_*` env vars, no change to planner slot resolution or forecast logic.
+- No API request/response schema change, no frontend change, no new settings or `CLAUDE_LB_*` env vars, no change to planner slot resolution or forecast logic.
 - Non-goals (raw-only, documented): reports medians and timezone-day aggregation, conversation distinct counts, the usage-summary lifetime read switch (its inputs are folded now for a later switch), and the existing lifetime rollup semantics.

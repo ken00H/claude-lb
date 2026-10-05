@@ -109,7 +109,7 @@ def _instrument_fastapi(app: FastAPI | None) -> None:
         logger.exception("Failed to auto-instrument FastAPI")
 
 
-def init_tracing(service_name: str = "codex-lb", endpoint: str = "", app: FastAPI | None = None) -> bool:
+def init_tracing(service_name: str = "claude-lb", endpoint: str = "", app: FastAPI | None = None) -> bool:
     global _otel_initialized
 
     if _otel_initialized:
@@ -172,7 +172,7 @@ def init_tracing(service_name: str = "codex-lb", endpoint: str = "", app: FastAP
 
     except ImportError:
         logger.warning(
-            "opentelemetry packages not installed; tracing disabled. Install with: pip install codex-lb[tracing]"
+            "opentelemetry packages not installed; tracing disabled. Install with: pip install claude-lb[tracing]"
         )
         return False
 

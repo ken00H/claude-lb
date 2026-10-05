@@ -28,11 +28,11 @@ When the proxy resolves or fails closed a continuity-sensitive follow-up request
 
 ### Requirement: Full upstream conversation archive
 
-The proxy MUST provide an opt-in durable archive of Codex-to-upstream conversation traffic. The archive MUST be enabled by the dashboard setting `conversation_archive_enabled` (the `dashboard_settings` column of that name): a NULL column MUST inherit the deprecated `CODEX_LB_CONVERSATION_ARCHIVE_ENABLED` environment variable and then the code default (off), a non-NULL column MUST win over both, and the effective value and its provenance MUST be reported by the settings API through the single `configuration-tiers` resolver. The archive writer MUST resolve the toggle at its single `archive_enabled()` gate from the last loaded dashboard-settings snapshot (`SettingsCache.cached_row()`, the environment layer before the first load); it MUST NOT read the database or await for it, and the `archive_*` call sites in the upstream HTTP and WebSocket clients MUST NOT resolve the toggle themselves. Once a snapshot has been loaded, invalidating the settings cache MUST NOT return the gate to the environment layer: the last loaded row keeps deciding until a newer one replaces it. The settings cache MUST be refreshed from the cache-invalidation bus rather than only expired, so a dashboard change reaches every replica — including one that is carrying nothing but already-open streams and therefore never pulls a snapshot in on a request — within the invalidation poll interval and without a restart. When enabled, the archive MUST write gzip-compressed newline-delimited JSON records for upstream request payloads, streamed Responses events, compact response payloads, and websocket text or binary frames without performing gzip file I/O in the request event loop during normal operation. The archive writer queue MUST be bounded and MUST apply synchronous write backpressure instead of growing without limit when the background writer is saturated. Archive records MUST include request id, timestamp, direction, traffic kind, transport, account id when known, upstream target metadata, redacted headers, and the full payload or frame body. Credential-bearing headers such as authorization, cookies, proxy authorization, token headers, and API key headers MUST be redacted before persistence. JSON records MUST preserve non-ASCII payload text as UTF-8 rather than Unicode escape sequences. When disabled, no archive file MUST be created by the archive writer. The archive directory (`CODEX_LB_CONVERSATION_ARCHIVE_DIR`) remains environment-only: each replica writes its own local shard, and the dashboard MUST show the directory read-only with that limitation stated. The settings API MUST report the directory to admin principals only and MUST NOT accept it as a write. Admin request-log API rows MUST expose an `archiveRequestId` lookup key when the persisted log id can differ from the archive record request id; guest rows MUST redact that key.
+The proxy MUST provide an opt-in durable archive of Codex-to-upstream conversation traffic. The archive MUST be enabled by the dashboard setting `conversation_archive_enabled` (the `dashboard_settings` column of that name): a NULL column MUST inherit the deprecated `CLAUDE_LB_CONVERSATION_ARCHIVE_ENABLED` environment variable and then the code default (off), a non-NULL column MUST win over both, and the effective value and its provenance MUST be reported by the settings API through the single `configuration-tiers` resolver. The archive writer MUST resolve the toggle at its single `archive_enabled()` gate from the last loaded dashboard-settings snapshot (`SettingsCache.cached_row()`, the environment layer before the first load); it MUST NOT read the database or await for it, and the `archive_*` call sites in the upstream HTTP and WebSocket clients MUST NOT resolve the toggle themselves. Once a snapshot has been loaded, invalidating the settings cache MUST NOT return the gate to the environment layer: the last loaded row keeps deciding until a newer one replaces it. The settings cache MUST be refreshed from the cache-invalidation bus rather than only expired, so a dashboard change reaches every replica — including one that is carrying nothing but already-open streams and therefore never pulls a snapshot in on a request — within the invalidation poll interval and without a restart. When enabled, the archive MUST write gzip-compressed newline-delimited JSON records for upstream request payloads, streamed Responses events, compact response payloads, and websocket text or binary frames without performing gzip file I/O in the request event loop during normal operation. The archive writer queue MUST be bounded and MUST apply synchronous write backpressure instead of growing without limit when the background writer is saturated. Archive records MUST include request id, timestamp, direction, traffic kind, transport, account id when known, upstream target metadata, redacted headers, and the full payload or frame body. Credential-bearing headers such as authorization, cookies, proxy authorization, token headers, and API key headers MUST be redacted before persistence. JSON records MUST preserve non-ASCII payload text as UTF-8 rather than Unicode escape sequences. When disabled, no archive file MUST be created by the archive writer. The archive directory (`CLAUDE_LB_CONVERSATION_ARCHIVE_DIR`) remains environment-only: each replica writes its own local shard, and the dashboard MUST show the directory read-only with that limitation stated. The settings API MUST report the directory to admin principals only and MUST NOT accept it as a write. Admin request-log API rows MUST expose an `archiveRequestId` lookup key when the persisted log id can differ from the archive record request id; guest rows MUST redact that key.
 
 #### Scenario: operator enables archive for audit
 
-- **WHEN** an operator confirms enabling the conversation archive in the dashboard (or `CODEX_LB_CONVERSATION_ARCHIVE_ENABLED=true` is set while the dashboard value is unset)
+- **WHEN** an operator confirms enabling the conversation archive in the dashboard (or `CLAUDE_LB_CONVERSATION_ARCHIVE_ENABLED=true` is set while the dashboard value is unset)
 - **AND** a Codex Responses request is proxied upstream after the settings cache has loaded the new snapshot
 - **THEN** the archive records both the outbound upstream payload and inbound upstream events or response body as gzip JSONL
 - **AND** credential-bearing headers are stored as redacted values
@@ -53,7 +53,7 @@ The proxy MUST provide an opt-in durable archive of Codex-to-upstream conversati
 
 #### Scenario: an unrelated settings change does not resume recording
 
-- **GIVEN** `CODEX_LB_CONVERSATION_ARCHIVE_ENABLED=true` and an operator has turned the archive off in the dashboard
+- **GIVEN** `CLAUDE_LB_CONVERSATION_ARCHIVE_ENABLED=true` and an operator has turned the archive off in the dashboard
 - **WHEN** any settings update invalidates the settings cache and no request has reloaded a snapshot yet
 - **THEN** the archive writer still records nothing
 
@@ -66,7 +66,7 @@ The proxy MUST provide an opt-in durable archive of Codex-to-upstream conversati
 
 #### Scenario: dashboard value wins over the environment variable
 
-- **GIVEN** `CODEX_LB_CONVERSATION_ARCHIVE_ENABLED=true` and an operator has set the archive off in the dashboard
+- **GIVEN** `CLAUDE_LB_CONVERSATION_ARCHIVE_ENABLED=true` and an operator has set the archive off in the dashboard
 - **WHEN** a request is proxied upstream
 - **THEN** the archive writer records nothing
 - **AND** the settings API reports `source: "dashboard"` for `conversation_archive_enabled` and warns at startup that the environment variable is shadowed
@@ -109,7 +109,7 @@ The service MUST expose metrics and structured logs for HTTP bridge routing deci
 
 The service MUST expose low-cardinality logs and metrics for account-local in-flight create count, active stream count, leased token/cost pressure, cap rejections, lease stale reclaims, soft-affinity reroutes, and local-vs-upstream 429 classification. Observability MUST avoid raw prompt text, raw affinity keys, API keys, emails, request ids, session ids, and request payload content.
 
-The service MUST expose a Prometheus gauge named `codex_lb_account_inflight_leases` labeled by `account_id` and `kind`, where `kind` is either `stream` or `response_create`. The gauge value MUST equal the current in-process account lease count for that account and kind. The gauge MUST update when a lease is acquired, explicitly released, or reclaimed as stale. Gauge labels MUST NOT include raw prompt text, raw affinity keys, API keys, emails, request ids, session ids, or request payload content.
+The service MUST expose a Prometheus gauge named `claude_lb_account_inflight_leases` labeled by `account_id` and `kind`, where `kind` is either `stream` or `response_create`. The gauge value MUST equal the current in-process account lease count for that account and kind. The gauge MUST update when a lease is acquired, explicitly released, or reclaimed as stale. Gauge labels MUST NOT include raw prompt text, raw affinity keys, API keys, emails, request ids, session ids, or request payload content.
 
 #### Scenario: Local and upstream 429s are separated
 
@@ -120,13 +120,13 @@ The service MUST expose a Prometheus gauge named `codex_lb_account_inflight_leas
 #### Scenario: Active account leases update gauge
 
 - **WHEN** the proxy acquires a `stream` lease for account `acc_1`
-- **THEN** `codex_lb_account_inflight_leases{account_id="acc_1",kind="stream"}` increases to the current active stream lease count
-- **AND** `codex_lb_account_inflight_leases{account_id="acc_1",kind="response_create"}` remains the current active response-create lease count
+- **THEN** `claude_lb_account_inflight_leases{account_id="acc_1",kind="stream"}` increases to the current active stream lease count
+- **AND** `claude_lb_account_inflight_leases{account_id="acc_1",kind="response_create"}` remains the current active response-create lease count
 
 #### Scenario: Released account leases reset gauge
 
 - **WHEN** the proxy explicitly releases or stale-reclaims the last active `stream` lease for account `acc_1`
-- **THEN** `codex_lb_account_inflight_leases{account_id="acc_1",kind="stream"}` is set to `0`
+- **THEN** `claude_lb_account_inflight_leases{account_id="acc_1",kind="stream"}` is set to `0`
 
 ### Requirement: Streaming timeout diagnostics are emitted
 
@@ -161,7 +161,7 @@ When an HTTP bridge startup wait times out locally, the service MUST log the req
 - **AND** the log includes only low-cardinality affinity metadata, not raw affinity key values
 
 ### Requirement: Runtime continuity canary reports raw-error exposure and build parity
-Operators MUST have a local verifier that reports whether the running `codex-lb` runtime is built from the expected code and whether recent Codex client logs contain raw `previous_response_not_found` errors.
+Operators MUST have a local verifier that reports whether the running `claude-lb` runtime is built from the expected code and whether recent Codex client logs contain raw `previous_response_not_found` errors.
 
 #### Scenario: live runtime is checked after a continuity patch
 - **WHEN** an operator runs the verifier on the Mac host
@@ -724,13 +724,13 @@ First-token detection MUST treat the first token-bearing output event — visibl
 
 ### Requirement: Cap partition replica count is observable
 
-The service MUST expose a Prometheus gauge named `codex_lb_cap_partition_replicas` whose value equals the live replica count currently used for account cap partitioning, and it MUST log adopted partition rebalances at info level with the old count, the new count, and this replica's rank. The gauge and log MUST NOT include account ids, instance secrets, or request payload content.
+The service MUST expose a Prometheus gauge named `claude_lb_cap_partition_replicas` whose value equals the live replica count currently used for account cap partitioning, and it MUST log adopted partition rebalances at info level with the old count, the new count, and this replica's rank. The gauge and log MUST NOT include account ids, instance secrets, or request payload content.
 
 #### Scenario: Partition rebalance updates the gauge
 
 - **GIVEN** a replica whose adopted partition has replica count 1
 - **WHEN** a partition refresh observes and adopts two active members
-- **THEN** `codex_lb_cap_partition_replicas` reports 2
+- **THEN** `claude_lb_cap_partition_replicas` reports 2
 - **AND** an info-level log records the rebalance from count 1 to count 2 with the replica's rank
 
 ### Requirement: Source-routed requests report upstream-measured generation timings
@@ -851,19 +851,19 @@ stat MUST display 0%.
 
 ### Requirement: Stream pool congestion is observable
 
-When Prometheus support is available the service MUST expose a gauge named `codex_lb_stream_pool_capacity` whose value equals the fair-share gate's most recently computed candidate pool capacity and a gauge named `codex_lb_stream_pool_inflight` whose value equals the corresponding pool in-flight stream count, and a counter named `codex_lb_api_key_fair_share_rejections_total` incremented once per fair-share denial. The gauges and the counter MUST NOT carry API-key, account, or request labels. Each fair-share denial MUST log at warning level with the requesting `api_key_id`, the key's in-flight count, the computed fair share, the pool in-flight and capacity, and the active-key count, and MUST NOT include other keys' identifiers, instance secrets, or request payload content. All fair-share metrics MUST degrade to no-ops when the Prometheus client is absent.
+When Prometheus support is available the service MUST expose a gauge named `claude_lb_stream_pool_capacity` whose value equals the fair-share gate's most recently computed candidate pool capacity and a gauge named `claude_lb_stream_pool_inflight` whose value equals the corresponding pool in-flight stream count, and a counter named `claude_lb_api_key_fair_share_rejections_total` incremented once per fair-share denial. The gauges and the counter MUST NOT carry API-key, account, or request labels. Each fair-share denial MUST log at warning level with the requesting `api_key_id`, the key's in-flight count, the computed fair share, the pool in-flight and capacity, and the active-key count, and MUST NOT include other keys' identifiers, instance secrets, or request payload content. All fair-share metrics MUST degrade to no-ops when the Prometheus client is absent.
 
 #### Scenario: Pool gauges are exported during gate evaluation
 
 - **GIVEN** the fair-share gate is enabled and evaluates a stream selection
 - **WHEN** metrics are scraped
-- **THEN** `codex_lb_stream_pool_capacity` and `codex_lb_stream_pool_inflight` report the evaluated pool values without per-key or per-account labels
+- **THEN** `claude_lb_stream_pool_capacity` and `claude_lb_stream_pool_inflight` report the evaluated pool values without per-key or per-account labels
 
 #### Scenario: Denials are counted without key cardinality
 
 - **GIVEN** repeated fair-share denials for multiple keys
 - **WHEN** metrics are scraped
-- **THEN** `codex_lb_api_key_fair_share_rejections_total` reflects the total denial count with no per-key label
+- **THEN** `claude_lb_api_key_fair_share_rejections_total` reflects the total denial count with no per-key label
 
 #### Scenario: Denial log carries the diagnostic numbers
 
@@ -875,8 +875,8 @@ When Prometheus support is available the service MUST expose a gauge named `code
 
 The system MUST sample event-loop scheduling lag (timer drift of a
 once-per-second sleep) while serving and export it as the
-`codex_lb_event_loop_lag_seconds` gauge. Samples at or above the configured
-warning threshold MUST increment `codex_lb_event_loop_lag_warnings_total` and
+`claude_lb_event_loop_lag_seconds` gauge. Samples at or above the configured
+warning threshold MUST increment `claude_lb_event_loop_lag_warnings_total` and
 emit a warning log that names the observed lag, the worst lag suppressed since
 the previous line, and the threshold; the warning log MUST be rate-limited so
 a sustained stall cannot flood the log. The threshold MUST be configurable via
@@ -887,7 +887,7 @@ operator action, and `0` MUST disable the watchdog.
 
 - **WHEN** the event loop is starved (callback storm, synchronous work on the
   loop, or CPU saturation) and scheduling lag reaches the warning threshold
-- **THEN** `codex_lb_event_loop_lag_warnings_total` increments
+- **THEN** `claude_lb_event_loop_lag_warnings_total` increments
 - **AND** a rate-limited `event_loop_lag` warning names the observed lag and
   threshold, distinguishing loop starvation from upstream slowness
 
@@ -1252,7 +1252,7 @@ skip these keyed patterns.
 ### Requirement: Upstream reasoning-replay rejections are counted
 
 When Prometheus support is available the proxy MUST expose a label-free counter
-named `codex_lb_upstream_reasoning_replay_400_total` and MUST increment it exactly
+named `claude_lb_upstream_reasoning_replay_400_total` and MUST increment it exactly
 once per upstream stream failure that is an HTTP 400 rejection, or a terminal
 `error` / `response.failed` frame carrying `invalid_request_error` without an HTTP
 status, whose error message references reasoning. Frames MUST be counted where
@@ -1267,13 +1267,13 @@ a no-op when the Prometheus client is absent.
 #### Scenario: Reasoning replay rejection is counted
 
 - **WHEN** upstream rejects a stream with HTTP 400 and a message such as `Item with id 'rs_...' of type 'reasoning' was provided without its required following item.`
-- **THEN** `codex_lb_upstream_reasoning_replay_400_total` increments by one
+- **THEN** `claude_lb_upstream_reasoning_replay_400_total` increments by one
 - **AND** the failure is classified and penalized exactly as before
 
 #### Scenario: Terminal frames are counted without an account-health write
 
 - **WHEN** an upstream SSE stream, websocket session, or HTTP-bridge session ends with a terminal `error` or `response.failed` frame whose code is `invalid_request_error` and whose message references reasoning
-- **THEN** `codex_lb_upstream_reasoning_replay_400_total` increments by exactly one
+- **THEN** `claude_lb_upstream_reasoning_replay_400_total` increments by exactly one
 - **AND** the frame is neither penalized nor otherwise classified differently than before
 
 #### Scenario: Other rejections are not counted

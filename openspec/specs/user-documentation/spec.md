@@ -5,7 +5,7 @@ Contracts for user-facing documentation: the published mkdocs-material site (str
 ## Requirements
 ### Requirement: Documentation site builds strictly and deploys from main
 
-The repository SHALL contain a mkdocs-material documentation site (`mkdocs.yml` with `docs_dir: docs`) published at https://soju06.github.io/codex-lb/. A dedicated GitHub Actions workflow SHALL build the site with `mkdocs build --strict` on every pull request that touches docs inputs and on pushes to `main`, and SHALL deploy to GitHub Pages only for non-pull-request events on `main`. The deploy job MUST use least-privilege permissions (`pages: write`, `id-token: write` scoped to the deploy job) and MUST NOT cancel in-flight deploys.
+The repository SHALL contain a mkdocs-material documentation site (`mkdocs.yml` with `docs_dir: docs`) published at https://soju06.github.io/claude-lb/. A dedicated GitHub Actions workflow SHALL build the site with `mkdocs build --strict` on every pull request that touches docs inputs and on pushes to `main`, and SHALL deploy to GitHub Pages only for non-pull-request events on `main`. The deploy job MUST use least-privilege permissions (`pages: write`, `id-token: write` scoped to the deploy job) and MUST NOT cancel in-flight deploys.
 
 #### Scenario: PR with a broken internal docs link fails the build
 
@@ -44,7 +44,7 @@ OpenSpec remains the normative source of truth. Every docs page that documents s
 
 ### Requirement: .env.example is a commented zero-drift sample
 
-`.env.example` SHALL contain only commented-out values, SHALL NOT state values that contradict the code defaults in `app/core/config/settings.py`, and SHALL retain the commented `# CODEX_LB_LEADER_ELECTION_ENABLED=false` single-instance escape hatch. Copying the file verbatim MUST yield the same behavior as running with no configuration.
+`.env.example` SHALL contain only commented-out values, SHALL NOT state values that contradict the code defaults in `app/core/config/settings.py`, and SHALL retain the commented `# CLAUDE_LB_LEADER_ELECTION_ENABLED=false` single-instance escape hatch. Copying the file verbatim MUST yield the same behavior as running with no configuration.
 
 #### Scenario: Copying the sample changes nothing
 
@@ -56,7 +56,7 @@ OpenSpec remains the normative source of truth. Every docs page that documents s
 #### Scenario: Leader-election escape hatch stays documented
 
 - **WHEN** `.env.example` is read
-- **THEN** it contains the commented line `# CODEX_LB_LEADER_ELECTION_ENABLED=false`
+- **THEN** it contains the commented line `# CLAUDE_LB_LEADER_ELECTION_ENABLED=false`
 - **AND** no active (uncommented) assignment disables leader election
 
 ### Requirement: Generated settings reference stays in sync with the code
@@ -64,14 +64,14 @@ OpenSpec remains the normative source of truth. Every docs page that documents s
 The documentation site SHALL include a settings reference page
 (`docs/reference/settings.md`) generated from `Settings.model_fields` by
 `scripts/generate_settings_reference.py`. The page SHALL list, for every
-setting, its environment variable name — the `CODEX_LB_`-prefixed name, or,
+setting, its environment variable name — the `CLAUDE_LB_`-prefixed name, or,
 for a setting declared with explicit validation aliases, the primary alias
 followed by the remaining aliases — its type, and its default
 (environment-derived defaults rendered symbolically), grouped by functional
 area; it SHALL document the bare `PORT` special case, the
-`CODEX_LB_ENV_FILE` bootstrap variable, and the `CODEX_LB_WORKERS_PER_INSTANCE`
+`CLAUDE_LB_ENV_FILE` bootstrap variable, and the `CLAUDE_LB_WORKERS_PER_INSTANCE`
 startup guard (which is not a setting), SHALL list the process-level
-environment variables codex-lb honors without making them settings
+environment variables claude-lb honors without making them settings
 (third-party or POSIX conventions read by the launcher, libraries, or frozen
 migrations), and SHALL list the removed (`_REMOVED_SETTINGS`) env names
 sourced from the code. The generated page SHALL be
@@ -103,7 +103,7 @@ from regenerated output, when the settings surface exceeds its ratchet
 - **AND** an operator can find the setting by either name
 
 #### Scenario: Process-level conventions are documented but not settings
-- **WHEN** codex-lb honors an environment variable that is a third-party or POSIX convention
+- **WHEN** claude-lb honors an environment variable that is a third-party or POSIX convention
 - **THEN** the reference lists it in the process-level section with its consumer
 - **AND** it is not counted toward the settings ratchet
 

@@ -177,7 +177,7 @@ async def test_ensure_fresh_detached_refresh_owns_session_on_caller_cancel(monke
     strand a background-pool connection. The shielded refresh task must write
     via its OWN session (from refresh_repo_factory), never the request-scoped
     repo that the cancelled caller closes. Pre-fix this leaked one pooled
-    connection per disconnect-during-refresh (codex-lb pool-exhaustion spiral).
+    connection per disconnect-during-refresh (claude-lb pool-exhaustion spiral).
     """
     started = asyncio.Event()
     release = asyncio.Event()

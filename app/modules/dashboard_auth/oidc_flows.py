@@ -35,7 +35,7 @@ from app.db.models import DashboardOidcLoginFlow
 #: Short-lived, path-scoped, and ``SameSite=Lax`` rather than ``Strict``: the
 #: callback is a top-level cross-site navigation, and ``Strict`` would drop the
 #: cookie on exactly the request that needs it.
-OIDC_FLOW_COOKIE: Final[str] = "codex_lb_oidc_flow"
+OIDC_FLOW_COOKIE: Final[str] = "claude_lb_oidc_flow"
 OIDC_FLOW_COOKIE_PATH: Final[str] = "/api/dashboard-auth/oidc"
 #: Where a sign-in through the identity provider begins. The login screen
 #: advertises it as the provider's ``login_url``; it lives here rather than in
@@ -50,7 +50,7 @@ OIDC_FLOW_TTL_SECONDS: Final[int] = 600
 #: path because the session response is the only reader, and given the same
 #: lifetime as a flow: long enough to read the screen and retry, short enough
 #: that a borrowed browser does not keep answering for somebody else.
-OIDC_PENDING_COOKIE: Final[str] = "codex_lb_oidc_pending"
+OIDC_PENDING_COOKIE: Final[str] = "claude_lb_oidc_pending"
 OIDC_PENDING_COOKIE_PATH: Final[str] = "/api/dashboard-auth"
 OIDC_PENDING_TTL_SECONDS: Final[int] = OIDC_FLOW_TTL_SECONDS
 

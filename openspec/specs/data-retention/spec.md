@@ -130,7 +130,7 @@ source from the dashboard runtime settings only: a non-NULL
 `dashboard_settings.usage_history_retention_days` value MUST apply; when the
 dashboard value is NULL (never configured) retention MUST be disabled. At
 every layer the value `0` means disabled. The former env aliases
-(`CODEX_LB_REQUEST_LOG_RETENTION_DAYS` / `CODEX_LB_USAGE_HISTORY_RETENTION_DAYS`)
+(`CLAUDE_LB_REQUEST_LOG_RETENTION_DAYS` / `CLAUDE_LB_USAGE_HISTORY_RETENTION_DAYS`)
 MUST NOT influence the effective window; they are removed settings covered by
 the removed-settings startup warning.
 
@@ -182,9 +182,9 @@ validation error.
 
 #### Scenario: Removed env alias has no effect
 
-- **GIVEN** a NULL dashboard value and `CODEX_LB_USAGE_HISTORY_RETENTION_DAYS=45` still set in the environment
+- **GIVEN** a NULL dashboard value and `CLAUDE_LB_USAGE_HISTORY_RETENTION_DAYS=45` still set in the environment
 - **WHEN** the application starts and the retention job runs
-- **THEN** startup logs the removed-settings warning naming `CODEX_LB_USAGE_HISTORY_RETENTION_DAYS`
+- **THEN** startup logs the removed-settings warning naming `CLAUDE_LB_USAGE_HISTORY_RETENTION_DAYS`
 - **AND** the effective usage-history retention is `0` and no rows are deleted
 
 ### Requirement: The bridge operation spool window is dashboard-managed with a derived floor

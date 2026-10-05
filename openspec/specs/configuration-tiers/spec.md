@@ -1,7 +1,7 @@
 # configuration-tiers Specification
 
 ## Purpose
-Defines where every codex-lb setting lives and how its value is resolved. Each setting belongs to exactly one tier — T0 bootstrap, T1 instance topology, T2 secret, T3 behaviour tunable, T4 incident debug — chosen by whether the value may legitimately differ between two replicas. The dashboard is the primary configuration surface: T3 values resolve as code default, then environment, then a non-NULL dashboard value; the environment is a fallback, never a seed copied into the dashboard row and never an override of a persisted dashboard value. This capability also fixes the single resolver and snapshot-consumer rule, the settings API provenance shape, the tier registry (`SETTING_TIERS` / `MIGRATING`), the settings-field budget, confinement of `os.environ` reads to the settings module, T0/T1-only operator documentation, and the one-release retirement path for environment names, together with the `make lint` checks that enforce them.
+Defines where every claude-lb setting lives and how its value is resolved. Each setting belongs to exactly one tier — T0 bootstrap, T1 instance topology, T2 secret, T3 behaviour tunable, T4 incident debug — chosen by whether the value may legitimately differ between two replicas. The dashboard is the primary configuration surface: T3 values resolve as code default, then environment, then a non-NULL dashboard value; the environment is a fallback, never a seed copied into the dashboard row and never an override of a persisted dashboard value. This capability also fixes the single resolver and snapshot-consumer rule, the settings API provenance shape, the tier registry (`SETTING_TIERS` / `MIGRATING`), the settings-field budget, confinement of `os.environ` reads to the settings module, T0/T1-only operator documentation, and the one-release retirement path for environment names, together with the `make lint` checks that enforce them.
 ## Requirements
 ### Requirement: Every setting declares a tier
 
@@ -48,11 +48,11 @@ Under `app/`, `os.environ`, `os.getenv`, and `dotenv_values` SHALL be referenced
 
 ### Requirement: The operator env template lists only bootstrap and topology settings
 
-`.env.example` SHALL mention only settings tiered `T0` or `T1` (`PORT` and non-setting text are unaffected). `scripts/check_settings_tiers.py` SHALL fail when a `CODEX_LB_*` variable in `.env.example`, commented or not, resolves to a T2, T3, or T4 field.
+`.env.example` SHALL mention only settings tiered `T0` or `T1` (`PORT` and non-setting text are unaffected). `scripts/check_settings_tiers.py` SHALL fail when a `CLAUDE_LB_*` variable in `.env.example`, commented or not, resolves to a T2, T3, or T4 field.
 
 #### Scenario: Behaviour tunable added to .env.example
 
-- **WHEN** a PR adds `# CODEX_LB_<T3_FIELD>=...` to `.env.example`
+- **WHEN** a PR adds `# CLAUDE_LB_<T3_FIELD>=...` to `.env.example`
 - **THEN** `make lint` fails naming the variable and its tier
 
 ### Requirement: The settings surface is ratcheted
@@ -118,7 +118,7 @@ The tier is decided in order: a value that is needed before the database is reac
 
 ### Requirement: Precedence is code default, then environment, then dashboard
 
-For every T3 setting the effective value MUST be resolved as: the dashboard value when it is non-NULL; otherwise the environment value when the setting has an environment fallback and the variable is set; otherwise the code default. An environment value MUST NOT override a non-NULL dashboard value, and no code path MAY invert this order (environment-wins kill switches, environment values that gate whether a dashboard value is honoured, sentinel dashboard values that defer to the environment, or `max()`/`min()` merges of environment and dashboard values are all prohibited). A field whose dashboard home is declared in `DASHBOARD_HOMES` follows the same order: the persisted value in the target column wins, the environment variable applies only while that column holds no decision (the `telemetry` specification mandates exactly this for `CODEX_LB_TELEMETRY_ENABLED` and `dashboard_settings.telemetry_consent`). Where another capability specification currently mandates an inversion (the `rate-limit-reset-credits` polling toggle that gates `auto_redeem_reset_credits_before_expiry`), that specification MUST be amended to this precedence in the same change that removes the inversion from code; until then the inversion is a tracked defect, not an exception to this requirement.
+For every T3 setting the effective value MUST be resolved as: the dashboard value when it is non-NULL; otherwise the environment value when the setting has an environment fallback and the variable is set; otherwise the code default. An environment value MUST NOT override a non-NULL dashboard value, and no code path MAY invert this order (environment-wins kill switches, environment values that gate whether a dashboard value is honoured, sentinel dashboard values that defer to the environment, or `max()`/`min()` merges of environment and dashboard values are all prohibited). A field whose dashboard home is declared in `DASHBOARD_HOMES` follows the same order: the persisted value in the target column wins, the environment variable applies only while that column holds no decision (the `telemetry` specification mandates exactly this for `CLAUDE_LB_TELEMETRY_ENABLED` and `dashboard_settings.telemetry_consent`). Where another capability specification currently mandates an inversion (the `rate-limit-reset-credits` polling toggle that gates `auto_redeem_reset_credits_before_expiry`), that specification MUST be amended to this precedence in the same change that removes the inversion from code; until then the inversion is a tracked defect, not an exception to this requirement.
 
 #### Scenario: Dashboard value wins over environment
 
@@ -140,7 +140,7 @@ For every T3 setting the effective value MUST be resolved as: the dashboard valu
 
 #### Scenario: Environment fallback ends when a decision is persisted
 
-- **GIVEN** `CODEX_LB_TELEMETRY_ENABLED=false` and no telemetry decision saved in the dashboard
+- **GIVEN** `CLAUDE_LB_TELEMETRY_ENABLED=false` and no telemetry decision saved in the dashboard
 - **WHEN** the operator enables telemetry in the dashboard
 - **THEN** the persisted decision is the effective value and the environment variable no longer applies while it stays set
 
@@ -150,8 +150,8 @@ When the settings row is created for the first time, every T3 dashboard column t
 
 #### Scenario: Environment change after first boot takes effect
 
-- **GIVEN** a fresh install whose settings row was created while `CODEX_LB_PROXY_ACCOUNT_STREAM_LIMIT=8` was set and no operator has edited the cap
-- **WHEN** the operator restarts with `CODEX_LB_PROXY_ACCOUNT_STREAM_LIMIT=12`
+- **GIVEN** a fresh install whose settings row was created while `CLAUDE_LB_PROXY_ACCOUNT_STREAM_LIMIT=8` was set and no operator has edited the cap
+- **WHEN** the operator restarts with `CLAUDE_LB_PROXY_ACCOUNT_STREAM_LIMIT=12`
 - **THEN** the effective stream cap is 12 and the settings API reports `source: "env"`
 
 #### Scenario: Operator edit stops the inheritance
@@ -201,7 +201,7 @@ For every inheritable setting — a setting whose NULL dashboard column falls ba
 
 #### Scenario: Environment value differs from the default
 
-- **GIVEN** `proxy_account_stream_limit` is NULL in `dashboard_settings` and `CODEX_LB_PROXY_ACCOUNT_STREAM_LIMIT=12` while the code default is 8
+- **GIVEN** `proxy_account_stream_limit` is NULL in `dashboard_settings` and `CLAUDE_LB_PROXY_ACCOUNT_STREAM_LIMIT=12` while the code default is 8
 - **WHEN** `GET /api/settings` is called
 - **THEN** `proxyAccountStreamLimit` is 12 and `provenance.proxy_account_stream_limit` is `{"source": "env", "envValue": 12, "default": 8}`
 
@@ -270,7 +270,7 @@ Every `Settings` field declared T3 MUST have a `dashboard_settings` column of th
 
 ### Requirement: Process environment is read only in the settings module
 
-Under `app/`, `os.environ`, `os.getenv` and `dotenv_values` MUST be referenced only in `app/core/config/settings.py`. Every `CODEX_LB_*` variable the application consumes MUST be a `Settings` field with a declared tier, so that it appears in the generated settings reference and is covered by the removed-settings warning when retired. The only exception is the allowlist `ENV_READ_ALLOWLIST` in `scripts/check_settings_tiers.py`, which names, per file, the number of lines that read the environment and the variables they read; it exists for two kinds of read: pre-existing sites awaiting promotion to `Settings` fields (including the `CODEX_LB_*` names read outside `Settings` when the allowlist was created), and reads of variables the application does not define — third-party and POSIX conventions (`HTTP_PROXY`/`NO_PROXY`, `TZ`, `KUBERNETES_SERVICE_HOST`, `PROMETHEUS_MULTIPROC_DIR`, `GITHUB_TOKEN`) and the uvicorn launcher knobs (`HOST`, `PORT`, `SSL_*`, `UVICORN_*`) consumed before `Settings` is constructed. Each allowlist cap is a hard per-file ceiling that MAY only shrink: a PR MUST NOT add a file to the allowlist or raise a cap, and a PR that removes the last read from a file or promotes a variable to a `Settings` field MUST lower or delete the entry in the same diff (a cap left above the actual count is tolerated as a warning so the promotion and the allowlist edit can land in either order).
+Under `app/`, `os.environ`, `os.getenv` and `dotenv_values` MUST be referenced only in `app/core/config/settings.py`. Every `CLAUDE_LB_*` variable the application consumes MUST be a `Settings` field with a declared tier, so that it appears in the generated settings reference and is covered by the removed-settings warning when retired. The only exception is the allowlist `ENV_READ_ALLOWLIST` in `scripts/check_settings_tiers.py`, which names, per file, the number of lines that read the environment and the variables they read; it exists for two kinds of read: pre-existing sites awaiting promotion to `Settings` fields (including the `CLAUDE_LB_*` names read outside `Settings` when the allowlist was created), and reads of variables the application does not define — third-party and POSIX conventions (`HTTP_PROXY`/`NO_PROXY`, `TZ`, `KUBERNETES_SERVICE_HOST`, `PROMETHEUS_MULTIPROC_DIR`, `GITHUB_TOKEN`) and the uvicorn launcher knobs (`HOST`, `PORT`, `SSL_*`, `UVICORN_*`) consumed before `Settings` is constructed. Each allowlist cap is a hard per-file ceiling that MAY only shrink: a PR MUST NOT add a file to the allowlist or raise a cap, and a PR that removes the last read from a file or promotes a variable to a `Settings` field MUST lower or delete the entry in the same diff (a cap left above the actual count is tolerated as a warning so the promotion and the allowlist edit can land in either order).
 
 #### Scenario: Ad-hoc environment read fails lint
 
@@ -285,13 +285,13 @@ Under `app/`, `os.environ`, `os.getenv` and `dotenv_values` MUST be referenced o
 
 #### Scenario: Promoted variable appears in the reference
 
-- **GIVEN** a `CODEX_LB_*` variable previously read through an allowlisted site
+- **GIVEN** a `CLAUDE_LB_*` variable previously read through an allowlisted site
 - **WHEN** it is promoted to a `Settings` field with a tier
 - **THEN** the same diff lowers or deletes the file's allowlist entry, and `scripts/generate_settings_reference.py` lists the variable with its tier
 
 ### Requirement: Operator-facing environment documentation lists T0 and T1 only
 
-`.env.example` and `docs/configuration.md` MUST list only T0 and T1 settings; a `CODEX_LB_*` variable whose tier is T2, T3 or T4 MUST NOT appear in `.env.example`, commented or not. The generated `docs/reference/settings.md` SHALL list every `Settings` field with the tier taken from `SETTING_TIERS` and SHALL carry a legend of the five tiers, so the reference is the operator-facing rendering of the registry.
+`.env.example` and `docs/configuration.md` MUST list only T0 and T1 settings; a `CLAUDE_LB_*` variable whose tier is T2, T3 or T4 MUST NOT appear in `.env.example`, commented or not. The generated `docs/reference/settings.md` SHALL list every `Settings` field with the tier taken from `SETTING_TIERS` and SHALL carry a legend of the five tiers, so the reference is the operator-facing rendering of the registry.
 
 #### Scenario: Tunable added to the sample env file
 

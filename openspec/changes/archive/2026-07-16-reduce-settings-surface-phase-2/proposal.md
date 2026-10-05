@@ -78,7 +78,7 @@ default installs.
   `app/core/resilience/circuit_breaker.py`,
   `app/core/resilience/memory_monitor.py`, `app/main.py`,
   `app/modules/proxy/api.py`, `app/modules/proxy/images_service.py`,
-  `app/core/openai/images.py`, `deploy/helm/codex-lb/**`
+  `app/core/openai/images.py`, `deploy/helm/claude-lb/**`
 - Operator impact: none for default installs. Deployments that set a
   removed env var keep working on the fixed value and see one startup WARN.
   Helm installs that overrode the three removed chart values fall back to

@@ -6,19 +6,19 @@ Define supported database backend wiring so local, Helm, SQLite, and external Po
 ## Requirements
 ### Requirement: Helm external PostgreSQL wiring resolves a non-empty database URL
 
-When the Helm chart deploys with `postgresql.enabled=false`, it MUST provide a non-empty `CODEX_LB_DATABASE_URL` to the workload from one of the supported external database inputs. The chart MUST accept a direct `externalDatabase.url`, and it MUST also support reading `database-url` from an operator-provided external database secret reference without requiring the application encryption-key secret to be the same object.
+When the Helm chart deploys with `postgresql.enabled=false`, it MUST provide a non-empty `CLAUDE_LB_DATABASE_URL` to the workload from one of the supported external database inputs. The chart MUST accept a direct `externalDatabase.url`, and it MUST also support reading `database-url` from an operator-provided external database secret reference without requiring the application encryption-key secret to be the same object.
 
 #### Scenario: Direct external database URL is used
 
 - **WHEN** `postgresql.enabled=false`
 - **AND** `externalDatabase.url` is non-empty
-- **THEN** the rendered workload uses that value for `CODEX_LB_DATABASE_URL`
+- **THEN** the rendered workload uses that value for `CLAUDE_LB_DATABASE_URL`
 
 #### Scenario: External database URL comes from a dedicated secret reference
 
 - **WHEN** `postgresql.enabled=false`
 - **AND** `externalDatabase.existingSecret` is set
-- **THEN** the rendered workload reads `database-url` from that secret for `CODEX_LB_DATABASE_URL`
+- **THEN** the rendered workload reads `database-url` from that secret for `CLAUDE_LB_DATABASE_URL`
 
 ### Requirement: PostgreSQL engines validate and recycle pooled connections
 
@@ -327,7 +327,7 @@ The application SHALL define its per-worker PostgreSQL connection capacity as th
 
 #### Scenario: Test database disables pooling
 
-- **WHEN** `CODEX_LB_TEST_DATABASE_URL` selects `NullPool`
+- **WHEN** `CLAUDE_LB_TEST_DATABASE_URL` selects `NullPool`
 - **THEN** pool sizing controls and the production pooled-engine budget do not apply to that test engine
 
 ### Requirement: SQLAlchemy-rendered Windows SQLite paths are percent-decoded before opening
@@ -345,9 +345,9 @@ Paths that do NOT match those rendered Windows forms MUST be preserved literally
 
 #### Scenario: Encoded drive with URL slash separators resolves to the real file
 
-- **GIVEN** a Windows SQLite URL with an encoded drive colon and normal URL path separators (`sqlite:///C%3A/Users/me/.codex-lb/store.db`)
+- **GIVEN** a Windows SQLite URL with an encoded drive colon and normal URL path separators (`sqlite:///C%3A/Users/me/.claude-lb/store.db`)
 - **WHEN** the path is extracted and decoded
-- **THEN** the filesystem path is `C:/Users/me/.codex-lb/store.db`, not the literal `C%3A/Users/me/.codex-lb/store.db`
+- **THEN** the filesystem path is `C:/Users/me/.claude-lb/store.db`, not the literal `C%3A/Users/me/.claude-lb/store.db`
 
 #### Scenario: Startup uses the decoded SQLite path
 
@@ -379,7 +379,7 @@ Paths that do NOT match those rendered Windows forms MUST be preserved literally
 
 #### Scenario: POSIX paths are unchanged
 
-- **GIVEN** a POSIX-style SQLite URL (`sqlite+aiosqlite:///var/lib/codex-lb/store.db`)
+- **GIVEN** a POSIX-style SQLite URL (`sqlite+aiosqlite:///var/lib/claude-lb/store.db`)
 - **WHEN** the path is extracted and decoded
 - **THEN** the result is identical to the input path (no `%` to decode; behavior is a no-op)
 
@@ -523,7 +523,7 @@ administration, and transient non-application clients.
 
 #### Scenario: Operators can still tune the pool
 
-- **WHEN** `CODEX_LB_DATABASE_POOL_SIZE` or `CODEX_LB_DATABASE_MAX_OVERFLOW`
+- **WHEN** `CLAUDE_LB_DATABASE_POOL_SIZE` or `CLAUDE_LB_DATABASE_MAX_OVERFLOW`
   is set in the environment
 - **THEN** the configured values override the defaults for both pooled
   engines

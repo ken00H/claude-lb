@@ -397,7 +397,7 @@ async def test_internal_drain_start_uses_hook_deadline_without_extension() -> No
 
     request = SimpleNamespace(
         client=SimpleNamespace(host="127.0.0.1"),
-        headers={"x-codex-lb-drain-deadline-monotonic": "110"},
+        headers={"x-claude-lb-drain-deadline-monotonic": "110"},
         app=SimpleNamespace(state=SimpleNamespace(proxy_service=None)),
     )
 
@@ -432,7 +432,7 @@ async def test_internal_drain_start_rejects_invalid_hook_deadline() -> None:
 
     request = SimpleNamespace(
         client=SimpleNamespace(host="127.0.0.1"),
-        headers={"x-codex-lb-drain-deadline-monotonic": "nan"},
+        headers={"x-claude-lb-drain-deadline-monotonic": "nan"},
         app=SimpleNamespace(state=SimpleNamespace(proxy_service=None)),
     )
 
@@ -491,7 +491,7 @@ async def test_deadline_drain_commit_survives_route_cancellation() -> None:
 
     request = SimpleNamespace(
         client=SimpleNamespace(host="127.0.0.1"),
-        headers={"x-codex-lb-drain-deadline-monotonic": "110"},
+        headers={"x-claude-lb-drain-deadline-monotonic": "110"},
         app=SimpleNamespace(
             state=SimpleNamespace(proxy_service=SimpleNamespace(mark_http_bridge_draining=mark_http_bridge_draining))
         ),

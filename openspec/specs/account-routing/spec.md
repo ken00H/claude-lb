@@ -1022,7 +1022,7 @@ body returned to the client MUST remain unchanged.
 
 ### Requirement: Upstream overload rejections back off and then isolate the account
 
-The balancer SHALL keep a replica-local sliding window of upstream overload admission rejections (`server_is_overloaded`, `overloaded_error`) per account that successes do not reset. When the window trips, the account SHALL enter a bounded, exponentially growing **soft backoff** during which fresh unbound selection and fresh sticky bindings prefer other candidates. When the backoff level reaches the isolation trip level, the account SHALL instead be **isolated** for the dashboard setting `proxy_overload_isolation_seconds` (default 1800; `0` disables isolation and keeps the soft backoff only; the environment variable `CODEX_LB_PROXY_OVERLOAD_ISOLATION_SECONDS` is the deprecated fallback the dashboard inherits while its value is unset). The window used for an isolation MUST be the one carried by the balancer's most recent request snapshot, never a settings read from the error funnel. While isolated, established soft sticky owners MAY be released as specified by `sticky-session-operations`. In both stages the account MUST be dropped from a candidate pool only while at least one other candidate remains, and the configured strategy MUST judge eligibility of the remaining pool: when it rejects every overload-free candidate, selection MUST fall back to the full pool exactly as before. The backoff level MUST NOT decay while the account is backed off or isolated; it decays only after a quiet interval measured from the later of the last trip and the backoff deadline. Hard continuity owners MUST NOT be moved by either stage. The balancer MUST emit a warning when isolation engages, naming the account, level and isolation interval.
+The balancer SHALL keep a replica-local sliding window of upstream overload admission rejections (`server_is_overloaded`, `overloaded_error`) per account that successes do not reset. When the window trips, the account SHALL enter a bounded, exponentially growing **soft backoff** during which fresh unbound selection and fresh sticky bindings prefer other candidates. When the backoff level reaches the isolation trip level, the account SHALL instead be **isolated** for the dashboard setting `proxy_overload_isolation_seconds` (default 1800; `0` disables isolation and keeps the soft backoff only; the environment variable `CLAUDE_LB_PROXY_OVERLOAD_ISOLATION_SECONDS` is the deprecated fallback the dashboard inherits while its value is unset). The window used for an isolation MUST be the one carried by the balancer's most recent request snapshot, never a settings read from the error funnel. While isolated, established soft sticky owners MAY be released as specified by `sticky-session-operations`. In both stages the account MUST be dropped from a candidate pool only while at least one other candidate remains, and the configured strategy MUST judge eligibility of the remaining pool: when it rejects every overload-free candidate, selection MUST fall back to the full pool exactly as before. The backoff level MUST NOT decay while the account is backed off or isolated; it decays only after a quiet interval measured from the later of the last trip and the backoff deadline. Hard continuity owners MUST NOT be moved by either stage. The balancer MUST emit a warning when isolation engages, naming the account, level and isolation interval.
 
 #### Scenario: Sustained rejection escalates from soft backoff to isolation
 
@@ -1033,7 +1033,7 @@ The balancer SHALL keep a replica-local sliding window of upstream overload admi
 
 #### Scenario: Isolation is disabled by a zero interval
 
-- **GIVEN** the dashboard stores `proxy_overload_isolation_seconds = 0` (or the column is NULL and `CODEX_LB_PROXY_OVERLOAD_ISOLATION_SECONDS=0`)
+- **GIVEN** the dashboard stores `proxy_overload_isolation_seconds = 0` (or the column is NULL and `CLAUDE_LB_PROXY_OVERLOAD_ISOLATION_SECONDS=0`)
 - **WHEN** an account's overload window trips at or beyond the isolation level
 - **THEN** it receives the capped soft backoff interval and is never marked isolated
 
@@ -1057,7 +1057,7 @@ The balancer SHALL keep a replica-local sliding window of upstream overload admi
 
 ### Requirement: Weighted strategies discount recent upstream error rate
 
-The balancer SHALL keep a replica-local window (600 s) of upstream outcomes per account: successes recorded by `record_success` and the account-attributable transient failures recorded by `record_errors`. Rate-limit, quota, permanent and account-neutral failures MUST NOT be counted. When the dashboard setting `proxy_account_error_rate_weighting_enabled` is true (default; the environment variable `CODEX_LB_PROXY_ACCOUNT_ERROR_RATE_WEIGHTING_ENABLED` is the deprecated fallback the dashboard inherits while its value is unset) and the window holds at least 10 outcomes, the `capacity_weighted` and `relative_availability` strategies MUST multiply the candidate's draw weight by `max(0.05, 1 - error_rate)`; with fewer outcomes or the setting disabled the multiplier MUST be neutral. The switch MUST be read from the request's `RoutingTunables` snapshot when states are built, never from the process settings inside selection. The multiplier MUST NOT change `relative_availability` top-k membership or any deterministic probe pick, and deterministic strategies (`round_robin`, `usage_weighted`, `fill_first`, `sequential_drain`, `reset_drain`, `single_account`) MUST be unaffected. The discount MUST lift as the window clears without requiring a success.
+The balancer SHALL keep a replica-local window (600 s) of upstream outcomes per account: successes recorded by `record_success` and the account-attributable transient failures recorded by `record_errors`. Rate-limit, quota, permanent and account-neutral failures MUST NOT be counted. When the dashboard setting `proxy_account_error_rate_weighting_enabled` is true (default; the environment variable `CLAUDE_LB_PROXY_ACCOUNT_ERROR_RATE_WEIGHTING_ENABLED` is the deprecated fallback the dashboard inherits while its value is unset) and the window holds at least 10 outcomes, the `capacity_weighted` and `relative_availability` strategies MUST multiply the candidate's draw weight by `max(0.05, 1 - error_rate)`; with fewer outcomes or the setting disabled the multiplier MUST be neutral. The switch MUST be read from the request's `RoutingTunables` snapshot when states are built, never from the process settings inside selection. The multiplier MUST NOT change `relative_availability` top-k membership or any deterministic probe pick, and deterministic strategies (`round_robin`, `usage_weighted`, `fill_first`, `sequential_drain`, `reset_drain`, `single_account`) MUST be unaffected. The discount MUST lift as the window clears without requiring a success.
 
 #### Scenario: A flaky account receives proportionally less weighted traffic
 
@@ -1075,30 +1075,30 @@ The balancer SHALL keep a replica-local window (600 s) of upstream outcomes per 
 
 #### Scenario: Weighting can be disabled
 
-- **GIVEN** the dashboard stores `proxy_account_error_rate_weighting_enabled = false` (or the column is NULL and `CODEX_LB_PROXY_ACCOUNT_ERROR_RATE_WEIGHTING_ENABLED=false`)
+- **GIVEN** the dashboard stores `proxy_account_error_rate_weighting_enabled = false` (or the column is NULL and `CLAUDE_LB_PROXY_ACCOUNT_ERROR_RATE_WEIGHTING_ENABLED=false`)
 - **WHEN** an account has failed every request in the window
 - **THEN** its draw weight multiplier is `1.0`
 
 #### Scenario: Dashboard value overrides startup environment
 
-- **GIVEN** the process environment sets `CODEX_LB_PROXY_ACCOUNT_ERROR_RATE_WEIGHTING_ENABLED=true` and the dashboard stores `false`
+- **GIVEN** the process environment sets `CLAUDE_LB_PROXY_ACCOUNT_ERROR_RATE_WEIGHTING_ENABLED=true` and the dashboard stores `false`
 - **WHEN** states are built for a weighted selection
 - **THEN** every candidate's multiplier is `1.0`
 
 ### Requirement: Resilience toggles follow the dashboard value
 
-Soft drain (the draining/probing health tiers), the deterministic failover decision and the circuit-breaker selection gate MUST be controlled by the `dashboard_settings` columns `soft_drain_enabled`, `deterministic_failover_enabled` and `circuit_breaker_enabled`. A NULL column MUST inherit the process environment value (the deprecated `CODEX_LB_*` alias) and then the code default, and a non-NULL column MUST win over both; the effective value MUST come from the single `configuration-tiers` resolver, and the settings API MUST report each toggle's effective value and provenance. Account selection MUST resolve the three toggles once from the dashboard-settings snapshot its caller obtained before entering runtime locks — the same snapshot that produced the concurrency caps — MUST apply that resolution to every reload of its selection inputs (sticky and non-sticky retries, exclusion- and security-filtered pools) and to opportunistic admission, and MUST NOT read the database, await the settings cache or read `get_settings().<toggle>` for them while holding a runtime lock or inside the retry loop. Force Probe settlement MUST take one snapshot before acquiring the account lock. The background state builds — the quota planner tick, the quota planner forecast endpoint and the usage-refresh recovery reconciliation — MUST resolve soft drain from one dashboard-settings snapshot taken per tick or per request outside any runtime lock (the settings cache, or the dashboard-settings row the usage-refresh cycle already read) and pass it into the state build, so the health tier they compute follows the dashboard toggle; they MUST NOT resolve the environment layer while a snapshot is available. Only a caller with no snapshot at all (tests, tools) resolves the environment layer, which is the pre-dashboard behaviour. Changing a toggle in the dashboard MUST take effect on the next selection on every replica without a restart.
+Soft drain (the draining/probing health tiers), the deterministic failover decision and the circuit-breaker selection gate MUST be controlled by the `dashboard_settings` columns `soft_drain_enabled`, `deterministic_failover_enabled` and `circuit_breaker_enabled`. A NULL column MUST inherit the process environment value (the deprecated `CLAUDE_LB_*` alias) and then the code default, and a non-NULL column MUST win over both; the effective value MUST come from the single `configuration-tiers` resolver, and the settings API MUST report each toggle's effective value and provenance. Account selection MUST resolve the three toggles once from the dashboard-settings snapshot its caller obtained before entering runtime locks — the same snapshot that produced the concurrency caps — MUST apply that resolution to every reload of its selection inputs (sticky and non-sticky retries, exclusion- and security-filtered pools) and to opportunistic admission, and MUST NOT read the database, await the settings cache or read `get_settings().<toggle>` for them while holding a runtime lock or inside the retry loop. Force Probe settlement MUST take one snapshot before acquiring the account lock. The background state builds — the quota planner tick, the quota planner forecast endpoint and the usage-refresh recovery reconciliation — MUST resolve soft drain from one dashboard-settings snapshot taken per tick or per request outside any runtime lock (the settings cache, or the dashboard-settings row the usage-refresh cycle already read) and pass it into the state build, so the health tier they compute follows the dashboard toggle; they MUST NOT resolve the environment layer while a snapshot is available. Only a caller with no snapshot at all (tests, tools) resolves the environment layer, which is the pre-dashboard behaviour. Changing a toggle in the dashboard MUST take effect on the next selection on every replica without a restart.
 
 #### Scenario: Dashboard turns soft drain off
 
-- **GIVEN** `CODEX_LB_SOFT_DRAIN_ENABLED` is unset (default on) and an operator sets soft drain off in the dashboard
+- **GIVEN** `CLAUDE_LB_SOFT_DRAIN_ENABLED` is unset (default on) and an operator sets soft drain off in the dashboard
 - **WHEN** the next selection evaluates an account whose primary usage is above the fixed drain threshold
 - **THEN** the account stays in the healthy tier instead of entering the draining tier
 - **AND** no database read or settings-cache await happened under the runtime lock
 
 #### Scenario: Background state builds follow the dashboard soft-drain value
 
-- **GIVEN** `CODEX_LB_SOFT_DRAIN_ENABLED` is unset (default on) and the dashboard stores `soft_drain_enabled = false`
+- **GIVEN** `CLAUDE_LB_SOFT_DRAIN_ENABLED` is unset (default on) and the dashboard stores `soft_drain_enabled = false`
 - **WHEN** the quota planner tick or forecast endpoint builds its account states, or the usage-refresh recovery evaluates a recoverable account
 - **THEN** the states are built with soft drain off, so an account above the fixed drain threshold stays in the healthy tier
 - **AND** the snapshot was taken once for that tick or request, outside any runtime lock
@@ -1111,7 +1111,7 @@ Soft drain (the draining/probing health tiers), the deterministic failover decis
 
 #### Scenario: Dashboard enables the circuit-breaker gate the environment left off
 
-- **GIVEN** `CODEX_LB_CIRCUIT_BREAKER_ENABLED=false` and an operator turns the circuit breaker on in the dashboard
+- **GIVEN** `CLAUDE_LB_CIRCUIT_BREAKER_ENABLED=false` and an operator turns the circuit breaker on in the dashboard
 - **AND** every account's breaker is open
 - **WHEN** a selection runs
 - **THEN** the balancer reports the upstream as degraded because the breakers are open, without a restart
@@ -1128,7 +1128,7 @@ The in-flight pressure penalty (`proxy_account_inflight_penalty_pct`), the lease
 
 #### Scenario: Dashboard value overrides startup environment
 
-- **GIVEN** the process environment sets `CODEX_LB_PROXY_ACCOUNT_INFLIGHT_PENALTY_PCT=2.5` and the dashboard stores `proxy_account_inflight_penalty_pct = 10`
+- **GIVEN** the process environment sets `CLAUDE_LB_PROXY_ACCOUNT_INFLIGHT_PENALTY_PCT=2.5` and the dashboard stores `proxy_account_inflight_penalty_pct = 10`
 - **WHEN** account states are built for a selection
 - **THEN** each in-flight request adds 10 percentage points of pressure, not 2.5
 
@@ -1141,7 +1141,7 @@ The in-flight pressure penalty (`proxy_account_inflight_penalty_pct`), the lease
 
 #### Scenario: Cleared dashboard value returns to the environment
 
-- **GIVEN** the dashboard stores `proxy_account_lease_ttl_seconds = 1200` while the environment sets `CODEX_LB_PROXY_ACCOUNT_LEASE_TTL_SECONDS=1800`
+- **GIVEN** the dashboard stores `proxy_account_lease_ttl_seconds = 1200` while the environment sets `CLAUDE_LB_PROXY_ACCOUNT_LEASE_TTL_SECONDS=1800`
 - **WHEN** `PUT /api/settings` sends `proxyAccountLeaseTtlSeconds: null`
 - **THEN** the response reports the effective TTL 1800 with `provenance.proxy_account_lease_ttl_seconds.source` `"env"`
 - **AND** the next request snapshot judges stale leases against 1800 seconds

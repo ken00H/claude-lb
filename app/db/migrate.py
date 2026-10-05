@@ -816,7 +816,7 @@ def check_legacy_credential_drop(
     exists there is no install here for a replica of an earlier release to be
     serving. Both halves have to hold -- an empty ledger *and* no such table.
 
-    ``config.attributes["codex_lb_fresh_install"]`` is deliberately not that
+    ``config.attributes["claude_lb_fresh_install"]`` is deliberately not that
     signal: it is false whenever an ``alembic_version`` table merely exists, so
     an empty one left behind by a crashed first run would turn today's missing
     warning into a warning about a database with nothing to drain -- and a
@@ -971,7 +971,7 @@ def _run_upgrade_locked(
             bootstrap=_NO_LEGACY_BOOTSTRAP,
         )
 
-    config.attributes["codex_lb_fresh_install"] = (
+    config.attributes["claude_lb_fresh_install"] = (
         state_before.current_revision is None
         and not state_before.has_alembic_version_table
         and not state_before.has_legacy_migrations_table
@@ -982,7 +982,7 @@ def _run_upgrade_locked(
     if bootstrap_legacy:
         bootstrap_result = _bootstrap_legacy_history(config)
         if bootstrap_result.stamped_revision is not None:
-            config.attributes["codex_lb_fresh_install"] = False
+            config.attributes["claude_lb_fresh_install"] = False
 
     _ensure_alembic_version_table_capacity(config)
     if auto_remap_legacy_revisions:
@@ -992,7 +992,7 @@ def _run_upgrade_locked(
     # columns destroys the account credentials (see the function). It runs
     # after the remap because it needs a ledger Alembic can resolve.
     if _reconcile_retired_credential_ledger(config) is not None:
-        config.attributes["codex_lb_fresh_install"] = False
+        config.attributes["claude_lb_fresh_install"] = False
     # Last read before the first DDL: the legacy bootstrap, the remap and the
     # reconciliation may all have moved the ledger, and the question is what
     # this database has actually applied at the moment the upgrade starts.
@@ -1118,7 +1118,7 @@ def _parse_args() -> argparse.Namespace:
         "--db-url",
         type=_non_empty_database_url,
         default=None,
-        help="Database URL to migrate. Defaults to CODEX_LB_DATABASE_URL from settings.",
+        help="Database URL to migrate. Defaults to CLAUDE_LB_DATABASE_URL from settings.",
     )
 
     subparsers = parser.add_subparsers(dest="command", required=True)

@@ -8,7 +8,7 @@ The migration has been available for five minors (1.13 - 1.24), and for every re
 
 ## What Changes
 
-- **REMOVED** `deploy/helm/codex-lb/templates/legacy-deployment-prepare-hook.yaml` and `legacy-deployment-cleanup-hook.yaml` (Job + ServiceAccount + Role + RoleBinding each).
+- **REMOVED** `deploy/helm/claude-lb/templates/legacy-deployment-prepare-hook.yaml` and `legacy-deployment-cleanup-hook.yaml` (Job + ServiceAccount + Role + RoleBinding each).
 - **REMOVED** the lookup-based selector branch in `templates/service.yaml`; the public Service now always renders `codex-lb.workloadSelectorLabels`.
 - **REMOVED** the `codex-lb.legacySelectorLabels` helper and the `migration.serviceSelectorMode` value. A stale `migration.serviceSelectorMode` in an operator's values file is inert — it is not read and no longer changes the rendered selector.
 - The planned-removal wording #2230 added ("the first minor release after 1.26") is rewritten rather than honoured: it has only ever existed in the unreleased `1.25.0` pre-release train (chart `1.25.0-beta.7`; `1.25.0` is not released), so no shipped chart ever carried that promise to operators. Leaving it would have made the README contradict the code.
@@ -31,7 +31,7 @@ None.
 
 - Chart templates: `templates/service.yaml`, `templates/_helpers.tpl`; both `legacy-deployment-*-hook.yaml` deleted.
 - Values: `migration.serviceSelectorMode` removed from `values.yaml` (it was never in `values.schema.json`).
-- Docs: `deploy/helm/codex-lb/README.md` `Upgrade Contract` bullet and `Upgrading` section.
+- Docs: `deploy/helm/claude-lb/README.md` `Upgrade Contract` bullet and `Upgrading` section.
 - Tests: `tests/unit/test_helm_external_secrets.py`.
 - Operators still on a chart older than 1.13.0 must upgrade to a `1.24.x` chart before this release. Upgrading such a release straight to this chart would point the Service at StatefulSet pods that do not exist yet. Everyone else is unaffected and their upgrades get cheaper.
 

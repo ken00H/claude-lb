@@ -25,20 +25,20 @@ from scripts.release_versions import (
 def write_minimal_release_files(root: Path, version: str = "1.18.2") -> None:
     (root / "app").mkdir(parents=True)
     (root / "frontend").mkdir(parents=True)
-    (root / "deploy" / "helm" / "codex-lb").mkdir(parents=True)
-    (root / "pyproject.toml").write_text(f'[project]\nname = "codex-lb"\nversion = "{version}"\n', encoding="utf-8")
+    (root / "deploy" / "helm" / "claude-lb").mkdir(parents=True)
+    (root / "pyproject.toml").write_text(f'[project]\nname = "claude-lb"\nversion = "{version}"\n', encoding="utf-8")
     (root / "app" / "__init__.py").write_text(
         f'__version__ = "{version}"  # x-release-please-version\n', encoding="utf-8"
     )
     (root / "frontend" / "package.json").write_text(
         json.dumps({"name": "frontend", "version": version}) + "\n", encoding="utf-8"
     )
-    (root / "deploy" / "helm" / "codex-lb" / "Chart.yaml").write_text(
-        f"apiVersion: v2\nname: codex-lb\nversion: {version}\nappVersion: {version}\n",
+    (root / "deploy" / "helm" / "claude-lb" / "Chart.yaml").write_text(
+        f"apiVersion: v2\nname: claude-lb\nversion: {version}\nappVersion: {version}\n",
         encoding="utf-8",
     )
     (root / "uv.lock").write_text(
-        f'[[package]]\nname = "codex-lb"\nversion = "{version}"\nsource = {{ editable = "." }}\n',
+        f'[[package]]\nname = "claude-lb"\nversion = "{version}"\nsource = {{ editable = "." }}\n',
         encoding="utf-8",
     )
 
@@ -80,7 +80,7 @@ def test_parse_stable_and_beta_versions() -> None:
 
 def test_read_pyproject_version_uses_project_table(tmp_path: Path) -> None:
     (tmp_path / "pyproject.toml").write_text(
-        '[tool.example]\nversion = "0.0.0"\n\n[project]\nname = "codex-lb"\nversion = "1.19.0"\n',
+        '[tool.example]\nversion = "0.0.0"\n\n[project]\nname = "claude-lb"\nversion = "1.19.0"\n',
         encoding="utf-8",
     )
 
@@ -124,7 +124,7 @@ def test_update_project_versions_keeps_all_release_files_in_sync(tmp_path: Path)
 def test_assert_project_versions_accepts_pep440_uv_lock_prerelease(tmp_path: Path) -> None:
     write_minimal_release_files(tmp_path, "1.20.0-beta.3")
     (tmp_path / "uv.lock").write_text(
-        '[[package]]\nname = "codex-lb"\nversion = "1.20.0b3"\nsource = { editable = "." }\n',
+        '[[package]]\nname = "claude-lb"\nversion = "1.20.0b3"\nsource = { editable = "." }\n',
         encoding="utf-8",
     )
 
@@ -137,7 +137,7 @@ def test_assert_project_versions_accepts_pep440_uv_lock_prerelease(tmp_path: Pat
         (
             "pyproject.toml",
             lambda root: (root / "pyproject.toml").write_text(
-                '[project]\nname = "codex-lb"\nversion = "1.20.0b3"\n',
+                '[project]\nname = "claude-lb"\nversion = "1.20.0b3"\n',
                 encoding="utf-8",
             ),
         ),
@@ -148,9 +148,9 @@ def test_assert_project_versions_accepts_pep440_uv_lock_prerelease(tmp_path: Pat
             ),
         ),
         (
-            "deploy/helm/codex-lb/Chart.yaml",
-            lambda root: (root / "deploy" / "helm" / "codex-lb" / "Chart.yaml").write_text(
-                "apiVersion: v2\nname: codex-lb\nversion: 1.20.0b3\nappVersion: 1.20.0b3\n",
+            "deploy/helm/claude-lb/Chart.yaml",
+            lambda root: (root / "deploy" / "helm" / "claude-lb" / "Chart.yaml").write_text(
+                "apiVersion: v2\nname: claude-lb\nversion: 1.20.0b3\nappVersion: 1.20.0b3\n",
                 encoding="utf-8",
             ),
         ),

@@ -353,7 +353,7 @@ def test_the_child_environment_drops_upstream_pointers_and_names_the_throwaway_h
         # Assembled rather than written as a literal, so a repository secret
         # scanner does not spend a review cycle on a fake.
         "OPENAI_API_KEY": "sk-" + "live-should-not-propagate",
-        "CODEX_LB_UPSTREAM_BASE_URL": "https://example.invalid",
+        "CLAUDE_LB_UPSTREAM_BASE_URL": "https://example.invalid",
         "CODEX_HOME": "/home/someone/.codex",
     }
 

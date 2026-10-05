@@ -206,7 +206,7 @@ The observed list goes into the manifest as `network_isolation`.
 
 `uv run` is load-bearing: the origin is FastAPI plus uvicorn and the request
 decoder is `zstandard`, so a bare system interpreter fails at import — and on
-many hosts `python` is not a command at all. The tools need codex-lb
+many hosts `python` is not a command at all. The tools need claude-lb
 *importable*, not configured: they read no settings and touch no database.
 
 Expected output:
@@ -260,7 +260,7 @@ catalog digest is secondary.
 
 The script refuses, before starting anything, an output directory inside the
 repository or under a temporary filesystem, an exported `CODEX_HOME` holding
-an `auth.json`, a shell carrying `CODEX_LB_*` / `OPENAI_API_KEY` /
+an `auth.json`, a shell carrying `CLAUDE_LB_*` / `OPENAI_API_KEY` /
 `OPENAI_BASE_URL` / `CHATGPT_BASE_URL` / `CODEX_ACCESS_TOKEN` /
 `CODEX_API_BASE_URL` / `CODEX_SESSION_ID`, a shell carrying any outbound proxy
 variable (`HTTP_PROXY` / `HTTPS_PROXY` / `ALL_PROXY` / `WS_PROXY` / `WSS_PROXY`

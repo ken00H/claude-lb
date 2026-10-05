@@ -906,11 +906,11 @@ _SECURITY_WORK_AUTHORIZATION_REQUIRED_HINTS = (
 )
 _SECURITY_WORK_RETRY_MESSAGE = (
     "Upstream flagged this request as possible cybersecurity work. "
-    "codex-lb is retrying on an account marked as authorized for security work."
+    "claude-lb is retrying on an account marked as authorized for security work."
 )
 _SECURITY_WORK_NO_AUTHORIZED_ACCOUNTS_MESSAGE = (
     "Upstream flagged this request as possible cybersecurity work, but no account is marked as authorized for "
-    "security work. codex-lb is continuing with normal account selection; the upstream request may still fail until "
+    "security work. claude-lb is continuing with normal account selection; the upstream request may still fail until "
     "an account with Trusted Access for Cyber is marked as security-work-authorized."
 )
 
@@ -2398,7 +2398,7 @@ def _security_work_advisory_event(
     if account_id:
         warning["account_id"] = account_id
     return {
-        "type": "codex_lb.warning",
+        "type": "claude_lb.warning",
         "warning": warning,
     }
 
@@ -2427,7 +2427,7 @@ def _raise_proxy_unavailable(message: str) -> NoReturn:
     )
 
 
-_FAILED_ACCOUNT_ATTR = "_codex_lb_failed_account"
+_FAILED_ACCOUNT_ATTR = "_claude_lb_failed_account"
 
 
 def _proxy_response_failed_account(exc: ProxyResponseError, fallback: Account) -> Account:

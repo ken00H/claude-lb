@@ -1,6 +1,6 @@
 """Configuration tiers for every ``Settings`` field (configuration-tiers capability).
 
-Each ``CODEX_LB_*`` field belongs to exactly one tier:
+Each ``CLAUDE_LB_*`` field belongs to exactly one tier:
 
 - ``T0`` bootstrap: needed before the database is reachable (data dir, DB URL,
   encryption key, migration policy, first-login token). env only.
@@ -167,7 +167,7 @@ MIGRATING: Final[dict[str, str]] = {}
 # fails when the column does not exist. The field's environment variable is the
 # fallback while that column holds no decision, per the precedence rule.
 DASHBOARD_HOMES: Final[dict[str, str]] = {
-    # persisted decision > CODEX_LB_TELEMETRY_ENABLED > default (telemetry spec)
+    # persisted decision > CLAUDE_LB_TELEMETRY_ENABLED > default (telemetry spec)
     "telemetry_enabled": "dashboard_settings.telemetry_consent",
     # M4 model catalogue: one row per slug; the env dict is the per-slug fallback
     "model_context_window_overrides": "model_context_window_overrides.context_window",

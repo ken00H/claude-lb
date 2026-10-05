@@ -15,7 +15,7 @@ defers one that has to happen anyway.
 `constantize-core-tunables` planned it as the 28th field of that batch and had
 to keep it, because it had exactly one live consumer:
 `scripts/traffic_analysis/fast_canary_suite.py` injected
-`CODEX_LB_TOKEN_REFRESH_INTERVAL_DAYS=365` into the controlled failure-matrix
+`CLAUDE_LB_TOKEN_REFRESH_INTERVAL_DAYS=365` into the controlled failure-matrix
 subprocess. That pin is load-bearing. Both controlled runners import the
 operator's isolated `auth.json` into a throwaway database and drive real client
 turns through the proxy; that file's `last_refresh` is copied verbatim onto the
@@ -24,7 +24,7 @@ days because the file is written once and then reused for every run. Without
 suppression the first proxied turn calls `should_refresh` -> true and exchanges
 the real, single-use refresh token against `https://auth.openai.com`
 (`AUTH_BASE_URL` is a protocol constant, so pointing
-`CODEX_LB_UPSTREAM_BASE_URL` at the local fixture does not cover OAuth). The
+`CLAUDE_LB_UPSTREAM_BASE_URL` at the local fixture does not cover OAuth). The
 rotated credential is written into a database the suite deletes during cleanup,
 so every later canary run starts from a dead file and the harness rots
 silently — the exact failure the previous change refused to cause. Dropping the
@@ -45,7 +45,7 @@ certain, not merely possible.
   and its test assertion are deleted.
   - This is strictly stronger than the pin it replaces: the pin only ever
     reached the failure-matrix subprocess, while the raw HTTP/2 runner depended
-    on a `CODEX_LB_TOKEN_REFRESH_INTERVAL_DAYS=365` line inside the host-local
+    on a `CLAUDE_LB_TOKEN_REFRESH_INTERVAL_DAYS=365` line inside the host-local
     script. One repository-owned preflight now covers both runners, and both
     host-local lines become inert (they produce the removed-setting WARN until
     an operator deletes them).
@@ -59,7 +59,7 @@ certain, not merely possible.
   `app/core/auth/refresh.py` becomes `Final[int] = 8` — the previous default —
   and `should_refresh` reads it directly instead of
   `get_settings().token_refresh_interval_days or <constant>`.
-  `CODEX_LB_TOKEN_REFRESH_INTERVAL_DAYS` joins `_REMOVED_SETTINGS` for its
+  `CLAUDE_LB_TOKEN_REFRESH_INTERVAL_DAYS` joins `_REMOVED_SETTINGS` for its
   one-release startup WARN.
 - The constant stays injectable: `should_refresh` resolves the module attribute
   at call time and `test_should_refresh_reads_the_module_constant_at_call_time`
@@ -98,11 +98,11 @@ None.
   `app/core/config/tiers.py`, `scripts/check_settings_tiers.py` (docstring),
   `scripts/traffic_analysis/fast_canary_suite.py`.
 - No schema change, no API change, no default change. An operator who still
-  sets `CODEX_LB_TOKEN_REFRESH_INTERVAL_DAYS` gets one startup WARN and keeps
+  sets `CLAUDE_LB_TOKEN_REFRESH_INTERVAL_DAYS` gets one startup WARN and keeps
   the previous default behaviour.
 - Operators of the traffic-parity canary: the suite now writes to the isolated
   `auth.json` it was already given (one metadata field). The host-local runner
-  scripts need no change; their own `CODEX_LB_TOKEN_REFRESH_INTERVAL_DAYS=365`
+  scripts need no change; their own `CLAUDE_LB_TOKEN_REFRESH_INTERVAL_DAYS=365`
   lines can be deleted at leisure.
 
 Part of the slop-removal campaign 0908 (MIGRATING triage; finishes the

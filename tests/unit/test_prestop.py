@@ -129,7 +129,7 @@ def test_local_drain_client_sends_hook_deadline_header() -> None:
     effective_deadline = client.start_drain(deadline_monotonic=123.5, timeout_seconds=2)
 
     request = captured["request"]
-    assert getattr(request, "get_header")("X-codex-lb-drain-deadline-monotonic") == "123.5"
+    assert getattr(request, "get_header")("X-claude-lb-drain-deadline-monotonic") == "123.5"
     assert captured["timeout"] == 2
     assert effective_deadline == 123.5
 

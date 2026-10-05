@@ -18,7 +18,7 @@
 
 ## 4. Documentation
 
-- [x] 4.1 deploy/helm/codex-lb/README.md: fix `sessionBridgeAdvertiseBaseUrl` example to `http://$(POD_NAME).<headless-svc>.<ns>.svc.<clusterDomain>:2455` with env-expansion explanation; fix Manual Ring Override example to bare `<release>-workload-N` pod names; document static-ring vs autoscaling incompatibility; document snippet-mode controller requirements and the snippet-free default; cross-reference the NetworkPolicy `ingressNSMatchLabels` requirement from the prod overlay section
+- [x] 4.1 deploy/helm/claude-lb/README.md: fix `sessionBridgeAdvertiseBaseUrl` example to `http://$(POD_NAME).<headless-svc>.<ns>.svc.<clusterDomain>:2455` with env-expansion explanation; fix Manual Ring Override example to bare `<release>-workload-N` pod names; document static-ring vs autoscaling incompatibility; document snippet-mode controller requirements and the snippet-free default; cross-reference the NetworkPolicy `ingressNSMatchLabels` requirement from the prod overlay section
 - [x] 4.2 docker-compose.yml + docker-compose.prod.yml: add single-replica guardrail header comment (no `--scale`; multi-replica requires Helm chart + PostgreSQL + leader election)
 
 ## 5. Smoke coverage

@@ -147,7 +147,7 @@ def _postgres_async_connect_args(url: str) -> dict[str, object] | None:
         # error instead of an unbounded await.
         "command_timeout": _POSTGRES_COMMAND_TIMEOUT_SECONDS,
     }
-    if os.environ.get("CODEX_LB_TEST_DATABASE_URL"):
+    if os.environ.get("CLAUDE_LB_TEST_DATABASE_URL"):
         connect_args["prepared_statement_cache_size"] = 0
     return connect_args
 
@@ -161,7 +161,7 @@ def _postgres_async_engine_kwargs(url: str) -> dict[str, object]:
     """
     connect_args = _postgres_async_connect_args(url)
     kwargs: dict[str, object] = {"connect_args": connect_args or {}}
-    if os.environ.get("CODEX_LB_TEST_DATABASE_URL") and url.startswith("postgresql+asyncpg://"):
+    if os.environ.get("CLAUDE_LB_TEST_DATABASE_URL") and url.startswith("postgresql+asyncpg://"):
         kwargs["poolclass"] = NullPool
     else:
         kwargs["pool_size"] = _settings.database_pool_size

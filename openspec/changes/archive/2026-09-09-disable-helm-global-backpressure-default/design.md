@@ -28,7 +28,7 @@ global cap on and can starve one traffic class from another.
 
 ## Decisions
 
-Change only `deploy/helm/codex-lb/values.yaml`
+Change only `deploy/helm/claude-lb/values.yaml`
 `config.backpressureMaxConcurrentRequests` from `200` to `0`. Leave
 `templates/configmap.yaml` unchanged because it already quotes
 `.Values.config.backpressureMaxConcurrentRequests`.

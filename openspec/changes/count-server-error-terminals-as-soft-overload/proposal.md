@@ -47,7 +47,7 @@ accounts as overload-free that were in practice refusing nearly everything.
   also drives four unrelated decisions — it flips
   `_is_account_neutral_request_rejection` and `_is_model_scoped_rejection` from
   "skip the penalty" to "record it", arms the `http_status == 429` burst
-  cooldown, and double-counts `codex_lb_upstream_reasoning_replay_400_total`
+  cooldown, and double-counts `claude_lb_upstream_reasoning_replay_400_total`
   for a frame already counted at `_observe_terminal_stream_error_frame`. So
   `_handle_stream_error` gains a keyword-only `upstream_http_status` read by
   the soft-overload gate and nothing else, and the gate becomes
@@ -67,7 +67,7 @@ accounts as overload-free that were in practice refusing nearly everything.
   soft-reroute semantics, failure classification, failover decision and the
   status and body returned to the client are all unchanged.
 
-Replica-local runtime state only: no migration, no new `CODEX_LB_*` setting, no
+Replica-local runtime state only: no migration, no new `CLAUDE_LB_*` setting, no
 `.env.example` change, no dashboard column, no new metric.
 
 ## Why a fractional weight rather than a second threshold

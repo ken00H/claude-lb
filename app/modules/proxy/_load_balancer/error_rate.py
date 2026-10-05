@@ -36,7 +36,7 @@ ERROR_RATE_WEIGHT_FLOOR = 0.05
 @dataclass(frozen=True, slots=True)
 class ErrorRateWeightingPolicy:
     """Operator knob: the dashboard setting ``proxy_account_error_rate_weighting_enabled``
-    (environment fallback ``CODEX_LB_PROXY_ACCOUNT_ERROR_RATE_WEIGHTING_ENABLED``),
+    (environment fallback ``CLAUDE_LB_PROXY_ACCOUNT_ERROR_RATE_WEIGHTING_ENABLED``),
     resolved by the caller into ``RoutingTunables`` and passed in -- this module
     never reads settings itself (C2-2 routing/overload)."""
 

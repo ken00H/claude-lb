@@ -41,7 +41,7 @@ _REFRESH_SKIP_TTL_FRACTION = 0.01
 _REFRESH_SKIP_MAX_SECONDS = 15.0
 
 # Only the Live-call ownership namespace is reserved. Other LF-prefixed keys
-# (e.g. the pre-existing "\ncodex-lb-affinity-v1" selection affinities) remain
+# (e.g. the pre-existing "\nclaude-lb-affinity-v1" selection affinities) remain
 # ordinary operator-manageable sessions.
 RESERVED_STICKY_SESSION_KEY_PREFIX = "\ncodex_live_call:"
 

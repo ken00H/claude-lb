@@ -35,7 +35,7 @@ def upgrade() -> None:
         return
     columns = _columns(bind, "dashboard_settings")
     config = op.get_context().config
-    fresh_install = bool(config.attributes.get("codex_lb_fresh_install")) if config is not None else False
+    fresh_install = bool(config.attributes.get("claude_lb_fresh_install")) if config is not None else False
 
     if "sticky_threads_enabled" in columns:
         with op.batch_alter_table("dashboard_settings") as batch_op:

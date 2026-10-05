@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 LIMIT_WARMUP_SOURCE = "limit_warmup"
 LIMIT_WARMUP_REQUEST_KIND = "warmup"
-LIMIT_WARMUP_HEADER = "x-codex-lb-limit-warmup"
+LIMIT_WARMUP_HEADER = "x-claude-lb-limit-warmup"
 _DEFAULT_WARMUP_INSTRUCTIONS = "Reply with OK only."
 _TERMINAL_ERROR_EVENTS = {"response.failed", "response.incomplete", "error"}
 _QUOTA_ERROR_CODES = {"insufficient_quota", "quota_exceeded", "rate_limit_exceeded", "usage_limit_reached"}
@@ -221,7 +221,7 @@ class StreamingLimitWarmupSender:
         headers = {
             "x-request-id": request_id,
             LIMIT_WARMUP_HEADER: "1",
-            "user-agent": "codex-lb-limit-warmup",
+            "user-agent": "claude-lb-limit-warmup",
         }
         usage: ResponseUsage | None = None
         route_trace = UpstreamProxyRouteTrace()
@@ -239,7 +239,7 @@ class StreamingLimitWarmupSender:
                 route=route,
                 route_trace=route_trace,
                 allow_direct_egress=route is None,
-                codex_lb_account_id=fresh_account.id,
+                claude_lb_account_id=fresh_account.id,
             ):
                 event = parse_sse_event(event_block)
                 if event is None:

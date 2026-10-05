@@ -55,7 +55,7 @@ and findings recorded here so the next session inherits them.
 ### CHANGELOG
 
 Left untouched per repo rule (release-please owns `CHANGELOG.md`; its config
-still points at codex-lb paths — see umbrella 4.5). Fork change notes live in
+still points at claude-lb paths — see umbrella 4.5). Fork change notes live in
 this file instead.
 
 ### Inherited red gates (pre-date this session, verified by stash-compare)
@@ -67,7 +67,7 @@ this file instead.
   with this branch's changes stashed), all fork-migration debt in files this
   change never touched: 4× `test_native_egress_packaging.py` (reference the
   Rust `crates/` deleted in the rebrand), 2×
-  `test_proxy_header_launcher_contract.py` (expect `uv run codex-lb` in the
+  `test_proxy_header_launcher_contract.py` (expect `uv run claude-lb` in the
   READMEs the fork stubbed/deleted), 1× `test_docker_networking.py`,
   4× `test_db_migrate.py` (legacy revision-remap tests). Fixing these is
   rebrand-cleanup scope (umbrella 4.5 family), not account-model scope.

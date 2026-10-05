@@ -709,8 +709,8 @@ class _WebSocketTransientRefreshFailover(Exception):
 # ``upstream_unavailable`` WITHOUT recording an account-health penalty, while a
 # genuine OAuth transport failure keeps its normal health accounting.
 
-_FAILED_ACCOUNT_ATTR = "_codex_lb_failed_account"
-_CLAIM_CONTENTION_UNPENALIZED_ATTR = "_codex_lb_claim_contention_unpenalized"
+_FAILED_ACCOUNT_ATTR = "_claude_lb_failed_account"
+_CLAIM_CONTENTION_UNPENALIZED_ATTR = "_claude_lb_claim_contention_unpenalized"
 
 
 class _RefreshFailoverProxy(Protocol):
@@ -2107,7 +2107,7 @@ def configured_upstream_stream_transport(dashboard_settings: Any) -> str:
     """Return the operator-configured upstream stream transport.
 
     The dashboard row is the only source. The legacy ``"default"`` sentinel
-    (which used to defer to the removed ``CODEX_LB_UPSTREAM_STREAM_TRANSPORT``
+    (which used to defer to the removed ``CLAUDE_LB_UPSTREAM_STREAM_TRANSPORT``
     env var) and any unknown value resolve to ``"auto"`` so a settings-cache
     snapshot taken before the data migration ran behaves like the migrated row.
     """

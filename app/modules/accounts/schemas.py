@@ -123,7 +123,7 @@ class AccountSummary(DashboardModel):
     # older row keeps a revoked token and keeps generating 401s through the
     # load balancer. Flagging the dupes in /accounts lets the dashboard
     # surface a "delete older" action without requiring the operator to
-    # group rows by email themselves. See codex-lb #787 (B).
+    # group rows by email themselves. See claude-lb #787 (B).
     is_email_duplicate: bool = False
     # Banked rate-limit reset credits from the in-memory snapshot when cached,
     # otherwise the latest persisted primary usage_history count from /wham/usage.

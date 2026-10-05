@@ -11,7 +11,7 @@ import pytest
 pytestmark = pytest.mark.unit
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
-_CHART_DIR = _REPO_ROOT / "deploy" / "helm" / "codex-lb"
+_CHART_DIR = _REPO_ROOT / "deploy" / "helm" / "claude-lb"
 _POSTGRES_DATASOURCE_TYPE = "grafana-postgresql-datasource"
 
 
@@ -65,18 +65,18 @@ def test_high_error_rate_alert_aggregates_request_series_before_division() -> No
 
     assert match is not None
     assert " ".join(match.group("expr").split()) == (
-        '( sum by (namespace, job) ( rate(codex_lb_requests_total{status=~"5.."}[5m]) )'
-        " / sum by (namespace, job) ( rate(codex_lb_requests_total[5m]) ) ) > 0.05"
+        '( sum by (namespace, job) ( rate(claude_lb_requests_total{status=~"5.."}[5m]) )'
+        " / sum by (namespace, job) ( rate(claude_lb_requests_total[5m]) ) ) > 0.05"
     )
 
 
 def test_grafana_error_rate_aggregates_request_series_before_division() -> None:
-    dashboard = json.loads((_CHART_DIR / "dashboards" / "codex-lb.json").read_text())
+    dashboard = json.loads((_CHART_DIR / "dashboards" / "claude-lb.json").read_text())
     error_rate_panel = next(panel for panel in dashboard["panels"] if panel["title"] == "Error Rate (5xx)")
 
     assert error_rate_panel["targets"][0]["expr"] == (
-        '(sum(rate(codex_lb_requests_total{namespace="$namespace",job=~"$job",status=~"5.."}[5m]))'
-        ' or vector(0)) / sum(rate(codex_lb_requests_total{namespace="$namespace",job=~"$job"}[5m]))'
+        '(sum(rate(claude_lb_requests_total{namespace="$namespace",job=~"$job",status=~"5.."}[5m]))'
+        ' or vector(0)) / sum(rate(claude_lb_requests_total{namespace="$namespace",job=~"$job"}[5m]))'
     )
 
 
@@ -90,21 +90,21 @@ def test_grafana_latency_quantiles_aggregate_selected_bucket_series_by_le() -> N
     }
 
     assert latency_queries == {
-        ("codex-lb.json", "Request Duration (p50/p95/p99)", "p50"): (
+        ("claude-lb.json", "Request Duration (p50/p95/p99)", "p50"): (
             "histogram_quantile(0.50, sum by (le) (rate("
-            'codex_lb_request_duration_seconds_bucket{namespace="$namespace",job=~"$job"}[5m])))'
+            'claude_lb_request_duration_seconds_bucket{namespace="$namespace",job=~"$job"}[5m])))'
         ),
-        ("codex-lb.json", "Request Duration (p50/p95/p99)", "p95"): (
+        ("claude-lb.json", "Request Duration (p50/p95/p99)", "p95"): (
             "histogram_quantile(0.95, sum by (le) (rate("
-            'codex_lb_request_duration_seconds_bucket{namespace="$namespace",job=~"$job"}[5m])))'
+            'claude_lb_request_duration_seconds_bucket{namespace="$namespace",job=~"$job"}[5m])))'
         ),
-        ("codex-lb.json", "Request Duration (p50/p95/p99)", "p99"): (
+        ("claude-lb.json", "Request Duration (p50/p95/p99)", "p99"): (
             "histogram_quantile(0.99, sum by (le) (rate("
-            'codex_lb_request_duration_seconds_bucket{namespace="$namespace",job=~"$job"}[5m])))'
+            'claude_lb_request_duration_seconds_bucket{namespace="$namespace",job=~"$job"}[5m])))'
         ),
-        ("codex-lb.json", "Upstream Request Duration (p99)", "p99"): (
+        ("claude-lb.json", "Upstream Request Duration (p99)", "p99"): (
             "histogram_quantile(0.99, sum by (le) (rate("
-            'codex_lb_upstream_request_duration_seconds_bucket{namespace="$namespace",job=~"$job"}[5m])))'
+            'claude_lb_upstream_request_duration_seconds_bucket{namespace="$namespace",job=~"$job"}[5m])))'
         ),
     }
 
@@ -119,5 +119,5 @@ def test_high_latency_quantile_aggregates_bucket_series_by_scope_and_le() -> Non
     assert match is not None
     assert " ".join(match.group("expr").split()) == (
         "histogram_quantile(0.99, sum by (namespace, job, le) ("
-        " rate(codex_lb_request_duration_seconds_bucket[5m]) ) ) > 10"
+        " rate(claude_lb_request_duration_seconds_bucket[5m]) ) ) > 10"
     )

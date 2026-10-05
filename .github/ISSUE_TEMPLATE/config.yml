@@ -15,7 +15,7 @@ contact_links:
       Advisories — do NOT open a public issue. See SECURITY.md.
 
   - name: 📚 Documentation & FAQ
-    url: https://soju06.github.io/codex-lb/
+    url: https://soju06.github.io/claude-lb/
     about: |
       Setup, client configuration, deployment, account quota and dashboard
       topics are covered on the docs site — check there first.

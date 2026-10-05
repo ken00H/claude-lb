@@ -1,4 +1,4 @@
-"""Compare Codex traffic observed on the two sides of codex-lb.
+"""Compare Codex traffic observed on the two sides of claude-lb.
 
 Path B is the client-facing leg and path C is the upstream-facing leg from the
 same run. Path A, when supplied, is a separately generated direct-upstream
@@ -973,7 +973,7 @@ def _compare_bc_turn(turn_number: int, turn_b: Turn | None, turn_c: Turn | None)
     request_c = _semantic_request(turn_c)
     request_c_for_comparison = dict(request_c)
     if "prompt_cache_key" not in request_b:
-        # codex-lb may derive a cache key for a public request that did not
+        # claude-lb may derive a cache key for a public request that did not
         # supply one. A client-supplied key remains material and must survive.
         request_c_for_comparison.pop("prompt_cache_key", None)
     checks["semantic_request"] = request_b == request_c_for_comparison

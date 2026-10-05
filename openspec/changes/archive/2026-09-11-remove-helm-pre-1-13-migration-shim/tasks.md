@@ -19,7 +19,7 @@
 
 ## 4. Verification
 
-- [x] 4.1 `helm lint deploy/helm/codex-lb`; `helm template` with defaults, `--is-upgrade`, and `--set migration.serviceSelectorMode=legacy`.
+- [x] 4.1 `helm lint deploy/helm/claude-lb`; `helm template` with defaults, `--is-upgrade`, and `--set migration.serviceSelectorMode=legacy`.
 - [x] 4.2 `uv run pytest tests/unit/test_helm_external_secrets.py tests/unit/test_helm_replica_artifacts.py tests/unit/test_helm_monitoring_artifacts.py tests/unit/test_helm_shutdown_contract.py -q`.
 - [x] 4.3 `make lint`, `python3 .github/scripts/check_simplicity_budgets.py`.
 - [x] 4.4 `openspec validate remove-helm-pre-1-13-migration-shim --strict` and `openspec validate --specs --strict`.

@@ -38,5 +38,5 @@ claude.ai OAuth seat — can serve real `/v1/messages` traffic end-to-end.
 - Explicitly deferred (stay on the umbrella): 5-hour/weekly window capacities (3.3 constants, blocked on
   live Pro/Max evidence), Codex proxy core + OpenAI-compat layer removal (3.5), legacy column drops,
   usage rollup remapping, model-registry swap, dashboard rebrand (section 4).
-- No new `CODEX_LB_*` settings; new constants are protocol constants (PRINCIPLES.md P2), not tunables.
+- No new `CLAUDE_LB_*` settings; new constants are protocol constants (PRINCIPLES.md P2), not tunables.
 - The bundled Codex proxy core remains inert reference code until 3.5.

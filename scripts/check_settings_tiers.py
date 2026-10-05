@@ -46,7 +46,7 @@ APP_DIR = ROOT / "app"
 SETTINGS_MODULE = Path("app/core/config/settings.py")
 ENV_EXAMPLE_PATH = ROOT / ".env.example"
 BUDGETS_PATH = ROOT / ".github" / "simplicity-budgets.toml"
-ENV_PREFIX = "CODEX_LB_"
+ENV_PREFIX = "CLAUDE_LB_"
 ENV_ONLY_TIERS = frozenset({"T0", "T1"})
 DASHBOARD_SETTINGS_TABLE = "dashboard_settings"
 
@@ -66,7 +66,7 @@ ENV_READ_ALLOWLIST: Mapping[str, tuple[int, str]] = {
     "app/modules/runtime/service.py": (1, "GITHUB_TOKEN release-version lookup"),
     "app/modules/telemetry/snapshot.py": (1, "KUBERNETES_SERVICE_HOST deployment detection"),
     "app/modules/automations/service.py": (1, "TZ default schedule timezone (S13)"),
-    "app/db/session.py": (2, "CODEX_LB_TEST_DATABASE_URL (CI only)"),
+    "app/db/session.py": (2, "CLAUDE_LB_TEST_DATABASE_URL (CI only)"),
     "app/db/alembic/versions/20260312_000000_add_additional_usage_quota_key.py": (1, "migration-time registry path"),
     "app/codex_sessions_retag.py": (3, "CODEX_HOME/USERPROFILE/WSL_DISTRO_NAME (standalone CLI tool)"),
 }

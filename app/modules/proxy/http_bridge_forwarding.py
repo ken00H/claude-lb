@@ -614,7 +614,7 @@ def _bridge_forward_signature(
             context=context,
             include_client_ip=include_client_ip,
             signature_version=signature_version,
-            protocol="codex-lb-http-bridge-forward",
+            protocol="claude-lb-http-bridge-forward",
         )
     return _sign_bridge_payload(signing_payload)
 
@@ -645,7 +645,7 @@ def _bridge_forward_tools_bound_signature(
         context=context,
         include_client_ip=True,
         signature_version=signature_version,
-        protocol="codex-lb-http-bridge-forward-tools-bound",
+        protocol="claude-lb-http-bridge-forward-tools-bound",
     )
     return _sign_bridge_payload(signing_payload)
 

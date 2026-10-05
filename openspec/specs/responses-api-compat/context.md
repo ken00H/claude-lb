@@ -30,7 +30,7 @@ See `openspec/specs/responses-api-compat/spec.md` for normative requirements.
 - `truncation` is rejected.
 - `previous_response_id` is forwarded when `conversation` is absent, but the `conversation + previous_response_id` conflict remains rejected.
 - HTTP `/v1/responses` and HTTP `/backend-api/codex/responses` now use a server-side upstream websocket session bridge by default so repeated compatible requests can keep upstream response/session continuity without forcing clients onto the public websocket route.
-- Codex-affinity HTTP bridge sessions can optionally use a conservative first-request prewarm (`generate=false`), but that behavior stays behind an explicit switch so production defaults do not pay an extra upstream request unless operators opt in. The switch is the dashboard setting `http_responses_session_bridge_codex_prewarm_enabled` (Settings → Advanced → Session bridge), resolved from the settings-cache snapshot before a session's prewarm lock; its `CODEX_LB_*` environment variable is a deprecated alias that applies only while the dashboard value is unset.
+- Codex-affinity HTTP bridge sessions can optionally use a conservative first-request prewarm (`generate=false`), but that behavior stays behind an explicit switch so production defaults do not pay an extra upstream request unless operators opt in. The switch is the dashboard setting `http_responses_session_bridge_codex_prewarm_enabled` (Settings → Advanced → Session bridge), resolved from the settings-cache snapshot before a session's prewarm lock; its `CLAUDE_LB_*` environment variable is a deprecated alias that applies only while the dashboard value is unset.
 - When operators configure a multi-instance bridge ring, deterministic owner enforcement now applies only to hard continuity keys such as `x-codex-turn-state` and explicit session headers. Prompt-cache-derived bridge keys remain stable for local reuse, but in gateway-safe mode a non-owner replica may tolerate that locality miss and create or reuse a local session instead of failing with `bridge_instance_mismatch`.
 - Codex-facing websocket routes now advertise `x-codex-turn-state` during websocket accept and honor client-provided turn-state on reconnect so routing can stay sticky at turn granularity even when the public websocket reconnects.
 - HTTP responses routes now also return `x-codex-turn-state` headers so clients that persist response headers can promote later HTTP requests from prompt-cache affinity to stronger Codex-session continuity.
@@ -49,12 +49,12 @@ See `openspec/specs/responses-api-compat/spec.md` for normative requirements.
 
 ## Fast Mode and Service Tiers
 
-codex-lb accepts the OpenAI/Codex `service_tier` field on Responses and Chat
+claude-lb accepts the OpenAI/Codex `service_tier` field on Responses and Chat
 Completions compatible routes. The legacy `fast` spelling is accepted as an
 alias and is forwarded upstream as the canonical `priority` tier.
 
 Fast Mode is request-level intent, not a local speed guarantee. The upstream
-Codex backend decides the actual tier for each completed response. codex-lb
+Codex backend decides the actual tier for each completed response. claude-lb
 therefore records three separate values in request logs:
 
 - `requestedServiceTier`: what the client or API key asked for, after alias
@@ -67,7 +67,7 @@ therefore records three separate values in request logs:
 
 If a request is sent with `service_tier: "fast"` or `service_tier: "priority"`
 and the completed row shows `requestedServiceTier: "priority"` but
-`actualServiceTier: "default"`, codex-lb forwarded the priority request and
+`actualServiceTier: "default"`, claude-lb forwarded the priority request and
 upstream chose the default tier. That can happen even when websocket transport
 is active.
 
@@ -80,14 +80,14 @@ Responses request with:
 }
 ```
 
-Clients that expose Fast Mode as `fast` may keep using that spelling; codex-lb
+Clients that expose Fast Mode as `fast` may keep using that spelling; claude-lb
 normalizes it to `priority` before forwarding.
 
 ### Ultrafast Processing
 
 The [OpenAI Responses API reference](https://developers.openai.com/api/reference/resources/responses/methods/create)
 documents `ultrafast` as an access-controlled processing tier currently
-available for `gpt-5.6-sol`. codex-lb forwards this canonical value unchanged;
+available for `gpt-5.6-sol`. claude-lb forwards this canonical value unchanged;
 it does not grant Ultrafast access by itself.
 
 Account eligibility comes from live or retained per-account upstream catalog
@@ -131,7 +131,7 @@ To verify a completed Fast Mode request:
 3. `actualServiceTier` is the upstream result. `default` means upstream did not
    grant priority for that response.
 
-This distinction matters for quota and cost accounting: codex-lb prices the
+This distinction matters for quota and cost accounting: claude-lb prices the
 request from the effective billable `serviceTier`, not from the requested tier
 when upstream reports a different actual tier.
 
@@ -197,10 +197,10 @@ consecutive eventless pending failure may open the repeated-failure cooldown.
 Stale-anchor recovery example: a reconnect sends a tool-output delta with a
 recent `previous_response_id`, and upstream answers
 ``{"type":"error","status":400,"error":{"type":"invalid_request_error","message":"Invalid `previous_response_id`."}}``.
-Because the delta cannot stand alone, codex-lb returns a sanitized
+Because the delta cannot stand alone, claude-lb returns a sanitized
 `previous_response_not_found` signal on the Codex-native route so the client can
 retry once with full local history. If the original request already contained a
-self-contained full resend, codex-lb instead reconnects and replays that body
+self-contained full resend, claude-lb instead reconnects and replays that body
 without the rejected anchor.
 
 ## Previous-response replay owner fencing

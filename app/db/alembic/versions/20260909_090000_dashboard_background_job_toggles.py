@@ -3,7 +3,7 @@
 Three nullable ``dashboard_settings`` BOOLEAN columns named after the
 ``Settings`` fields they take over: ``auth_guardian_enabled``,
 ``automations_scheduler_enabled`` and ``rate_limit_reset_credits_refresh_enabled``.
-NULL means "inherit": the deprecated ``CODEX_LB_*`` environment alias, then the
+NULL means "inherit": the deprecated ``CLAUDE_LB_*`` environment alias, then the
 code default, keep applying until an operator sets a value in the dashboard
 (configuration-tiers; slop-removal campaign 0908, M2).
 

@@ -5,7 +5,7 @@ rationale, decisions, and operational notes behind the simplicity merge gates.
 
 ## Purpose
 
-codex-lb's original value proposition was "run one command, get a load-balancing
+claude-lb's original value proposition was "run one command, get a load-balancing
 proxy and a dashboard you can read in one glance." Nothing in the contribution
 process defended that proposition: every merge gate checked correctness (CI,
 codex review, OpenSpec coverage) and none checked whether the default experience
@@ -71,7 +71,7 @@ advanced nav) — but they stop the counters from silently climbing again.
 
 ## Worked example (P2)
 
-A PR adds `CODEX_LB_FOO_TIMEOUT_SECONDS` to tune an upstream call. The PR body
+A PR adds `CLAUDE_LB_FOO_TIMEOUT_SECONDS` to tune an upstream call. The PR body
 must answer "why can't this be a default?":
 
 > Acceptable: "Operators behind corporate proxies see 30–120s handshake times;

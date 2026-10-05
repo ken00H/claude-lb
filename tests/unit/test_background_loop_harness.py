@@ -4,7 +4,7 @@ The ambient app lifespan must never start a real background loop inside the
 suite (SQLite lock flakes, no-op planner decision rows, public GitHub/npm
 catalog lookups). tests/conftest.py achieves that by patching the
 ``build_*_scheduler`` seams in ``app.main`` — not by exporting
-``CODEX_LB_*_ENABLED=false`` — so the seam has to be complete: every builder
+``CLAUDE_LB_*_ENABLED=false`` — so the seam has to be complete: every builder
 the lifespan imports is either replaced with a no-op or explicitly listed here
 as an always-on maintenance loop the suite tolerates.
 """
@@ -30,19 +30,19 @@ LIVE_MAINTENANCE_LOOP_BUILDERS: tuple[str, ...] = (
     "build_api_key_last_used_flush_scheduler",
 )
 
-# ``CODEX_LB_*_ENABLED`` toggles the harness used to export as ``false``. They
+# ``CLAUDE_LB_*_ENABLED`` toggles the harness used to export as ``false``. They
 # stay unset so ``Settings()`` keeps its production defaults inside the suite;
 # most of them no longer exist as settings at all (constantize-core-tunables).
 # The request-path usage refresh is neutralised by the
 # ``_disable_request_path_usage_refresh`` fixture seam instead.
 RETIRED_HARNESS_ENV_OVERRIDES: tuple[str, ...] = (
-    "CODEX_LB_USAGE_REFRESH_ENABLED",
-    "CODEX_LB_MODEL_REGISTRY_ENABLED",
-    "CODEX_LB_STICKY_SESSION_CLEANUP_ENABLED",
-    "CODEX_LB_QUOTA_PLANNER_SCHEDULER_ENABLED",
-    "CODEX_LB_AUTOMATIONS_SCHEDULER_ENABLED",
-    "CODEX_LB_AUTH_GUARDIAN_ENABLED",
-    "CODEX_LB_LIVE_USAGE_INGESTION_ENABLED",
+    "CLAUDE_LB_USAGE_REFRESH_ENABLED",
+    "CLAUDE_LB_MODEL_REGISTRY_ENABLED",
+    "CLAUDE_LB_STICKY_SESSION_CLEANUP_ENABLED",
+    "CLAUDE_LB_QUOTA_PLANNER_SCHEDULER_ENABLED",
+    "CLAUDE_LB_AUTOMATIONS_SCHEDULER_ENABLED",
+    "CLAUDE_LB_AUTH_GUARDIAN_ENABLED",
+    "CLAUDE_LB_LIVE_USAGE_INGESTION_ENABLED",
 )
 
 
@@ -126,7 +126,7 @@ def test_harness_does_not_export_background_loop_env_kill_switches() -> None:
 def test_usage_refresh_env_export_still_has_a_settings_field_behind_it() -> None:
     """Hand-off guard for the follow-up that constantizes ``usage_refresh_enabled``.
 
-    tests/conftest.py still exports ``CODEX_LB_USAGE_REFRESH_ENABLED=false``
+    tests/conftest.py still exports ``CLAUDE_LB_USAGE_REFRESH_ENABLED=false``
     because the field also gates request-path refreshes (``UsageUpdater.
     refresh_accounts`` on account import, ``request_refresh`` after a streamed
     ``usage_limit_reached``); without it every account-importing test spends
@@ -135,10 +135,10 @@ def test_usage_refresh_env_export_still_has_a_settings_field_behind_it() -> None
     no-op and the suite slows ~30x with no failing test. Fail loudly instead.
     """
     conftest_source = (Path(__file__).parents[1] / "conftest.py").read_text(encoding="utf-8")
-    if 'os.environ["CODEX_LB_USAGE_REFRESH_ENABLED"]' not in conftest_source:
+    if 'os.environ["CLAUDE_LB_USAGE_REFRESH_ENABLED"]' not in conftest_source:
         return
     assert "usage_refresh_enabled" in Settings.model_fields, (
         "usage_refresh_enabled was removed from Settings but tests/conftest.py still exports "
-        "CODEX_LB_USAGE_REFRESH_ENABLED: replace the export with a request-path seam (autouse patch of "
+        "CLAUDE_LB_USAGE_REFRESH_ENABLED: replace the export with a request-path seam (autouse patch of "
         "UsageUpdater.refresh_accounts / request_refresh, or a stubbed usage client) before deleting the env line"
     )

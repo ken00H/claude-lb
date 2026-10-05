@@ -254,7 +254,7 @@ async def test_session_selection_key_is_logged_instead_of_payload_cache_key(asyn
     sessions = await async_client.get("/api/sticky-sessions")
     assert sessions.status_code == 200
     assert [entry["key"] for entry in sessions.json()["entries"]] == [
-        "\ncodex-lb-affinity-v1:session_header:ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+        "\nclaude-lb-affinity-v1:session_header:ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
     ]
     logs = await async_client.get("/api/request-logs")
     row = logs.json()["requests"][0]

@@ -38,7 +38,7 @@ users get the same informed default-on treatment as new installs).
 
 #### Scenario: Fresh install defaults to active
 
-- **WHEN** codex-lb starts for the first time with no persisted consent and no environment
+- **WHEN** claude-lb starts for the first time with no persisted consent and no environment
   override
 - **THEN** consent is `undecided` and telemetry snapshots are transmitted
 
@@ -87,17 +87,17 @@ field and set it to `null` when the preview was not requested and is not dialog-
 
 ### Requirement: Settings toggle and environment kill switch
 
-The dashboard settings MUST expose a telemetry toggle reflecting the resolved consent state. Consent MUST resolve as `persisted decision > CODEX_LB_TELEMETRY_ENABLED > default`: a persisted dashboard decision is authoritative and MUST NOT be overridden by the environment variable. `CODEX_LB_TELEMETRY_ENABLED` MUST apply only while the persisted state is `undecided` (`false` disables all transmission, `true` enables and suppresses the consent dialog) and MUST be reported with `source: env`. The toggle MUST remain usable while the environment value is in effect so the operator can persist a decision, and the dashboard MUST show a notice that the environment value is the current fallback.
+The dashboard settings MUST expose a telemetry toggle reflecting the resolved consent state. Consent MUST resolve as `persisted decision > CLAUDE_LB_TELEMETRY_ENABLED > default`: a persisted dashboard decision is authoritative and MUST NOT be overridden by the environment variable. `CLAUDE_LB_TELEMETRY_ENABLED` MUST apply only while the persisted state is `undecided` (`false` disables all transmission, `true` enables and suppresses the consent dialog) and MUST be reported with `source: env`. The toggle MUST remain usable while the environment value is in effect so the operator can persist a decision, and the dashboard MUST show a notice that the environment value is the current fallback.
 
 #### Scenario: Headless deployment disables via environment
 
-- **WHEN** the service runs with `CODEX_LB_TELEMETRY_ENABLED=false` and no decision is persisted
+- **WHEN** the service runs with `CLAUDE_LB_TELEMETRY_ENABLED=false` and no decision is persisted
 - **THEN** no telemetry network traffic occurs, the consent API reports `source: env`, and the
   settings toggle shows telemetry as disabled with the environment-fallback notice
 
 #### Scenario: Persisted decision wins over the environment
 
-- **GIVEN** the service runs with `CODEX_LB_TELEMETRY_ENABLED=true`
+- **GIVEN** the service runs with `CLAUDE_LB_TELEMETRY_ENABLED=true`
 - **WHEN** the operator disables telemetry in settings
 - **THEN** consent persists as `disabled`, the response reports `source: persisted` and `active: false`
 - **AND** subsequent reads keep reporting the persisted decision while the variable stays set
@@ -118,7 +118,7 @@ disable it. Non-leader replicas MUST NOT duplicate the notice.
 
 - **WHEN** the service starts with consent `undecided`
 - **THEN** exactly one log line names the telemetry documentation location and the
-  `CODEX_LB_TELEMETRY_ENABLED=false` disable path
+  `CLAUDE_LB_TELEMETRY_ENABLED=false` disable path
 
 ### Requirement: Disabled means zero telemetry traffic
 
@@ -250,7 +250,7 @@ are not transmitted while telemetry is inactive.
 
 ### Requirement: Dashboard opt-out notification
 
-The service MUST send one final signed `POST /v1/optout` notification for each dashboard-driven effective consent transition from active to inactive, and MUST complete any required instance registration and activation before sending that notification. The notification MUST use the telemetry instance identity and snapshot signing scheme, MUST be isolated from the settings API response, and MUST NOT be sent when the environment alone makes telemetry inactive (no dashboard decision persisted). Persisting a dashboard decision ends environment control: a persisted decision that flips the effective state from active to inactive MUST send exactly one notice even while `CODEX_LB_TELEMETRY_ENABLED` is set.
+The service MUST send one final signed `POST /v1/optout` notification for each dashboard-driven effective consent transition from active to inactive, and MUST complete any required instance registration and activation before sending that notification. The notification MUST use the telemetry instance identity and snapshot signing scheme, MUST be isolated from the settings API response, and MUST NOT be sent when the environment alone makes telemetry inactive (no dashboard decision persisted). Persisting a dashboard decision ends environment control: a persisted decision that flips the effective state from active to inactive MUST send exactly one notice even while `CLAUDE_LB_TELEMETRY_ENABLED` is set.
 
 #### Scenario: Opt-out fires exactly once per transition
 
@@ -261,16 +261,16 @@ The service MUST send one final signed `POST /v1/optout` notification for each d
 
 #### Scenario: Environment opt-out stays silent
 
-- **WHEN** `CODEX_LB_TELEMETRY_ENABLED=false` makes telemetry inactive while no dashboard decision
+- **WHEN** `CLAUDE_LB_TELEMETRY_ENABLED=false` makes telemetry inactive while no dashboard decision
   is persisted
 - **THEN** no opt-out notification or other telemetry network request is attempted
 
 #### Scenario: Dashboard decision ends environment control
 
-- **GIVEN** `CODEX_LB_TELEMETRY_ENABLED=true` keeps telemetry active while no decision is persisted
+- **GIVEN** `CLAUDE_LB_TELEMETRY_ENABLED=true` keeps telemetry active while no decision is persisted
 - **WHEN** the operator disables telemetry in settings
 - **THEN** exactly one opt-out notification is attempted and telemetry becomes silent
-- **AND** enabling telemetry in settings while `CODEX_LB_TELEMETRY_ENABLED=false` kept it inactive
+- **AND** enabling telemetry in settings while `CLAUDE_LB_TELEMETRY_ENABLED=false` kept it inactive
   attempts no opt-out notification because the transition is inactive to active
 
 #### Scenario: Opt-out failure is isolated

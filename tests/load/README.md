@@ -1,11 +1,11 @@
 # Load testing (`k6`)
 
-This folder contains local/manual load-testing scripts for codex-lb.
+This folder contains local/manual load-testing scripts for claude-lb.
 
 ## Prerequisites
 
 1. Install k6: https://grafana.com/docs/k6/latest/set-up/install-k6/
-2. Run codex-lb locally and expose it on `http://localhost:2455` (or pass a custom `BASE_URL`).
+2. Run claude-lb locally and expose it on `http://localhost:2455` (or pass a custom `BASE_URL`).
 
 ## Start mock upstream server
 

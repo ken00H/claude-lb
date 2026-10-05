@@ -1,10 +1,10 @@
-"""E2E tests: real OpenAI Python SDK against codex-lb /v1/responses via ASGI.
+"""E2E tests: real OpenAI Python SDK against claude-lb /v1/responses via ASGI.
 
 These tests drive the actual ``openai`` package (``client.responses.stream(...)``
 and ``client.responses.create(...)``) through the in-process FastAPI app via
 ``httpx.ASGITransport``. The upstream Codex stream is mocked via
 ``core_stream_responses`` (same pattern as ``test_proxy_flow.py``) so the tests
-cover the entire ``codex-lb`` request/response path — including
+cover the entire ``claude-lb`` request/response path — including
 ``_normalize_public_responses_stream`` — without requiring a real Codex
 account.
 
@@ -71,7 +71,7 @@ def _response_created(resp_id: str, seq: int = 0) -> str:
 
 def _response_completed_empty(resp_id: str, seq: int) -> str:
     """The Codex shape: terminal event with output=[]. Real items come via
-    intermediate output_item.done events (which codex-lb must backfill)."""
+    intermediate output_item.done events (which claude-lb must backfill)."""
     return _sse(
         {
             "type": "response.completed",

@@ -152,7 +152,7 @@ def _routing_strategy(settings: Any) -> RoutingStrategy:
     return cast(Callable[[Any], RoutingStrategy], _service_global("_routing_strategy"))(settings)
 
 
-_FAILED_ACCOUNT_ATTR = "_codex_lb_failed_account"
+_FAILED_ACCOUNT_ATTR = "_claude_lb_failed_account"
 _REQUEST_TRANSPORT_HTTP = "http"
 
 

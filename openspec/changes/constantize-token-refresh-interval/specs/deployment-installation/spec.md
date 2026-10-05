@@ -5,7 +5,7 @@
 Values that are protocol constants or internal tuning details SHALL NOT be
 operator-configurable, and values the dashboard runtime settings own SHALL NOT
 also be operator-configurable through the environment. When a previously
-supported `CODEX_LB_*` setting is removed from the configuration surface, its
+supported `CLAUDE_LB_*` setting is removed from the configuration surface, its
 environment variable MUST be ignored without failing startup, and for at
 least one release after removal, startup MUST emit a single warning log
 listing every removed setting name found in the process environment or the
@@ -21,7 +21,7 @@ The following values MUST be fixed at their previously documented defaults:
 
 - The OAuth protocol identity values (authorization base URL, client id,
   originator, scope, redirect URI, and callback port): they identify
-  codex-lb to OpenAI exactly like the Codex CLI, and changing any of them
+  claude-lb to OpenAI exactly like the Codex CLI, and changing any of them
   breaks login.
 - Background scheduler cadences (quota planner tick, automations poll,
   model registry refresh, sticky-session cleanup).
@@ -64,7 +64,7 @@ The following values MUST be fixed at their previously documented defaults:
 The following values MUST be derived rather than configured:
 
 - The memory-pressure warning threshold: 80% of the configurable reject
-  threshold (`CODEX_LB_MEMORY_REJECT_THRESHOLD_MB`), with both disabled
+  threshold (`CLAUDE_LB_MEMORY_REJECT_THRESHOLD_MB`), with both disabled
   when the reject threshold is 0.
 - The background-task database engine's pool size and max overflow: always
   taken from `database_pool_size` and `database_max_overflow`.
@@ -79,7 +79,7 @@ retention windows (`request_log_retention_days`,
 environment alias (see `data-retention`).
 
 Incident-debugging trace logging SHALL be controlled by the single
-`CODEX_LB_TRACE` comma-separated channel list, whose empty default disables
+`CLAUDE_LB_TRACE` comma-separated channel list, whose empty default disables
 all trace channels. The Codex HTTP-bridge prewarm rollout scoping SHALL NOT
 be operator-configurable: prewarm eligibility MUST be the single
 `http_responses_session_bridge_codex_prewarm_enabled` switch alone, with no
@@ -87,7 +87,7 @@ canary sampling percent and no API-key allow/deny cohort lists. That switch
 MUST be a dashboard runtime setting (a nullable `dashboard_settings` column of
 the same name, NULL on the first-created row and never seeded from the
 environment) whose
-`CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_CODEX_PREWARM_ENABLED` variable is a
+`CLAUDE_LB_HTTP_RESPONSES_SESSION_BRIDGE_CODEX_PREWARM_ENABLED` variable is a
 deprecated alias that applies only while the column is NULL and that joins the
 removed-settings warning list in the next minor release. The bridge MUST
 resolve the switch before it takes a session's prewarm lock, from the dashboard
@@ -111,15 +111,15 @@ operator-configurable settings, and `soft_drain_enabled` and
 enable switches. Those two switches and `circuit_breaker_enabled` MUST be
 dashboard runtime settings (`dashboard_settings` columns of the same name,
 NULL on the first-created row; see `account-routing` and
-`outbound-http-clients`) whose `CODEX_LB_*` variables are deprecated aliases
+`outbound-http-clients`) whose `CLAUDE_LB_*` variables are deprecated aliases
 that apply only while the column is NULL and that join the removed-settings
 warning list in the next minor release.
 
 #### Scenario: Removed env vars are ignored with one startup warning
 
 - **GIVEN** a deployment whose environment still sets removed settings such
-  as `CODEX_LB_REQUEST_LOG_RETENTION_DAYS` and
-  `CODEX_LB_USAGE_REFRESH_INTERVAL_SECONDS`
+  as `CLAUDE_LB_REQUEST_LOG_RETENTION_DAYS` and
+  `CLAUDE_LB_USAGE_REFRESH_INTERVAL_SECONDS`
 - **WHEN** the application starts
 - **THEN** startup succeeds and the dashboard runtime values are used
 - **AND** exactly one warning log lists both removed names without their
@@ -134,37 +134,37 @@ warning list in the next minor release.
 #### Scenario: Names past their warning release are silently inert
 
 - **GIVEN** a deployment whose environment still sets names removed in an
-  earlier batch, such as `CODEX_LB_AUTH_BASE_URL`,
-  `CODEX_LB_QUOTA_PLANNER_TICK_SECONDS`, or
-  `CODEX_LB_DATABASE_POOL_RECYCLE_SECONDS`
+  earlier batch, such as `CLAUDE_LB_AUTH_BASE_URL`,
+  `CLAUDE_LB_QUOTA_PLANNER_TICK_SECONDS`, or
+  `CLAUDE_LB_DATABASE_POOL_RECYCLE_SECONDS`
 - **WHEN** the application starts
 - **THEN** startup succeeds, the fixed built-in values are used
 - **AND** no removed-settings warning is logged for those names
 
 #### Scenario: Trace channels default to off
 
-- **GIVEN** a default install with `CODEX_LB_TRACE` unset
+- **GIVEN** a default install with `CLAUDE_LB_TRACE` unset
 - **WHEN** the proxy serves requests
 - **THEN** no request-shape, payload, service-tier, or upstream trace logs
   are emitted
 
 #### Scenario: A trace channel can be enabled for an incident
 
-- **GIVEN** `CODEX_LB_TRACE=shape,upstream_payload`
+- **GIVEN** `CLAUDE_LB_TRACE=shape,upstream_payload`
 - **WHEN** the proxy serves requests
 - **THEN** request-shape and upstream-payload trace logs are emitted while
   all other trace channels stay off
 
 #### Scenario: Memory warning threshold derives from the reject threshold
 
-- **GIVEN** `CODEX_LB_MEMORY_REJECT_THRESHOLD_MB=100`
+- **GIVEN** `CLAUDE_LB_MEMORY_REJECT_THRESHOLD_MB=100`
 - **WHEN** process RSS reaches 80 MiB
 - **THEN** a memory warning is logged while requests continue to be served
 - **AND** requests are rejected with 503 only once RSS reaches 100 MiB
 
 #### Scenario: Memory guard stays fully disabled by default
 
-- **GIVEN** a default install with `CODEX_LB_MEMORY_REJECT_THRESHOLD_MB`
+- **GIVEN** a default install with `CLAUDE_LB_MEMORY_REJECT_THRESHOLD_MB`
   unset (0)
 - **WHEN** the proxy serves requests under any memory usage
 - **THEN** no memory warning is logged and no request is rejected for
@@ -174,24 +174,24 @@ warning list in the next minor release.
 
 - **GIVEN** a Helm install using the chart's default values
 - **WHEN** the config map is rendered
-- **THEN** it contains no `CODEX_LB_OPENAI_CACHE_AFFINITY_MAX_AGE_SECONDS`,
-  `CODEX_LB_CIRCUIT_BREAKER_FAILURE_THRESHOLD`, or
-  `CODEX_LB_STICKY_SESSION_CLEANUP_INTERVAL_SECONDS` entries
+- **THEN** it contains no `CLAUDE_LB_OPENAI_CACHE_AFFINITY_MAX_AGE_SECONDS`,
+  `CLAUDE_LB_CIRCUIT_BREAKER_FAILURE_THRESHOLD`, or
+  `CLAUDE_LB_STICKY_SESSION_CLEANUP_INTERVAL_SECONDS` entries
 - **AND** startup emits no removed-settings warning
 
 #### Scenario: Dashboard-owned columns seed from their defaults
 
-- **GIVEN** a fresh database and `CODEX_LB_WARMUP_MODEL=gpt-5.4-nano` still
+- **GIVEN** a fresh database and `CLAUDE_LB_WARMUP_MODEL=gpt-5.4-nano` still
   set in the environment
 - **WHEN** the dashboard settings row is created for the first time
 - **THEN** `warmup_model` is `gpt-5.4-mini`, `http_downstream_transport_policy`
   is `smart`, and `openai_cache_affinity_max_age_seconds` is `1800`
-- **AND** the startup warning names `CODEX_LB_WARMUP_MODEL`
+- **AND** the startup warning names `CLAUDE_LB_WARMUP_MODEL`
 
 #### Scenario: Fresh database bootstrap ignores a removed variable
 
 - **GIVEN** an empty database and
-  `CODEX_LB_OPENAI_CACHE_AFFINITY_MAX_AGE_SECONDS=64` still set in the
+  `CLAUDE_LB_OPENAI_CACHE_AFFINITY_MAX_AGE_SECONDS=64` still set in the
   environment
 - **WHEN** the Alembic chain is upgraded to head
 - **THEN** the seeded `dashboard_settings` row has
@@ -200,15 +200,15 @@ warning list in the next minor release.
 
 #### Scenario: Removed names are matched case-insensitively
 
-- **GIVEN** a deployment whose environment sets `codex_lb_warmup_model`
+- **GIVEN** a deployment whose environment sets `claude_lb_warmup_model`
   in lowercase (which the former field honoured)
 - **WHEN** the application starts
-- **THEN** the startup warning lists `CODEX_LB_WARMUP_MODEL`
+- **THEN** the startup warning lists `CLAUDE_LB_WARMUP_MODEL`
 
 #### Scenario: Background pool sizing derives from the main pool settings
 
-- **GIVEN** `CODEX_LB_DATABASE_POOL_SIZE=12` and
-  `CODEX_LB_DATABASE_MAX_OVERFLOW=4` on a PostgreSQL deployment
+- **GIVEN** `CLAUDE_LB_DATABASE_POOL_SIZE=12` and
+  `CLAUDE_LB_DATABASE_MAX_OVERFLOW=4` on a PostgreSQL deployment
 - **WHEN** the application creates the background-task database engine
 - **THEN** the background engine uses pool size 12 and max overflow 4
 - **AND** no separate background pool sizing can be configured
@@ -219,7 +219,7 @@ warning list in the next minor release.
 - **WHEN** an account's primary window usage reaches 85%
 - **THEN** the account enters the draining health tier
 - **AND** a drained account enters the probing tier only after the fixed
-  60-second quiet window, regardless of any `CODEX_LB_PROBE_QUIET_SECONDS`
+  60-second quiet window, regardless of any `CLAUDE_LB_PROBE_QUIET_SECONDS`
   value still present in the environment
 
 #### Scenario: Prewarm stays off by default
@@ -233,7 +233,7 @@ warning list in the next minor release.
 #### Scenario: Prewarm eligibility is the enabled flag alone
 
 - **GIVEN** the Codex session prewarm switch is on, either in the dashboard or
-  through `CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_CODEX_PREWARM_ENABLED=true`
+  through `CLAUDE_LB_HTTP_RESPONSES_SESSION_BRIDGE_CODEX_PREWARM_ENABLED=true`
   while the dashboard value is unset
 - **WHEN** a first-turn Codex bridge request arrives on a session that has
   not been prewarmed
@@ -270,7 +270,7 @@ warning list in the next minor release.
 
 #### Scenario: Prewarm env alias applies only until the dashboard sets a value
 
-- **GIVEN** `CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_CODEX_PREWARM_ENABLED=true`
+- **GIVEN** `CLAUDE_LB_HTTP_RESPONSES_SESSION_BRIDGE_CODEX_PREWARM_ENABLED=true`
   and a `dashboard_settings` row whose
   `http_responses_session_bridge_codex_prewarm_enabled` column is NULL
 - **WHEN** an operator turns the Codex session prewarm off in the dashboard
@@ -282,7 +282,7 @@ warning list in the next minor release.
 
 #### Scenario: Resilience toggle env aliases apply only until the dashboard sets a value
 
-- **GIVEN** `CODEX_LB_CIRCUIT_BREAKER_ENABLED=true` and a `dashboard_settings`
+- **GIVEN** `CLAUDE_LB_CIRCUIT_BREAKER_ENABLED=true` and a `dashboard_settings`
   row whose `circuit_breaker_enabled` column is NULL
 - **WHEN** an operator sets the circuit breaker off in the dashboard
 - **THEN** the next request runs with the breaker off on every replica without
@@ -293,9 +293,9 @@ warning list in the next minor release.
 #### Scenario: Proactive token-refresh window is a fixed constant
 
 - **GIVEN** a deployment that still sets
-  `CODEX_LB_TOKEN_REFRESH_INTERVAL_DAYS=365`
+  `CLAUDE_LB_TOKEN_REFRESH_INTERVAL_DAYS=365`
 - **AND** an active account whose last successful refresh is nine days old
 - **WHEN** the application starts and serves a request for that account
-- **THEN** the startup warning lists `CODEX_LB_TOKEN_REFRESH_INTERVAL_DAYS`
+- **THEN** the startup warning lists `CLAUDE_LB_TOKEN_REFRESH_INTERVAL_DAYS`
 - **AND** the account is proactively refreshed anyway, because the window is
   the fixed eight days

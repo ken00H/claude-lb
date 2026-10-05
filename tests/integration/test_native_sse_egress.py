@@ -122,9 +122,9 @@ async def _serve_http(handler: _HttpHandler) -> AsyncIterator[str]:
 
 @pytest.fixture
 async def native_worker() -> AsyncIterator[SubprocessNativeEgressClient]:
-    helper_value = os.environ.get("CODEX_LB_NATIVE_EGRESS_TEST_BINARY")
+    helper_value = os.environ.get("CLAUDE_LB_NATIVE_EGRESS_TEST_BINARY")
     if not helper_value:
-        pytest.skip("set CODEX_LB_NATIVE_EGRESS_TEST_BINARY to run the native SSE wire probes")
+        pytest.skip("set CLAUDE_LB_NATIVE_EGRESS_TEST_BINARY to run the native SSE wire probes")
     helper = Path(helper_value)
     if not helper.is_file() or not os.access(helper, os.X_OK):
         pytest.skip(f"native helper is unavailable: {helper}")
@@ -209,7 +209,7 @@ async def test_buffered_native_burst_preserves_responses_result(
 ) -> None:
     monkeypatch.setattr(native_module, "_NATIVE_STREAM_QUEUE_LIMIT", 64)
     handshake = json.loads(
-        (Path(__file__).resolve().parents[2] / "crates/codex-lb-protocol/tests/fixtures/handshake-v1.json").read_text()
+        (Path(__file__).resolve().parents[2] / "crates/claude-lb-protocol/tests/fixtures/handshake-v1.json").read_text()
     )
     terminal = {"type": "response.completed", "response": {"id": "burst-result", "output": []}}
     expected = [{"type": "response.output_text.delta", "delta": str(index)} for index in range(256)] + [terminal]
@@ -845,7 +845,7 @@ _COMPACT_EVENTS = (
 )
 
 _COMPACT_CASES = json.loads(
-    (Path(__file__).resolve().parents[2] / "crates/codex-lb-responses/tests/fixtures/compact-v1.json").read_text()
+    (Path(__file__).resolve().parents[2] / "crates/claude-lb-responses/tests/fixtures/compact-v1.json").read_text()
 )
 
 
@@ -1343,7 +1343,7 @@ async def test_native_compact_routed_fallback_keeps_metadata_and_never_replays_a
 
 
 _STREAM_CASES = json.loads(
-    (Path(__file__).resolve().parents[2] / "crates/codex-lb-responses/tests/fixtures/stream-v1.json").read_text()
+    (Path(__file__).resolve().parents[2] / "crates/claude-lb-responses/tests/fixtures/stream-v1.json").read_text()
 )
 
 

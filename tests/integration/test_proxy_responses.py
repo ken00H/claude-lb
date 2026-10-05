@@ -1910,7 +1910,7 @@ async def test_http_previous_response_owner_is_ready_before_persistence(
     site = web.TCPSite(runner, "127.0.0.1", 0)
     await site.start()
     origin_port = runner.addresses[0][1]
-    monkeypatch.setenv("CODEX_LB_UPSTREAM_BASE_URL", f"http://127.0.0.1:{origin_port}")
+    monkeypatch.setenv("CLAUDE_LB_UPSTREAM_BASE_URL", f"http://127.0.0.1:{origin_port}")
     monkeypatch.setattr(proxy_client_module, "MAX_SSE_EVENT_BYTES", 1024)
     get_settings.cache_clear()
     monkeypatch.setattr(proxy_module, "get_settings", get_settings)

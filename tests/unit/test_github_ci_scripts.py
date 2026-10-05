@@ -92,8 +92,8 @@ def test_detect_changed_areas_falls_back_to_full_suite_after_github_outage(monke
     [
         "Cargo.toml",
         "Cargo.lock",
-        "crates/codex-lb-protocol/src/lib.rs",
-        "crates/codex-lb-protocol/tests/fixtures/handshake-v1.json",
+        "crates/claude-lb-protocol/src/lib.rs",
+        "crates/claude-lb-protocol/tests/fixtures/handshake-v1.json",
         "Dockerfile",
         "Dockerfile.distroless",
     ],

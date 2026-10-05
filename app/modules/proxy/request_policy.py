@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
 # one of these we transparently rewrite it to a value the resolved model
 # advertises in its ``supported_reasoning_levels`` so the request does not
 # hang. ``minimal`` is a valid value on the OpenAI Platform Responses API for
-# GPT-5 family models, but the ChatGPT backend codex-lb proxies to does not
+# GPT-5 family models, but the ChatGPT backend claude-lb proxies to does not
 # accept it as of 2026-04. See https://github.com/Soju06/codex-lb/issues/493
 _UNSUPPORTED_UPSTREAM_REASONING_EFFORTS: frozenset[str] = frozenset({"minimal"})
 _DEFAULT_REASONING_EFFORT_FALLBACK = "low"
@@ -96,7 +96,7 @@ _MODEL_ALIAS_TOKENS: frozenset[str] = frozenset(
     }
 )
 
-# Service tier values codex-lb accepts at the API-key surface but that the
+# Service tier values claude-lb accepts at the API-key surface but that the
 # ChatGPT/Codex backend rejects with ``Unsupported service_tier: <value>``.
 # Semantically both ``auto`` and ``default`` mean "let upstream pick" -- the
 # same thing as omitting the field entirely -- so when an enforced API-key
@@ -110,7 +110,7 @@ def resolve_wire_reasoning_effort(effort: str) -> str:
     """Return the wire-safe value for a client-plane reasoning effort.
 
     The reference Codex client rewrites client-plane efforts (``ultra`` ->
-    ``max``) before building the upstream Responses request; every codex-lb
+    ``max``) before building the upstream Responses request; every claude-lb
     code path that builds an upstream payload directly (proxy enforcement,
     automation compact pings) applies the same aliasing so the upstream
     backend never sees a client-plane literal. Unknown values pass through
@@ -203,7 +203,7 @@ def _materialize_provider_reasoning_effort(
     else:
         payload.reasoning.effort = effort
     if isinstance(payload, ResponsesRequest):
-        payload._codex_lb_provider_reasoning_effort_materialized = True
+        payload._claude_lb_provider_reasoning_effort_materialized = True
 
 
 def _client_reasoning_effort_from_model(model: str | None) -> str | None:
@@ -278,8 +278,8 @@ def apply_api_key_enforcement(
     equal the enforced value (including after ``fast`` canonicalizes to
     ``priority``).
     """
-    client_reasoning_effort = payload._codex_lb_client_reasoning_effort or _client_reasoning_effort(payload)
-    payload._codex_lb_client_reasoning_effort = client_reasoning_effort
+    client_reasoning_effort = payload._claude_lb_client_reasoning_effort or _client_reasoning_effort(payload)
+    payload._claude_lb_client_reasoning_effort = client_reasoning_effort
     provider_reasoning_effort = _client_reasoning_effort_from_provider_aliases(payload)
     normalize_upstream_model_alias(payload)
 
@@ -303,7 +303,7 @@ def apply_api_key_enforcement(
         payload.model = api_key.enforced_model
         if enforced_model_reasoning_effort is not None:
             client_reasoning_effort = enforced_model_reasoning_effort
-            payload._codex_lb_client_reasoning_effort = client_reasoning_effort
+            payload._claude_lb_client_reasoning_effort = client_reasoning_effort
         normalize_upstream_model_alias(payload)
         if (
             responses_input_uses_lite_tools(payload.input)
@@ -676,7 +676,7 @@ def normalize_unsupported_reasoning_effort(
 ) -> str | None:
     """Rewrite ``reasoning.effort`` values the upstream backend rejects.
 
-    Some efforts that codex-lb accepts at the API surface (notably
+    Some efforts that claude-lb accepts at the API surface (notably
     ``"minimal"``) are silently dropped by the ChatGPT/Codex WebSocket
     backend, which causes the response stream to hang with no completion.
     For those values we map to a value the resolved model actually supports
@@ -977,7 +977,7 @@ def enforce_strict_function_tools_format(
     surfaced error is a generic ``upstream_rejected_input`` 502, which
     well-behaved retry loops misclassify as transient. Real OpenAI
     returns a deterministic ``400 invalid_function_parameters`` for the
-    same payload, so codex-lb pre-validates here.
+    same payload, so claude-lb pre-validates here.
 
     ``param_template`` controls how the rejected parameter is named in
     the error envelope: native ``/v1/responses`` callers see

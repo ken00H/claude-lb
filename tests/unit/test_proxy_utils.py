@@ -2370,12 +2370,12 @@ def test_filter_inbound_headers_strips_internal_responses_lite_header():
 def test_filter_inbound_headers_strips_internal_capability_header():
     filtered = filter_inbound_headers(
         {
-            "X-Codex-LB-Required-Capability": "trusted_cyber",
+            "X-Claude-LB-Required-Capability": "trusted_cyber",
             "X-Custom": "preserved",
         }
     )
 
-    assert "X-Codex-LB-Required-Capability" not in filtered
+    assert "X-Claude-LB-Required-Capability" not in filtered
     assert filtered["X-Custom"] == "preserved"
 
 
@@ -9930,7 +9930,7 @@ async def test_native_codex_stream_preserves_missing_terminal_without_synthesis(
 async def test_native_codex_stream_suppresses_marked_synthetic_transport_terminal() -> None:
     async def synthetic_failure_stream() -> AsyncIterator[str]:
         yield (
-            'data: {"type":"response.failed","_codex_lb_synthetic_transport_failure":true,'
+            'data: {"type":"response.failed","_claude_lb_synthetic_transport_failure":true,'
             '"response":{"status":"failed","error":{"code":"upstream_request_timeout",'
             '"message":"Proxy request budget exhausted"}}}\n\n'
         )
@@ -9951,7 +9951,7 @@ async def test_native_codex_stream_suppresses_marked_synthetic_transport_termina
 async def test_native_codex_stream_suppresses_marked_incomplete_terminal_as_eof() -> None:
     async def synthetic_failure_stream() -> AsyncIterator[str]:
         yield (
-            'data: {"type":"response.failed","_codex_lb_synthetic_transport_failure":true,'
+            'data: {"type":"response.failed","_claude_lb_synthetic_transport_failure":true,'
             '"response":{"status":"failed","error":{"code":"stream_incomplete",'
             '"message":"Upstream closed stream without completion"}}}\n\n'
         )
@@ -9972,7 +9972,7 @@ async def test_native_codex_stream_suppresses_marked_incomplete_terminal_as_eof(
 async def test_non_native_stream_emits_synthetic_transport_terminal_without_internal_marker() -> None:
     async def synthetic_failure_stream() -> AsyncIterator[str]:
         yield (
-            'data: {"type":"response.failed","_codex_lb_synthetic_transport_failure":true,'
+            'data: {"type":"response.failed","_claude_lb_synthetic_transport_failure":true,'
             '"response":{"status":"failed","error":{"code":"upstream_request_timeout",'
             '"message":"Proxy request budget exhausted"}}}\n\n'
         )
@@ -9987,7 +9987,7 @@ async def test_non_native_stream_emits_synthetic_transport_terminal_without_inte
 
     assert events[0] is not None
     assert events[0]["type"] == "response.failed"
-    assert "_codex_lb_synthetic_transport_failure" not in events[0]
+    assert "_claude_lb_synthetic_transport_failure" not in events[0]
 
 
 @pytest.mark.asyncio
@@ -10056,7 +10056,7 @@ async def test_native_codex_stream_surfaces_local_pre_dispatch_refusal_as_unmark
     # that kept the terminal but dropped the retry instruction would leave the
     # client with the same dead end #2364 reported.
     assert error["message"] == "The previous response anchor was rejected upstream; retry the request."
-    assert "_codex_lb_synthetic_transport_failure" not in events[0]
+    assert "_claude_lb_synthetic_transport_failure" not in events[0]
 
     async def unflagged_stream() -> AsyncIterator[str]:
         raise _refusal(local_pre_dispatch_refusal=False)
@@ -11348,7 +11348,7 @@ async def test_open_upstream_websocket_holds_half_open_probe_until_lifecycle_fin
     )
 
     assert cb.release_calls == 0
-    assert getattr(websocket, "_codex_lb_half_open_probe_held", False) is True
+    assert getattr(websocket, "_claude_lb_half_open_probe_held", False) is True
 
 
 @pytest.mark.asyncio
@@ -21398,7 +21398,7 @@ async def test_stream_responses_retries_security_work_warning_on_authorized_acco
     assert len(chunks) == 2
     warning = json.loads(chunks[0].split("data: ", 1)[1])
     event = json.loads(chunks[1].split("data: ", 1)[1])
-    assert warning["type"] == "codex_lb.warning"
+    assert warning["type"] == "claude_lb.warning"
     assert warning["warning"]["code"] == "security_work_authorization_required"
     assert warning["warning"]["action"] == "retry_security_work_authorized"
     assert event["type"] == "response.completed"
@@ -21614,10 +21614,10 @@ async def test_stream_responses_treats_missing_security_work_pool_as_optional(mo
     retry_warning = json.loads(chunks[0].split("data: ", 1)[1])
     missing_pool_warning = json.loads(chunks[1].split("data: ", 1)[1])
     event = json.loads(chunks[2].split("data: ", 1)[1])
-    assert retry_warning["type"] == "codex_lb.warning"
+    assert retry_warning["type"] == "claude_lb.warning"
     assert retry_warning["warning"]["code"] == "security_work_authorization_required"
     assert retry_warning["warning"]["action"] == "retry_security_work_authorized"
-    assert missing_pool_warning["type"] == "codex_lb.warning"
+    assert missing_pool_warning["type"] == "claude_lb.warning"
     assert missing_pool_warning["warning"]["code"] == "no_security_work_authorized_accounts"
     assert missing_pool_warning["warning"]["action"] == "continue_normal_selection"
     assert event["type"] == "response.completed"
@@ -22029,7 +22029,7 @@ async def test_http_bridge_retries_security_work_warning_on_authorized_account(m
     warning_block = await request_state.event_queue.get()
     assert warning_block is not None
     warning = json.loads(warning_block.split("data: ", 1)[1])
-    assert warning["type"] == "codex_lb.warning"
+    assert warning["type"] == "claude_lb.warning"
     assert warning["warning"]["code"] == "security_work_authorization_required"
     assert warning["warning"]["action"] == "retry_security_work_authorized"
     assert request_state.event_queue.empty()
@@ -23628,7 +23628,7 @@ async def test_http_bridge_does_not_replay_security_work_warning_after_response_
     warning_block = await request_state.event_queue.get()
     assert warning_block is not None
     warning = json.loads(warning_block.split("data: ", 1)[1])
-    assert warning["type"] == "codex_lb.warning"
+    assert warning["type"] == "claude_lb.warning"
     assert warning["warning"]["code"] == "security_work_authorization_required"
     assert warning["warning"]["action"] == "forward_original_security_work_error"
     forwarded = await request_state.event_queue.get()
@@ -51112,7 +51112,7 @@ async def test_retry_http_bridge_precreated_request_keeps_operation_id_on_owner(
         "type": "response.create",
         "model": "gpt-5.6-sol",
         "input": "portable user input",
-        "client_metadata": {"codex_lb_operation_id": "op_bridge_owner"},
+        "client_metadata": {"claude_lb_operation_id": "op_bridge_owner"},
     }
 
 

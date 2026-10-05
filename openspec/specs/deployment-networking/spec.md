@@ -17,12 +17,12 @@ When the Helm chart enables `networkPolicy`, it MUST NOT open the main HTTP ingr
 
 ### Requirement: Stock Docker networking explains network switching
 
-The documented portable standalone Docker deployment MUST attach codex-lb to a user-defined bridge network, and stock Compose deployments MUST declare a user-defined default bridge. The documentation MUST state that Docker's embedded resolver can retain stale external forwarding servers across a host network change. It MUST provide a Linux host-network launch option for operators whose host exposes a stable resolver address, and MUST state that a direct DHCP-provided resolver can still become stale in host-network mode. Stock configuration MUST NOT hard-code a public recursive DNS server.
+The documented portable standalone Docker deployment MUST attach claude-lb to a user-defined bridge network, and stock Compose deployments MUST declare a user-defined default bridge. The documentation MUST state that Docker's embedded resolver can retain stale external forwarding servers across a host network change. It MUST provide a Linux host-network launch option for operators whose host exposes a stable resolver address, and MUST state that a direct DHCP-provided resolver can still become stale in host-network mode. Stock configuration MUST NOT hard-code a public recursive DNS server.
 
 #### Scenario: Standalone quick start uses a user-defined bridge
 
 - **WHEN** an operator follows the documented standalone Docker quick start
-- **THEN** the instructions create the codex-lb bridge idempotently
+- **THEN** the instructions create the claude-lb bridge idempotently
 - **AND** start the container with that bridge selected by `--network`
 
 #### Scenario: Compose uses a user-defined default bridge
@@ -103,7 +103,7 @@ The default responses-ingress sticky mechanism MUST NOT rely on `nginx.ingress.k
 
 The Helm chart MUST allow operators to configure an ordered list of HTTPRoute
 rules containing Gateway API `matches` and `filters`. The chart MUST attach the
-codex-lb Service backend to every configured rule. The feature MUST be optional
+claude-lb Service backend to every configured rule. The feature MUST be optional
 and preserve the existing backend-only catch-all rule when no rules are set.
 
 #### Scenario: Paths use different Gateway filters
@@ -116,7 +116,7 @@ and preserve the existing backend-only catch-all rule when no rules are set.
 - **WHEN** the chart renders its HTTPRoute
 - **THEN** both rules retain their configured matches in order
 - **AND** only the catch-all rule contains the configured filter
-- **AND** both rules target the chart-managed codex-lb Service and port
+- **AND** both rules target the chart-managed claude-lb Service and port
 - **AND** WHAM identity discovery, file-upload, and Codex usage/reset-credit
   paths retain their own caller-authentication contracts instead of traversing
   the dashboard filter
@@ -127,7 +127,7 @@ and preserve the existing backend-only catch-all rule when no rules are set.
 - **AND** `gatewayApi.rules` is empty
 - **WHEN** the chart renders its HTTPRoute
 - **THEN** it contains one backend-only rule targeting the chart-managed
-  codex-lb Service and port
+  claude-lb Service and port
 
 ### Requirement: Helm chart can create an application-specific Gateway
 

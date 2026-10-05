@@ -76,7 +76,7 @@ download_tlc() {
 # seconds because TLC stops at the first counterexample; the full model has no
 # counterexample to stop at and its state space is far larger than a reviewer
 # will sit through.  0 disables the budget and runs to exhaustion.
-FULL_TIMEOUT_SECONDS="${CODEX_LB_TLC_FULL_TIMEOUT_SECONDS:-1800}"
+FULL_TIMEOUT_SECONDS="${CLAUDE_LB_TLC_FULL_TIMEOUT_SECONDS:-1800}"
 
 run_tlc() {
   local cfg="$1"
@@ -161,7 +161,7 @@ expect_full_pass() {
     fi
     echo "PARTIAL full: no violation through depth ${depth:-?} after ${FULL_TIMEOUT_SECONDS}s" \
       "(distinct states=${distinct}); the state space was NOT exhausted."
-    echo "  Set CODEX_LB_TLC_FULL_TIMEOUT_SECONDS=0 to run the full model to exhaustion."
+    echo "  Set CLAUDE_LB_TLC_FULL_TIMEOUT_SECONDS=0 to run the full model to exhaustion."
     return
   fi
 

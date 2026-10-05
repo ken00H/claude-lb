@@ -15,7 +15,7 @@ from app.modules.telemetry.snapshot import TelemetrySnapshotBuilder
 logger = logging.getLogger(__name__)
 
 TELEMETRY_INTERVAL_SECONDS = 24 * 60 * 60
-TELEMETRY_FIELDS_DOCUMENTATION = "https://soju06.github.io/codex-lb/telemetry/"
+TELEMETRY_FIELDS_DOCUMENTATION = "https://soju06.github.io/claude-lb/telemetry/"
 
 
 @dataclass(slots=True)
@@ -65,7 +65,7 @@ class TelemetryScheduler:
                     if log_undecided_notice and consent.state == "undecided" and consent.source == "default":
                         logger.info(
                             "Anonymous telemetry is active; collected fields: %s; disable with "
-                            "CODEX_LB_TELEMETRY_ENABLED=false",
+                            "CLAUDE_LB_TELEMETRY_ENABLED=false",
                             TELEMETRY_FIELDS_DOCUMENTATION,
                         )
                     if not consent.active:

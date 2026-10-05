@@ -873,7 +873,7 @@ sections MUST remain visible regardless of line-chart selection.
 ### Requirement: Reports safely persists visibility
 
 Reports MUST store the selected chart IDs as a JSON array under the exact
-localStorage key `codex-lb-reports-visible-charts`. The only known chart IDs
+localStorage key `claude-lb-reports-visible-charts`. The only known chart IDs
 MUST be the following five, in this canonical order: `costByDay`,
 `tokensByDay`, `timeToFirstToken`, `tokensPerSecond`, `queueWait`. This
 canonical order MUST be used for normalization, persistence, and rendering.
@@ -1591,13 +1591,13 @@ The dashboard SHALL render a visible sort icon on every sortable `/reports` `Dai
 
 ### Requirement: Dashboard supports runtime locale selection
 
-The dashboard SHALL load translations through `i18next` + `react-i18next`, support at least `en` (default) and `zh-CN` locales, persist the user's selection in `localStorage` under the key `codex-lb-language`, and apply the active locale to the document's `lang` attribute. When no persisted preference exists, the dashboard SHALL detect the browser language and use `zh-CN` for any `zh*` tag and `en` otherwise.
+The dashboard SHALL load translations through `i18next` + `react-i18next`, support at least `en` (default) and `zh-CN` locales, persist the user's selection in `localStorage` under the key `claude-lb-language`, and apply the active locale to the document's `lang` attribute. When no persisted preference exists, the dashboard SHALL detect the browser language and use `zh-CN` for any `zh*` tag and `en` otherwise.
 
 #### Scenario: First visit with a Chinese browser
 
 - **WHEN** a user opens the dashboard for the first time with `navigator.language = "zh-CN"` and no persisted preference
 - **THEN** the in-scope surface (header, status-bar labels, auth screens) renders in Simplified Chinese
-- **AND** `localStorage` contains `codex-lb-language=zh-CN`
+- **AND** `localStorage` contains `claude-lb-language=zh-CN`
 
 #### Scenario: First visit with an unsupported browser language
 
@@ -1609,7 +1609,7 @@ The dashboard SHALL load translations through `i18next` + `react-i18next`, suppo
 
 - **WHEN** the user activates the language switcher in the app header and selects `简体中文`
 - **THEN** the in-scope surface re-renders in Simplified Chinese without a full page reload
-- **AND** `localStorage.codex-lb-language` is set to `zh-CN`
+- **AND** `localStorage.claude-lb-language` is set to `zh-CN`
 - **AND** `document.documentElement.lang` is set to `zh-CN`
 
 #### Scenario: Selection persists across reloads
@@ -1808,7 +1808,7 @@ compact remaining-time label.
 - **WHEN** the operator clicks the Usage panel Reset action
 - **AND** confirms the dialog
 - **THEN** the dashboard sends a usage reset consume request for the selected account
-- **AND** codex-lb does not send a model probe request
+- **AND** claude-lb does not send a model probe request
 - **AND** account-related usage, trend, reset-credit, and dashboard summary
   queries are invalidated after success
 - **AND** no reset-credit availability query is configured with a permanent
@@ -2538,7 +2538,7 @@ language switcher SHALL let users choose Korean without reloading the page.
 
 - **WHEN** a user opens the dashboard for the first time with `navigator.language = "ko-KR"` and no persisted preference
 - **THEN** the dashboard renders the translated in-scope surface in Korean
-- **AND** `localStorage` contains `codex-lb-language=ko`
+- **AND** `localStorage` contains `claude-lb-language=ko`
 - **AND** `document.documentElement.lang` is set to `ko`
 
 #### Scenario: User toggles Korean
@@ -2712,7 +2712,7 @@ content. Cached overview data SHALL remain visible on later refetch errors.
 ### Requirement: App header brand links to dashboard
 
 The app header brand area SHALL render a `<Link to="/dashboard">` wrapping the
-logo and "Codex LB" text so that clicking the brand navigates back to the
+logo and "Claude LB" text so that clicking the brand navigates back to the
 dashboard home page. The link SHALL preserve the existing visual layout (logo
 size, gradient background, text styling) and SHALL include keyboard
 focus-visible ring styling matching the project's existing interactive-element
@@ -2720,7 +2720,7 @@ conventions.
 
 #### Scenario: Brand click navigates to dashboard
 
-- **WHEN** an operator clicks the header brand area (logo or "Codex LB" text)
+- **WHEN** an operator clicks the header brand area (logo or "Claude LB" text)
 - **THEN** the SPA navigates to `/dashboard`
 
 #### Scenario: Brand link is keyboard-accessible
@@ -2732,7 +2732,7 @@ conventions.
 #### Scenario: Brand link preserves visual appearance
 
 - **WHEN** the header renders
-- **THEN** the logo and "Codex LB" text appear visually identical to the prior
+- **THEN** the logo and "Claude LB" text appear visually identical to the prior
   non-interactive `<div>` layout
 
 ### Requirement: Dashboard metrics expose conversation-bearing requests

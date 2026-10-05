@@ -14,11 +14,11 @@ from app.db.sqlite_utils import sqlite_db_path_from_url
 
 logger = logging.getLogger(__name__)
 
-MIGRATION_LOCK_KEY = "codex_lb:migrations"
+MIGRATION_LOCK_KEY = "claude_lb:migrations"
 SQLITE_MIGRATION_LOCK_SUFFIX = ".migrate-lock"
 _POLL_INTERVAL_SECONDS = 2.0
 _WAIT_LOG_INTERVAL_SECONDS = 10.0
-_TIMEOUT_SETTING_HINT = "database_migration_lock_timeout_seconds (CODEX_LB_DATABASE_MIGRATION_LOCK_TIMEOUT_SECONDS)"
+_TIMEOUT_SETTING_HINT = "database_migration_lock_timeout_seconds (CLAUDE_LB_DATABASE_MIGRATION_LOCK_TIMEOUT_SECONDS)"
 
 
 def sqlite_migration_lock_path(db_path: Path) -> Path:

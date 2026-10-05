@@ -9,7 +9,7 @@
 
 ## 2. Chart Default
 
-- [x] 2.1 Change only `deploy/helm/codex-lb/values.yaml`
+- [x] 2.1 Change only `deploy/helm/claude-lb/values.yaml`
       `config.backpressureMaxConcurrentRequests` from `200` to `0`.
 
 ## 3. Verification

@@ -29,13 +29,13 @@ from app.db.models import DashboardSettings
 REPO_ROOT = Path(__file__).resolve().parents[1]
 OUTPUT_PATH = REPO_ROOT / "docs" / "reference" / "settings.md"
 
-ENV_PREFIX = "CODEX_LB_"
+ENV_PREFIX = "CLAUDE_LB_"
 
 # Defaults computed from the runtime environment (home directory, container
 # detection, hostname, outbound proxy env vars). Rendered symbolically so the
 # generated page is machine-independent and deterministic.
 _SYMBOLIC_DEFAULTS: dict[str, str] = {
-    "data_dir": "`~/.codex-lb` (host) / `/var/lib/codex-lb` (container)",
+    "data_dir": "`~/.claude-lb` (host) / `/var/lib/claude-lb` (container)",
     "database_url": "`sqlite+aiosqlite:///<data_dir>/store.db`",
     "encryption_key_file": "`<data_dir>/encryption.key`",
     "conversation_archive_dir": "`<data_dir>/conversation-archive`",
@@ -99,14 +99,14 @@ _EXACT_SECTIONS: dict[str, str] = {
     "forwarded_allow_ips": "Firewall",
 }
 
-# Process-level environment variables codex-lb honors that are NOT Settings
+# Process-level environment variables claude-lb honors that are NOT Settings
 # fields: third-party or POSIX conventions read by the launcher, libraries, or
 # frozen Alembic migrations. Listed so operators can find them and so the
 # ``os.environ``-outside-Settings lint allowlist has a documented source.
 _PROCESS_ENV_CONVENTIONS: tuple[tuple[str, str], ...] = (
     (
         "`HOST`, `PORT`, `SSL_CERTFILE`, `SSL_KEYFILE`, `UVICORN_TIMEOUT_KEEP_ALIVE`, `UVICORN_WS_MAX_SIZE`",
-        "Uvicorn launch defaults read once by the `codex-lb` CLI (`app/cli.py`); host runs only.",
+        "Uvicorn launch defaults read once by the `claude-lb` CLI (`app/cli.py`); host runs only.",
     ),
     (
         "`HTTP_PROXY`, `HTTPS_PROXY`, `ALL_PROXY`, `WS_PROXY`, `NO_PROXY` (and lowercase)",
@@ -135,14 +135,14 @@ _PROCESS_ENV_CONVENTIONS: tuple[tuple[str, str], ...] = (
     ),
     (
         "`CODEX_HOME`, `USERPROFILE`, `WSL_DISTRO_NAME`",
-        "Codex CLI home discovery for the `codex-lb codex-sessions retag` tool.",
+        "Codex CLI home discovery for the `claude-lb codex-sessions retag` tool.",
     ),
     (
-        "`CODEX_LB_TEST_DATABASE_URL`",
+        "`CLAUDE_LB_TEST_DATABASE_URL`",
         "Test-suite/CI only: overrides the database used by the test session factory.",
     ),
     (
-        "`CODEX_LB_ADDITIONAL_QUOTA_REGISTRY_FILE` (inside `app/db/alembic/versions/**` only)",
+        "`CLAUDE_LB_ADDITIONAL_QUOTA_REGISTRY_FILE` (inside `app/db/alembic/versions/**` only)",
         "Frozen Alembic migrations read the process environment directly because migrations must not "
         "depend on `Settings`; the live setting of the same name is documented in the tables below.",
     ),
@@ -288,7 +288,7 @@ def render_settings_reference() -> str:
         "`tests/unit/test_settings_reference.py` fails when this page drifts from",
         "`app/core/config/settings.py`.",
         "",
-        f"codex-lb currently exposes {len(fields)} settings. Every setting is an environment",
+        f"claude-lb currently exposes {len(fields)} settings. Every setting is an environment",
         f"variable, normally with the `{ENV_PREFIX}` prefix (process environment or `.env` /",
         "`.env.local` next to the process); aliased settings list every accepted name.",
         "All defaults work with zero configuration —",
@@ -338,7 +338,7 @@ def render_settings_reference() -> str:
         "",
         "## Process-level environment variables (not settings)",
         "",
-        "These are third-party or POSIX conventions codex-lb honors without",
+        "These are third-party or POSIX conventions claude-lb honors without",
         "making them settings. They are read by their owning launcher, library, or",
         "frozen migration rather than through `Settings`. Together with `Settings`",
         "itself this table is the allowlist of environment reads under `app/`;",

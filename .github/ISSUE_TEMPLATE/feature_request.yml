@@ -11,7 +11,7 @@ body:
         - For open-ended ideas, please consider opening a
           [Discussion](https://github.com/Soju06/codex-lb/discussions) first to
           collect feedback. Use this form when you have a concrete, scoped proposal.
-        - codex-lb uses **OpenSpec-first** development. Significant behavior
+        - claude-lb uses **OpenSpec-first** development. Significant behavior
           changes will eventually live as an `openspec/changes/<change>/`
           proposal — you don't need to write the spec yourself, but think about
           *what changes* in observable behavior, not just *how* to implement it.
@@ -32,7 +32,7 @@ body:
       label: Problem / motivation
       description: What user-facing pain point or limitation does this address?
       placeholder: |
-        e.g. "When a ChatGPT account hits its 5h quota, codex-lb continues to
+        e.g. "When a ChatGPT account hits its 5h quota, claude-lb continues to
         route to it for ~30s before marking it cooled, causing intermittent 429s
         on user-visible requests."
     validations:

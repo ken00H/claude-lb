@@ -49,6 +49,6 @@ leaves in place when its fetch fails.
 - With the pin cleared, an image request during an upstream WebSocket outage now
   falls into the existing `recent_ws_failure` branch and is degraded to HTTP
   there, with the bypass counter and log that branch already emits.
-- `codex_lb_upstream_transport_decisions_total` will show
+- `claude_lb_upstream_transport_decisions_total` will show
   `upstream_transport="http",policy="explicit"` falling and `"auto"` rising for
   image traffic; `http_bridge_routing{reason="image"}` stays flat.

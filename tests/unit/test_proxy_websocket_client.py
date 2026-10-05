@@ -2297,7 +2297,7 @@ async def test_live_connector_replaces_identity_and_preserves_frameless_metadata
     websocket = await proxy_websocket_module.connect_live_websocket(
         "rtc_example",
         {
-            "Authorization": "Bearer codex-lb-key",
+            "Authorization": "Bearer claude-lb-key",
             "ChatGPT-Account-ID": "wrong-account",
             "User-Agent": "frameless-desktop/1.0",
             "OpenAI-Alpha": "quicksilver=v2",
@@ -2332,7 +2332,7 @@ async def test_live_connector_replaces_identity_and_preserves_frameless_metadata
     assert lowered["x-openai-internal-codex-residency"] == "us"
     assert lowered["openai-beta"] == "realtime=v1"
     assert "sec-websocket-key" not in lowered
-    assert "codex-lb-key" not in str(first_call)
+    assert "claude-lb-key" not in str(first_call)
     assert first_call.kwargs["user_agent_header"] == "frameless-desktop/1.0"
 
     responses_only_websocket = await proxy_websocket_module.connect_live_websocket(

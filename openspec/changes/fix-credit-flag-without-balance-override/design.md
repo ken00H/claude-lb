@@ -1,6 +1,6 @@
 ## Context
 
-The existing usage-refresh policy allowed any snapshot with `credits_has = true` to override an exhausted secondary or weekly window. A live Team account showed `secondary_window.used_percent = 100`, `credits.has_credits = true`, `credits.balance = null`, and `credits.unlimited = false`; codex-lb displayed it as `active` and the relative-availability balancer continued to select it with `remaining_credits=0.00`.
+The existing usage-refresh policy allowed any snapshot with `credits_has = true` to override an exhausted secondary or weekly window. A live Team account showed `secondary_window.used_percent = 100`, `credits.has_credits = true`, `credits.balance = null`, and `credits.unlimited = false`; claude-lb displayed it as `active` and the relative-availability balancer continued to select it with `remaining_credits=0.00`.
 
 ## Goals / Non-Goals
 
@@ -12,7 +12,7 @@ The existing usage-refresh policy allowed any snapshot with `credits_has = true`
 
 **Non-Goals:**
 
-- Do not change usage payload parsing unless upstream sends a numeric balance that codex-lb drops.
+- Do not change usage payload parsing unless upstream sends a numeric balance that claude-lb drops.
 - Do not reclassify unrelated upstream request-shape errors as quota errors without raw quota evidence.
 - Do not add new settings, dashboard controls, migrations, or deploy mechanics.
 - Do not change the account-summary rate-limited recovery trust gate (`mappers._has_credit_override`); it stays on its existing predicate as a separate concern.

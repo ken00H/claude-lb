@@ -983,7 +983,7 @@ def create_app() -> FastAPI:
     settings = get_settings()
     configure_memory_monitor(reject_threshold_mb=settings.memory_reject_threshold_mb)
     app = FastAPI(
-        title="codex-lb",
+        title="claude-lb",
         version="0.1.0",
         lifespan=lifespan,
         swagger_ui_parameters={"persistAuthorization": True},
@@ -991,7 +991,7 @@ def create_app() -> FastAPI:
     if settings.otel_enabled:
         from app.core.tracing.otel import init_tracing
 
-        init_tracing(service_name="codex-lb", endpoint=settings.otel_exporter_endpoint, app=app)
+        init_tracing(service_name="claude-lb", endpoint=settings.otel_exporter_endpoint, app=app)
 
     # Innermost of the app-level middlewares: binds the dashboard-managed
     # settings overrides (C2-1 timeouts) for the request/socket once the

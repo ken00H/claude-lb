@@ -41,7 +41,7 @@ _CodexSessionSource = Literal["session_header", "thread_header", "turn_state"]
 # text keys can safely retain LF. This sentinel makes the internal namespace
 # structurally unreachable by every legacy raw header, even if its digest is
 # disclosed.
-_CODEX_SELECTION_KEY_PREFIX = "\ncodex-lb-affinity-v1"
+_CODEX_SELECTION_KEY_PREFIX = "\nclaude-lb-affinity-v1"
 
 
 class _AffinitySelectionKwargs(TypedDict):
@@ -664,7 +664,7 @@ _SYNTHESIZED_TURN_STATE_PATTERN = re.compile(r"^(?:http_)?turn_[0-9a-f]{32}$")
 
 
 def _is_synthesized_turn_state(value: str) -> bool:
-    """True when ``value`` matches a turn-state synthesized by codex-lb itself.
+    """True when ``value`` matches a turn-state synthesized by claude-lb itself.
 
     Used by the file-pin resolver to distinguish a client-supplied
     continuation marker from a synthesizer-generated placeholder so

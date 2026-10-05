@@ -855,8 +855,8 @@ async def _create_profile_authorization(name: str) -> str:
 @pytest.mark.parametrize(
     ("profile_name", "expected_provider_id", "expected_security_requirement"),
     [
-        (None, "codex-lb", False),
-        ("daybreak-blue", "codex-lb-daybreak-blue", True),
+        (None, "claude-lb", False),
+        ("daybreak-blue", "claude-lb-daybreak-blue", True),
     ],
     ids=["ordinary", "daybreak-blue"],
 )
@@ -888,7 +888,7 @@ def test_codex_provider_profiles_route_before_first_account_attempt(
     assert provider["supports_websockets"] is True
     assert provider["requires_openai_auth"] is True
     if expected_security_requirement:
-        assert provider["env_key"] == "CODEX_LB_API_KEY"
+        assert provider["env_key"] == "CLAUDE_LB_API_KEY"
         assert normalized_provider_headers == {REQUIRED_CAPABILITY_HEADER: "trusted_cyber"}
     else:
         assert "env_key" not in provider
@@ -12637,7 +12637,7 @@ def test_backend_responses_websocket_trusted_capability_empty_pool_fails_closed_
             warning = json.loads(websocket.receive_text())
             terminal = json.loads(websocket.receive_text())
 
-    assert warning["type"] == "codex_lb.warning"
+    assert warning["type"] == "claude_lb.warning"
     assert warning["warning"]["code"] == "no_security_work_authorized_accounts"
     assert warning["warning"]["action"] == "fail_closed_capability_routing"
     assert "did not fall back to an ordinary account" in warning["warning"]["message"]

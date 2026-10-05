@@ -398,7 +398,7 @@ class RuntimeConnectAddressResponse(DashboardModel):
 
 # M4 model catalogue: per-model context window overrides. ``source`` is
 # ``"dashboard"`` when a dashboard row exists for the slug and ``"env"`` when
-# only the ``CODEX_LB_MODEL_CONTEXT_WINDOW_OVERRIDES`` entry applies;
+# only the ``CLAUDE_LB_MODEL_CONTEXT_WINDOW_OVERRIDES`` entry applies;
 # ``env_value`` is that entry (``None`` when the environment has none).
 class ModelContextWindowOverrideResponse(DashboardModel):
     slug: str

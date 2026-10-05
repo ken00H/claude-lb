@@ -249,11 +249,11 @@ def test_env_read_syntax_error_is_reported_not_raised(tmp_path: Path) -> None:
 
 
 def test_env_example_rejects_non_bootstrap_tiers_even_when_commented() -> None:
-    text = "# CODEX_LB_ALPHA=1\nCODEX_LB_GAMMA=2\n# CODEX_LB_BETA=3\n# CODEX_LB_UNKNOWN=4\nPORT=2455\n"
+    text = "# CLAUDE_LB_ALPHA=1\nCLAUDE_LB_GAMMA=2\n# CLAUDE_LB_BETA=3\n# CLAUDE_LB_UNKNOWN=4\nPORT=2455\n"
     assert checker.env_example_fields(text) == ["alpha", "gamma", "beta", "unknown"]
     report = checker.check_env_example(text, FIELDS, TIER_MAP)
     assert report.errors == [
-        ".env.example mentions CODEX_LB_BETA (T3); only T0/T1 settings belong in the operator template"
+        ".env.example mentions CLAUDE_LB_BETA (T3); only T0/T1 settings belong in the operator template"
     ]
 
 

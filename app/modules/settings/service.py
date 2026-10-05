@@ -579,7 +579,7 @@ def warn_environment_shadowed_by_dashboard(row: DashboardSettings, settings: Set
         logger.warning(
             "environment value(s) ignored because the dashboard owns the setting: %s "
             "(Settings -> Advanced; clear the dashboard value to inherit the environment again)",
-            ", ".join(f"CODEX_LB_{name.upper()}" for name in shadowed),
+            ", ".join(f"CLAUDE_LB_{name.upper()}" for name in shadowed),
         )
     return shadowed
 

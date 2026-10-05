@@ -61,13 +61,13 @@ def _repo_factory(repository: object) -> ProxyRepoFactory:
 
 def test_parse_routing_intent_accepts_one_authenticated_carrier() -> None:
     assert parse_routing_intent(
-        {"X-CoDeX-LB-ReQuIrEd-CaPaBiLiTy": "trusted_cyber"},
+        {"X-ClaUdE-LB-ReQuIrEd-CaPaBiLiTy": "trusted_cyber"},
         api_key=_api_key(),
     ) == RoutingIntent.requiring(RoutingCapability.TRUSTED_CYBER)
     assert parse_routing_intent(
         {},
         api_key=_api_key(),
-        client_metadata={"x-codex-lb-required-capability": "trusted_cyber"},
+        client_metadata={"x-claude-lb-required-capability": "trusted_cyber"},
     ) == RoutingIntent.requiring(RoutingCapability.TRUSTED_CYBER)
 
 
@@ -124,7 +124,7 @@ def test_parse_routing_intent_rejects_unauthenticated_signal() -> None:
 
 def test_strip_capability_metadata_removes_only_internal_key() -> None:
     metadata = {
-        "X-Codex-LB-Required-Capability": "trusted_cyber",
+        "X-Claude-LB-Required-Capability": "trusted_cyber",
         "x-codex-window-id": "window-1",
         "custom": {"nested": True},
     }
@@ -133,7 +133,7 @@ def test_strip_capability_metadata_removes_only_internal_key() -> None:
         "x-codex-window-id": "window-1",
         "custom": {"nested": True},
     }
-    assert metadata["X-Codex-LB-Required-Capability"] == "trusted_cyber"
+    assert metadata["X-Claude-LB-Required-Capability"] == "trusted_cyber"
 
 
 def test_capability_lineage_aliases_preserve_domains_and_stable_task_root() -> None:

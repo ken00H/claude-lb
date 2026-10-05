@@ -1,10 +1,10 @@
-"""E2E tests: real OpenAI Python SDK across all supported codex-lb /v1 surfaces.
+"""E2E tests: real OpenAI Python SDK across all supported claude-lb /v1 surfaces.
 
 The companion file ``test_v1_responses_openai_sdk.py`` already covers
 ``client.responses.stream(...)`` in detail (G1/G3/G4 normalisation). This
 file widens the surface to **every other** OpenAI SDK method that maps to
-a codex-lb route, plus a parametrised audit of routes the proxy does NOT
-expose — so that a regression to either layer (codex-lb routing or
+a claude-lb route, plus a parametrised audit of routes the proxy does NOT
+expose — so that a regression to either layer (claude-lb routing or
 ``app.modules.proxy.service``) shows up in CI without standing up a real
 upstream account.
 
@@ -268,7 +268,7 @@ async def sdk_client(
     """Real ``openai.AsyncOpenAI`` bound to the in-process FastAPI app.
 
     The client uses the same ASGI transport that ``e2e_client`` already
-    set up, so the SDK's HTTP traffic exercises the real codex-lb routing
+    set up, so the SDK's HTTP traffic exercises the real claude-lb routing
     layer end-to-end.
     """
     await setup_dashboard_password(e2e_client)

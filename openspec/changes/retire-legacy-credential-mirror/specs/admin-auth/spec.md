@@ -97,11 +97,11 @@ Turning `totp_required_on_login` or `totp_required_for_admin_role` from off to o
 
 ### Requirement: Host password recovery says when the account it reset still cannot sign in
 
-Every account can now be disabled, including the one the install bootstrapped, and a password is a way in only for an `active` account: the local form refuses every other status before it looks at a hash. `codex-lb admin reset-password` SHALL therefore report the target's status in terms of that consequence, naming re-enabling by an administrator as what is still missing, whenever the account it just wrote to is not `active`. The command SHALL NOT change the status itself — turning an account an administrator disabled back on is an administrator's decision, not a recovery command's — and SHALL still perform the write, the session revocation and the audit exactly as it does for an active account.
+Every account can now be disabled, including the one the install bootstrapped, and a password is a way in only for an `active` account: the local form refuses every other status before it looks at a hash. `claude-lb admin reset-password` SHALL therefore report the target's status in terms of that consequence, naming re-enabling by an administrator as what is still missing, whenever the account it just wrote to is not `active`. The command SHALL NOT change the status itself — turning an account an administrator disabled back on is an administrator's decision, not a recovery command's — and SHALL still perform the write, the session revocation and the audit exactly as it does for an active account.
 
 #### Scenario: Resetting the password of a disabled account
 
 - **GIVEN** an account that an administrator disabled
-- **WHEN** the operator runs `codex-lb admin reset-password <that account>`
+- **WHEN** the operator runs `claude-lb admin reset-password <that account>`
 - **THEN** the stored hash changes and the report says the account cannot sign in until an administrator re-enables it
 - **AND** the account's status is unchanged

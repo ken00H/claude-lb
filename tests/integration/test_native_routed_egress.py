@@ -47,9 +47,9 @@ async def _copy_stream(reader: asyncio.StreamReader, writer: asyncio.StreamWrite
 async def test_direct_sse_and_routed_http_websocket_share_native_helper(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    helper_value = os.environ.get("CODEX_LB_NATIVE_EGRESS_TEST_BINARY")
+    helper_value = os.environ.get("CLAUDE_LB_NATIVE_EGRESS_TEST_BINARY")
     if not helper_value:
-        pytest.skip("set CODEX_LB_NATIVE_EGRESS_TEST_BINARY to run the native route wire probe")
+        pytest.skip("set CLAUDE_LB_NATIVE_EGRESS_TEST_BINARY to run the native route wire probe")
     helper = Path(helper_value)
     if not helper.is_file():
         pytest.skip(f"native helper is unavailable: {helper}")

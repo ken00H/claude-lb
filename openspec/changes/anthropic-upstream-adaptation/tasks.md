@@ -2,7 +2,7 @@
 
 ## 1. Fork scaffold
 
-- [x] 1.1 Clone codex-lb → claude-lb, rename remote to `upstream`
+- [x] 1.1 Clone claude-lb → claude-lb, rename remote to `upstream`
 - [x] 1.2 Rebrand `pyproject.toml` (name, description, keywords, entrypoints `claude-lb` / `claude-lb-db`)
 - [x] 1.3 Update CLI user-facing strings (`app/cli.py`, `app/db/migrate.py`, `app/admin_cli.py`) and Makefile `migration-check` targets
 - [x] 1.4 Delete `crates/`, `Cargo.toml`, `Cargo.lock`, `rust-toolchain.toml`, `deny.toml`; drop rust targets from Makefile (`lint` ratchets, `ci-fast`, `ci` unaffected except rust removal)
@@ -46,4 +46,4 @@
 - [ ] 4.3 Dashboard rebrand + account-type-aware UI; before/after screenshots
 - [ ] 4.4 Docs sweep: `docs/**` re-scoped to claude-lb, each page linked to owning spec
 - [ ] 4.5 `.github/` workflows + `flake.nix` de-Rust + rename (required before first remote push)
-- [ ] 4.6 Decide `CODEX_LB_*` env prefix: rename vs alias (compatibility decision, explicit change)
+- [ ] 4.6 Decide `CLAUDE_LB_*` env prefix: rename vs alias (compatibility decision, explicit change)

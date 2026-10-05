@@ -335,7 +335,7 @@ request-shape trace so an A/B can be sliced after the fact.
 
 #### Scenario: Unrecognised configured mode degrades to shared
 
-- **GIVEN** `CODEX_LB_THREAD_CACHE_IDENTITY_MODE`, or the
+- **GIVEN** `CLAUDE_LB_THREAD_CACHE_IDENTITY_MODE`, or the
   `dashboard_settings` column, holds a value that is neither `shared` nor
   `isolated`
 - **WHEN** the settings are loaded and `GET /api/settings` is called

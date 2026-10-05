@@ -596,12 +596,12 @@ async def test_real_prometheus_counter_registration_and_labels(monkeypatch: pyte
     )
     registry = cast(Any, prometheus.REGISTRY)
     labels = {"surface": "responses", "outcome": OUTCOME_TERMINAL_WRITTEN}
-    before = registry.get_sample_value("codex_lb_stream_terminal_delivery_total", labels) or 0.0
+    before = registry.get_sample_value("claude_lb_stream_terminal_delivery_total", labels) or 0.0
 
     response = DeliveryTracedStreamingResponse(_iter(_COMPLETED), surface="responses")
     await _run(response)
 
-    assert registry.get_sample_value("codex_lb_stream_terminal_delivery_total", labels) == before + 1.0
+    assert registry.get_sample_value("claude_lb_stream_terminal_delivery_total", labels) == before + 1.0
 
 
 def test_outcome_label_set_is_closed() -> None:

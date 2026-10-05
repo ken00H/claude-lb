@@ -19,7 +19,7 @@ does not.
 
 ## Why the classifier gains a field instead of a sibling — or a reordering
 
-The downstream fork `aafqaq/codex-lb-enhanced` solved the same
+The downstream fork `aafqaq/claude-lb-enhanced` solved the same
 capacity/exhaustion ambiguity by adding a second classifier
 (`account_exhaustion_code_for_failover`) next to the existing one and calling it
 from the selection paths. That leaves two sources of truth for "what kind of

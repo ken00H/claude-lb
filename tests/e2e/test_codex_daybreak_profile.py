@@ -14,7 +14,7 @@ import pytest
 
 pytestmark = pytest.mark.e2e
 
-_RUN_E2E = os.environ.get("CODEX_LB_RUN_CODEX_PROFILE_E2E") == "1"
+_RUN_E2E = os.environ.get("CLAUDE_LB_RUN_CODEX_PROFILE_E2E") == "1"
 _ROOT = Path(__file__).resolve().parents[2]
 _BASE_CONFIG = _ROOT / "docs/examples/codex/config.toml"
 _PROFILE = _ROOT / "docs/examples/codex/daybreak-blue.config.toml"
@@ -63,7 +63,7 @@ class _Handler(BaseHTTPRequestHandler):
 
 def _write_config(codex_home: Path, port: int) -> None:
     config = _BASE_CONFIG.read_text(encoding="utf-8")
-    for provider, path in (("codex-lb", "ordinary"), ("codex-lb-daybreak-blue", "daybreak")):
+    for provider, path in (("claude-lb", "ordinary"), ("claude-lb-daybreak-blue", "daybreak")):
         section = f"[model_providers.{provider}]"
         section_start = config.index(section)
         base_start = config.index('base_url = "', section_start)
@@ -91,7 +91,7 @@ def _run_codex(
         "USER": "codex-profile-e2e",
     }
     if include_key:
-        env["CODEX_LB_API_KEY"] = _API_KEY
+        env["CLAUDE_LB_API_KEY"] = _API_KEY
     policy = f'(version 1)(allow default)(deny network-outbound)(allow network-outbound (remote ip "localhost:{port}"))'
     command = [
         sandbox_exec,
@@ -112,7 +112,7 @@ def _run_codex(
     return subprocess.run(command, cwd=root, env=env, capture_output=True, text=True, timeout=45, check=False)
 
 
-@pytest.mark.skipif(not _RUN_E2E, reason="set CODEX_LB_RUN_CODEX_PROFILE_E2E=1 for the installed-Codex proof")
+@pytest.mark.skipif(not _RUN_E2E, reason="set CLAUDE_LB_RUN_CODEX_PROFILE_E2E=1 for the installed-Codex proof")
 def test_installed_codex_daybreak_profile_emits_authenticated_capability_before_fallback(tmp_path: Path) -> None:
     if sys.platform != "darwin":
         pytest.skip("the network-deny harness requires macOS sandbox-exec")
@@ -130,19 +130,19 @@ def test_installed_codex_daybreak_profile_emits_authenticated_capability_before_
         method, path, headers = server.requests[0]
         assert (method, path, headers["upgrade"].lower()) == ("GET", "/daybreak/responses", "websocket")
         assert headers["authorization"] == f"Bearer {_API_KEY}"
-        assert headers["x-codex-lb-required-capability"] == "trusted_cyber"
+        assert headers["x-claude-lb-required-capability"] == "trusted_cyber"
 
         fallbacks = [(path, headers) for method, path, headers in server.requests if method == "POST"]
         assert fallbacks, result.stdout + result.stderr
         assert all(path == "/daybreak/responses" for path, _headers in fallbacks)
         assert all(headers["authorization"] == f"Bearer {_API_KEY}" for _path, headers in fallbacks)
-        assert all(headers["x-codex-lb-required-capability"] == "trusted_cyber" for _path, headers in fallbacks)
+        assert all(headers["x-claude-lb-required-capability"] == "trusted_cyber" for _path, headers in fallbacks)
 
         server.requests.clear()
         missing = _run_codex(codex, sandbox_exec, tmp_path / "missing-key", port, include_key=False)
         output = missing.stdout + missing.stderr
         assert missing.returncode != 0
-        assert "Missing environment variable" in output and "CODEX_LB_API_KEY" in output
+        assert "Missing environment variable" in output and "CLAUDE_LB_API_KEY" in output
         assert server.requests == []
     finally:
         server.shutdown()

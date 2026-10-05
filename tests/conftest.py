@@ -21,23 +21,23 @@ if os.name == "nt":
     ]
 
 
-TEST_DB_DIR = Path(tempfile.mkdtemp(prefix="codex-lb-tests-"))
-TEST_DB_PATH = TEST_DB_DIR / "codex-lb.db"
+TEST_DB_DIR = Path(tempfile.mkdtemp(prefix="claude-lb-tests-"))
+TEST_DB_PATH = TEST_DB_DIR / "claude-lb.db"
 
-os.environ["CODEX_LB_DATABASE_URL"] = os.environ.get(
-    "CODEX_LB_TEST_DATABASE_URL", f"sqlite+aiosqlite:///{TEST_DB_PATH}"
+os.environ["CLAUDE_LB_DATABASE_URL"] = os.environ.get(
+    "CLAUDE_LB_TEST_DATABASE_URL", f"sqlite+aiosqlite:///{TEST_DB_PATH}"
 )
-os.environ["CODEX_LB_UPSTREAM_BASE_URL"] = "https://example.invalid/backend-api"
+os.environ["CLAUDE_LB_UPSTREAM_BASE_URL"] = "https://example.invalid/backend-api"
 # The HTTP responses session bridge is a request-path feature with a T4 env
 # kill switch (see app/core/config/tiers.py). The suite runs on the raw
 # upstream path by default; bridge suites opt in with explicit ``Settings``.
-os.environ["CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_ENABLED"] = "false"
+os.environ["CLAUDE_LB_HTTP_RESPONSES_SESSION_BRIDGE_ENABLED"] = "false"
 # Route-resolution caching is opt-in per test (cache-specific tests set a TTL
 # explicitly); keeping it off preserves fresh-read semantics everywhere else.
-os.environ["CODEX_LB_UPSTREAM_ROUTE_CACHE_TTL_SECONDS"] = "0"
+os.environ["CLAUDE_LB_UPSTREAM_ROUTE_CACHE_TTL_SECONDS"] = "0"
 # NOTE: Background loops (model registry, sticky cleanup, quota planner,
 # automations, auth guardian, usage refresh, ...) and leader election are
-# intentionally NOT disabled via ``CODEX_LB_*_ENABLED`` env overrides here. They
+# intentionally NOT disabled via ``CLAUDE_LB_*_ENABLED`` env overrides here. They
 # are default-enabled in production, and a global override would leak into every
 # ``Settings()`` constructed anywhere in the suite — breaking production-default
 # assertions such as test_settings_multi_replica.py — while silently turning
@@ -251,7 +251,7 @@ def _disable_background_loop_schedulers(monkeypatch) -> tuple[str, ...]:
     keep the loops from ever starting — without touching ``Settings`` (unit
     tests still observe the real production defaults such as
     ``automations_scheduler_enabled is True``) and without depending on a
-    ``CODEX_LB_*_ENABLED`` env override that would silently stop working once
+    ``CLAUDE_LB_*_ENABLED`` env override that would silently stop working once
     the toggle behind it is constantized. Returns the patched builder names so
     the coverage test can assert the seam is complete.
     """
@@ -429,7 +429,7 @@ def _scope_plan_downgrade_observation_store(request):
 @pytest.fixture(autouse=True)
 def temp_key_file(monkeypatch):
     key_path = TEST_DB_DIR / f"encryption-{uuid4().hex}.key"
-    monkeypatch.setenv("CODEX_LB_ENCRYPTION_KEY_FILE", str(key_path))
+    monkeypatch.setenv("CLAUDE_LB_ENCRYPTION_KEY_FILE", str(key_path))
     from app.core.config.settings import get_settings
 
     get_settings.cache_clear()

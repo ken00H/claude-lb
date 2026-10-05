@@ -794,10 +794,10 @@ async def test_the_policy_narrows_the_reverse_proxy_password_fallback(
         operator_id = await _invite_and_accept(async_client, person, "olivia", OPERATOR_ROLE)
         assert operator_id
 
-        monkeypatch.setenv("CODEX_LB_DASHBOARD_AUTH_MODE", DashboardAuthMode.TRUSTED_HEADER.value)
-        monkeypatch.setenv("CODEX_LB_DASHBOARD_AUTH_PROXY_HEADER", "Remote-User")
-        monkeypatch.setenv("CODEX_LB_FIREWALL_TRUST_PROXY_HEADERS", "true")
-        monkeypatch.setenv("CODEX_LB_FIREWALL_TRUSTED_PROXY_CIDRS", "127.0.0.1/32")
+        monkeypatch.setenv("CLAUDE_LB_DASHBOARD_AUTH_MODE", DashboardAuthMode.TRUSTED_HEADER.value)
+        monkeypatch.setenv("CLAUDE_LB_DASHBOARD_AUTH_PROXY_HEADER", "Remote-User")
+        monkeypatch.setenv("CLAUDE_LB_FIREWALL_TRUST_PROXY_HEADERS", "true")
+        monkeypatch.setenv("CLAUDE_LB_FIREWALL_TRUSTED_PROXY_CIDRS", "127.0.0.1/32")
         get_settings.cache_clear()
         async with SessionLocal() as session:
             provider = await session.get(DashboardAuthProvider, TRUSTED_HEADER_PROVIDER_ID)

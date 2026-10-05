@@ -1,6 +1,6 @@
 # Anonymous telemetry
 
-codex-lb sends an anonymous usage snapshot to the project-operated collector at
+claude-lb sends an anonymous usage snapshot to the project-operated collector at
 `https://telemetry.tokmaxxing.com` when the service starts and every 24 hours. In a
 multi-replica deployment, only the elected leader builds and sends the snapshot.
 
@@ -19,7 +19,7 @@ view it later from Settings. The signed snapshot body has three fields:
 
 The versioned `metrics` schema contains only these fields:
 
-- `schema_version`, active `consent` (`undecided` or `enabled`), random `instance_id`, codex-lb
+- `schema_version`, active `consent` (`undecided` or `enabled`), random `instance_id`, claude-lb
   `version`, Python version, OS, architecture, and process uptime
 - `deploy`: deployment method, database backend and size bucket, replica count, and whether
   trusted reverse-proxy headers are enabled
@@ -48,15 +48,15 @@ the decision, and the Settings toggle can change it later.
 For a headless opt-out before the first dashboard visit, set:
 
 ```bash
-CODEX_LB_TELEMETRY_ENABLED=false
+CLAUDE_LB_TELEMETRY_ENABLED=false
 ```
 
 The environment value applies only while no dashboard decision has been saved; a saved
 dashboard decision always takes precedence over it. The Settings toggle shows a notice while
-the environment value is the one in effect. When telemetry resolves to disabled, codex-lb opens
+the environment value is the one in effect. When telemetry resolves to disabled, claude-lb opens
 no connection to the telemetry endpoint. The environment opt-out is always completely silent.
 
-When a dashboard decision changes telemetry from active to inactive, codex-lb makes one final
+When a dashboard decision changes telemetry from active to inactive, claude-lb makes one final
 signed request to `POST /v1/optout` so aggregate opt-out counts remain accurate. If the instance
 has not contacted the collector in this process, it first performs the normal registration and
 activation. Re-enabling and later disabling from the dashboard sends one new notice for that new
@@ -67,7 +67,7 @@ Its canonical JSON body is:
 
 ```json
 {
-  "app_version": "<codex-lb version>",
+  "app_version": "<claude-lb version>",
   "event": "optout",
   "instance_id": "<random UUIDv4>",
   "occurred_at": "<current ISO 8601 UTC time>"
@@ -76,12 +76,12 @@ Its canonical JSON body is:
 
 This single decision-time notice is the only exception to disabled telemetry silence. It is
 sent only for a dashboard-driven active-to-inactive transition; setting
-`CODEX_LB_TELEMETRY_ENABLED=false` never sends it.
+`CLAUDE_LB_TELEMETRY_ENABLED=false` never sends it.
 
 ## Retention and failures
 
 Each snapshot summarizes the previous seven days of data already present in `request_logs`.
-codex-lb does not keep a separate local telemetry history and does not queue a failed send. The
+claude-lb does not keep a separate local telemetry history and does not queue a failed send. The
 collector's server-side retention duration is not currently specified; assume transmitted
 snapshots remain stored until a published retention policy or explicit deletion.
 

@@ -39,7 +39,7 @@ carry.
   upstream account: the `prompt_cache_key`, the Codex process-session /
   conversation / thread headers, and a stable opaque line prepended to the
   prompt content. The scope token is
-  `sha256("codex-lb-cache-scope-v1|" + <load-balancer account id>)[:16]` —
+  `sha256("claude-lb-cache-scope-v1|" + <load-balancer account id>)[:16]` —
   deterministic, no clock, no randomness, identical on every turn of every
   session on that account.
 - In `shared` mode the outbound request is byte-for-byte what it is today.

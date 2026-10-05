@@ -82,31 +82,31 @@ The chart MUST declare a minimum supported Kubernetes version of `1.32`, and CI 
 
 ### Requirement: Application data directory resolution is configurable and container-aware
 
-The application MUST resolve its default data directory from operator intent before container heuristics. A non-empty `CODEX_LB_DATA_DIR` value MUST be the highest-priority data directory override. When no override is configured, an existing `$HOME/.codex-lb` directory MUST remain preferred even if the process detects that it is running inside a container. The container data directory (`/var/lib/codex-lb`) MUST be used only when no override is configured, the home data directory does not already exist, and container detection is true.
+The application MUST resolve its default data directory from operator intent before container heuristics. A non-empty `CLAUDE_LB_DATA_DIR` value MUST be the highest-priority data directory override. When no override is configured, an existing `$HOME/.claude-lb` directory MUST remain preferred even if the process detects that it is running inside a container. The container data directory (`/var/lib/claude-lb`) MUST be used only when no override is configured, the home data directory does not already exist, and container detection is true.
 
 #### Scenario: Explicit data directory override wins
 
-- **GIVEN** `CODEX_LB_DATA_DIR` is configured to a non-empty path
+- **GIVEN** `CLAUDE_LB_DATA_DIR` is configured to a non-empty path
 - **WHEN** application settings are loaded
 - **THEN** the configured path is used as the data directory
 - **AND** the container detection result does not override it
 
 #### Scenario: Existing home data is reused inside an interactive container
 
-- **GIVEN** `CODEX_LB_DATA_DIR` is not configured
-- **AND** `$HOME/.codex-lb` already exists
+- **GIVEN** `CLAUDE_LB_DATA_DIR` is not configured
+- **AND** `$HOME/.claude-lb` already exists
 - **AND** container detection is true
 - **WHEN** application settings are loaded
-- **THEN** `$HOME/.codex-lb` is used as the data directory
-- **AND** `/var/lib/codex-lb` is not selected
+- **THEN** `$HOME/.claude-lb` is used as the data directory
+- **AND** `/var/lib/claude-lb` is not selected
 
 #### Scenario: Container default is preserved when no home data exists
 
-- **GIVEN** `CODEX_LB_DATA_DIR` is not configured
-- **AND** `$HOME/.codex-lb` does not exist
+- **GIVEN** `CLAUDE_LB_DATA_DIR` is not configured
+- **AND** `$HOME/.claude-lb` does not exist
 - **AND** container detection is true
 - **WHEN** application settings are loaded
-- **THEN** `/var/lib/codex-lb` is used as the data directory
+- **THEN** `/var/lib/claude-lb` is used as the data directory
 
 #### Scenario: Related default paths follow the resolved data directory
 
@@ -120,8 +120,8 @@ The application MUST resolve its default data directory from operator intent bef
 
 #### Scenario: Explicit related path overrides are preserved
 
-- **GIVEN** `CODEX_LB_DATA_DIR` is configured
-- **AND** one or more related paths such as `CODEX_LB_DATABASE_URL`, `CODEX_LB_ENCRYPTION_KEY_FILE`, or `CODEX_LB_CONVERSATION_ARCHIVE_DIR` are explicitly configured
+- **GIVEN** `CLAUDE_LB_DATA_DIR` is configured
+- **AND** one or more related paths such as `CLAUDE_LB_DATABASE_URL`, `CLAUDE_LB_ENCRYPTION_KEY_FILE`, or `CLAUDE_LB_CONVERSATION_ARCHIVE_DIR` are explicitly configured
 - **WHEN** application settings are loaded
 - **THEN** each explicitly configured related path keeps its configured value
 - **AND** only omitted related paths derive from the resolved data directory
@@ -187,7 +187,7 @@ WHEN `config.sessionBridgeInstanceRing` is non-empty, chart rendering MUST fail 
 
 #### Scenario: Static ring with correct count but wrong values fails to render
 
-- **WHEN** the chart is rendered with `replicaCount=2` and a `config.sessionBridgeInstanceRing` listing 2 entries that are not the expected StatefulSet pod names (for example FQDN-style entries or `codex-lb-0,codex-lb-1`)
+- **WHEN** the chart is rendered with `replicaCount=2` and a `config.sessionBridgeInstanceRing` listing 2 entries that are not the expected StatefulSet pod names (for example FQDN-style entries or `claude-lb-0,claude-lb-1`)
 - **THEN** `helm template` fails with an error naming the missing expected pod names and the exact ring the chart requires
 
 #### Scenario: Static ring with an unexpected extra entry fails to render
@@ -220,7 +220,7 @@ The shipped docker-compose files MUST document that they define a single-replica
 
 ### Requirement: Owned launch paths preserve raw peer before proxy projection
 
-Every project-owned launch path for the main application MUST disable server-level proxy-header projection. The outermost application middleware MUST preserve the incoming HTTP or WebSocket `scope["client"]` before applying Uvicorn-compatible proxy projection exactly once. Downstream consumers MUST continue to observe Uvicorn's projected client and scheme. Projection trust MUST be sourced from the `forwarded_allow_ips` setting, whose primary environment name is the bare `FORWARDED_ALLOW_IPS` (for compatibility with Uvicorn deployments) and whose prefixed alias is `CODEX_LB_FORWARDED_ALLOW_IPS`; either name MAY be set in the process environment or in the env files `Settings` reads. Projection MUST use `FORWARDED_ALLOW_IPS` unchanged: unset MUST trust `127.0.0.1`, empty MUST trust no peer, `*` MUST trust every peer, and explicit hosts or networks MUST retain Uvicorn's parsing and trusted-chain behavior. The middleware MUST NOT read the process environment directly.
+Every project-owned launch path for the main application MUST disable server-level proxy-header projection. The outermost application middleware MUST preserve the incoming HTTP or WebSocket `scope["client"]` before applying Uvicorn-compatible proxy projection exactly once. Downstream consumers MUST continue to observe Uvicorn's projected client and scheme. Projection trust MUST be sourced from the `forwarded_allow_ips` setting, whose primary environment name is the bare `FORWARDED_ALLOW_IPS` (for compatibility with Uvicorn deployments) and whose prefixed alias is `CLAUDE_LB_FORWARDED_ALLOW_IPS`; either name MAY be set in the process environment or in the env files `Settings` reads. Projection MUST use `FORWARDED_ALLOW_IPS` unchanged: unset MUST trust `127.0.0.1`, empty MUST trust no peer, `*` MUST trust every peer, and explicit hosts or networks MUST retain Uvicorn's parsing and trusted-chain behavior. The middleware MUST NOT read the process environment directly.
 
 #### Scenario: Owned launchers disable early projection
 - **WHEN** the main application starts through the project CLI, development Compose, or a shipped direct FastAPI/Uvicorn command
@@ -237,7 +237,7 @@ Every project-owned launch path for the main application MUST disable server-lev
 - **THEN** proxy projection follows Uvicorn's existing trust semantics
 
 #### Scenario: Prefixed alias is honored
-- **WHEN** `CODEX_LB_FORWARDED_ALLOW_IPS` is set and `FORWARDED_ALLOW_IPS` is unset
+- **WHEN** `CLAUDE_LB_FORWARDED_ALLOW_IPS` is set and `FORWARDED_ALLOW_IPS` is unset
 - **THEN** proxy projection trusts the aliased value with the same semantics
 - **AND** the setting appears in the generated settings reference under both names
 
@@ -272,7 +272,7 @@ The oversized response-create dump directory under `<data-dir>/debug/response-cr
 - **GIVEN** a default installation with no dump-related configuration
 - **WHEN** oversized response-create dumps are captured over time
 - **THEN** duplicate suppression and pruning apply
-- **AND** no `CODEX_LB_*` setting is required to bound the directory
+- **AND** no `CLAUDE_LB_*` setting is required to bound the directory
 
 ### Requirement: External secret references support provider-native layouts
 
@@ -329,7 +329,7 @@ dashboard titles.
 #### Scenario: Operator uses concise titles in a folder hierarchy
 
 - **GIVEN** Grafana dashboard provisioning is enabled
-- **AND** title overrides map `codex-lb.json` to `Overview` and
+- **AND** title overrides map `claude-lb.json` to `Overview` and
   `ttft-breakdown.json` to `TTFT Breakdown`
 - **WHEN** the chart renders the Grafana dashboard ConfigMap
 - **THEN** each dashboard JSON document contains its configured title
@@ -340,8 +340,8 @@ dashboard titles.
 - **GIVEN** Grafana dashboard provisioning is enabled
 - **AND** the operator does not customize dashboard titles
 - **WHEN** the chart renders the Grafana dashboard ConfigMap
-- **THEN** the overview title remains `codex-lb`
-- **AND** the TTFT title remains `codex-lb TTFT Breakdown`
+- **THEN** the overview title remains `claude-lb`
+- **AND** the TTFT title remains `claude-lb TTFT Breakdown`
 - **AND** each ConfigMap value remains byte-identical to the chart's raw-file rendering
 
 ### Requirement: Helm preStop shares the application drain deadline
@@ -414,26 +414,26 @@ Every shipped or documented launch path for the main application MUST delegate t
 
 The repository MUST provide a locked Nix flake for each supported Nix platform. The flake MUST expose the proxy as its default package and default app, and MUST expose a default development shell containing an editable project installation, all locked runtime dependencies, the `dev` dependency group, and the project package manager. The default package and development shell MUST exclude documentation dependencies and optional runtime integrations unless they are required by those outputs. The flake package and development shell MUST use Python 3.13 and MUST derive Python dependencies from the committed `pyproject.toml` and `uv.lock` files.
 
-Because the packaged module root lives in the read-only Nix store where env files cannot exist, the packaged entry points MUST provide launch-directory `.env` / `.env.local` loading through the explicit `CODEX_LB_ENV_FILE` settings-load override (an `os.pathsep`-separated env-file path list, honored before Settings reads env files), defaulted by the package wrapper and never overriding an operator-provided value. Nix packaging MUST NOT change env-file discovery for non-Nix launch paths: without `CODEX_LB_ENV_FILE`, env files resolve relative to the installed module root and launch-directory env files are never loaded implicitly.
+Because the packaged module root lives in the read-only Nix store where env files cannot exist, the packaged entry points MUST provide launch-directory `.env` / `.env.local` loading through the explicit `CLAUDE_LB_ENV_FILE` settings-load override (an `os.pathsep`-separated env-file path list, honored before Settings reads env files), defaulted by the package wrapper and never overriding an operator-provided value. Nix packaging MUST NOT change env-file discovery for non-Nix launch paths: without `CLAUDE_LB_ENV_FILE`, env files resolve relative to the installed module root and launch-directory env files are never loaded implicitly.
 
 #### Scenario: Default package builds the proxy
 
 - **WHEN** a user runs `nix build`
-- **THEN** Nix builds a package containing the `codex-lb` and `codex-lb-db` commands
+- **THEN** Nix builds a package containing the `claude-lb` and `claude-lb-db` commands
 - **AND** the package contains the compiled dashboard served by the proxy root route
 - **AND** the package uses the dependency versions and hashes recorded by the flake and Python lock files
 
 #### Scenario: Default app runs the proxy CLI
 
 - **WHEN** a user runs `nix run . -- --help`
-- **THEN** the packaged `codex-lb` command prints its CLI help and exits successfully
+- **THEN** the packaged `claude-lb` command prints its CLI help and exits successfully
 - **AND** running `nix run .` without help arguments starts the proxy through the project-owned CLI entry point
 - **AND** the packaged app loads `.env` and `.env.local` from the directory where it is launched
-- **AND** an operator-provided `CODEX_LB_ENV_FILE` value takes precedence over the launch-directory default
+- **AND** an operator-provided `CLAUDE_LB_ENV_FILE` value takes precedence over the launch-directory default
 
 #### Scenario: Non-Nix launch paths keep module-root env-file discovery
 
-- **WHEN** the application is launched outside the Nix wrapper without `CODEX_LB_ENV_FILE`
+- **WHEN** the application is launched outside the Nix wrapper without `CLAUDE_LB_ENV_FILE`
 - **THEN** `.env` and `.env.local` resolve relative to the installed module root
 - **AND** env files in the launch directory are not loaded
 
@@ -455,7 +455,7 @@ Because the packaged module root lives in the read-only Nix store where env file
 The official Linux container build MUST compile the native egress worker from
 the repository-root Cargo workspace with its committed lockfile and pinned
 toolchain in an isolated Rust build stage, and MUST install only the resulting
-release executable as `codex-lb-native-egress` on the runtime path. The
+release executable as `claude-lb-native-egress` on the runtime path. The
 executable MUST support a long-lived multiplexed request protocol and reusable
 reqwest client pools without requiring a sidecar or operator setting. The
 runtime image MUST NOT contain the Rust toolchain or Cargo build directory.
@@ -465,7 +465,7 @@ absent.
 #### Scenario: Container runtime exposes native helper
 
 - **WHEN** the official Linux image is built from the repository
-- **THEN** `codex-lb-native-egress` is executable on the runtime path
+- **THEN** `claude-lb-native-egress` is executable on the runtime path
 - **AND** it was built with the committed lockfile
 - **AND** it accepts multiple request commands during one process lifetime
 - **AND** Cargo and the Rust compiler are absent from the runtime image
@@ -473,7 +473,7 @@ absent.
 #### Scenario: Universal Python package remains portable
 
 - **WHEN** a wheel or source install runs on a platform without the helper
-- **THEN** importing and starting codex-lb succeeds
+- **THEN** importing and starting claude-lb succeeds
 - **AND** supported direct requests fall back to the Python transport
 
 ### Requirement: Rust migration uses one final-state workspace
@@ -648,8 +648,8 @@ When bundled PostgreSQL is disabled and NetworkPolicy is enabled, the Helm chart
 
 ### Requirement: Operator metrics and log configuration fails closed
 
-The application MUST accept `CODEX_LB_METRICS_PORT` only in inclusive
-`1..65535` and `CODEX_LB_LOG_FORMAT` only as `text` or `json`. Invalid values
+The application MUST accept `CLAUDE_LB_METRICS_PORT` only in inclusive
+`1..65535` and `CLAUDE_LB_LOG_FORMAT` only as `text` or `json`. Invalid values
 MUST produce field-specific validation errors before metrics startup or
 formatter selection. Existing main/metrics collision rejection MUST remain.
 
@@ -676,7 +676,7 @@ rendering/install. Valid defaults/boundaries MUST remain unchanged.
 Values that are protocol constants or internal tuning details SHALL NOT be
 operator-configurable, and values the dashboard runtime settings own SHALL NOT
 also be operator-configurable through the environment. When a previously
-supported `CODEX_LB_*` setting is removed from the configuration surface, its
+supported `CLAUDE_LB_*` setting is removed from the configuration surface, its
 environment variable MUST be ignored without failing startup, and for at
 least one release after removal, startup MUST emit a single warning log
 listing every removed setting name found in the process environment or the
@@ -692,7 +692,7 @@ The following values MUST be fixed at their previously documented defaults:
 
 - The OAuth protocol identity values (authorization base URL, client id,
   originator, scope, redirect URI, and callback port): they identify
-  codex-lb to OpenAI exactly like the Codex CLI, and changing any of them
+  claude-lb to OpenAI exactly like the Codex CLI, and changing any of them
   breaks login.
 - Background scheduler cadences (quota planner tick, automations poll,
   model registry refresh, sticky-session cleanup).
@@ -730,7 +730,7 @@ The following values MUST be fixed at their previously documented defaults:
 The following values MUST be derived rather than configured:
 
 - The memory-pressure warning threshold: 80% of the configurable reject
-  threshold (`CODEX_LB_MEMORY_REJECT_THRESHOLD_MB`), with both disabled
+  threshold (`CLAUDE_LB_MEMORY_REJECT_THRESHOLD_MB`), with both disabled
   when the reject threshold is 0.
 - The background-task database engine's pool size and max overflow: always
   taken from `database_pool_size` and `database_max_overflow`.
@@ -745,7 +745,7 @@ retention windows (`request_log_retention_days`,
 environment alias (see `data-retention`).
 
 Incident-debugging trace logging SHALL be controlled by the single
-`CODEX_LB_TRACE` comma-separated channel list, whose empty default disables
+`CLAUDE_LB_TRACE` comma-separated channel list, whose empty default disables
 all trace channels. The Codex HTTP-bridge prewarm rollout scoping SHALL NOT
 be operator-configurable: prewarm eligibility MUST be the single
 `http_responses_session_bridge_codex_prewarm_enabled` switch alone, with no
@@ -753,7 +753,7 @@ canary sampling percent and no API-key allow/deny cohort lists. That switch
 MUST be a dashboard runtime setting (a nullable `dashboard_settings` column of
 the same name, NULL on the first-created row and never seeded from the
 environment) whose
-`CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_CODEX_PREWARM_ENABLED` variable is a
+`CLAUDE_LB_HTTP_RESPONSES_SESSION_BRIDGE_CODEX_PREWARM_ENABLED` variable is a
 deprecated alias that applies only while the column is NULL and that joins the
 removed-settings warning list in the next minor release. The bridge MUST
 resolve the switch before it takes a session's prewarm lock, from the dashboard
@@ -777,15 +777,15 @@ operator-configurable settings, and `soft_drain_enabled` and
 enable switches. Those two switches and `circuit_breaker_enabled` MUST be
 dashboard runtime settings (`dashboard_settings` columns of the same name,
 NULL on the first-created row; see `account-routing` and
-`outbound-http-clients`) whose `CODEX_LB_*` variables are deprecated aliases
+`outbound-http-clients`) whose `CLAUDE_LB_*` variables are deprecated aliases
 that apply only while the column is NULL and that join the removed-settings
 warning list in the next minor release.
 
 #### Scenario: Removed env vars are ignored with one startup warning
 
 - **GIVEN** a deployment whose environment still sets removed settings such
-  as `CODEX_LB_REQUEST_LOG_RETENTION_DAYS` and
-  `CODEX_LB_USAGE_REFRESH_INTERVAL_SECONDS`
+  as `CLAUDE_LB_REQUEST_LOG_RETENTION_DAYS` and
+  `CLAUDE_LB_USAGE_REFRESH_INTERVAL_SECONDS`
 - **WHEN** the application starts
 - **THEN** startup succeeds and the dashboard runtime values are used
 - **AND** exactly one warning log lists both removed names without their
@@ -800,37 +800,37 @@ warning list in the next minor release.
 #### Scenario: Names past their warning release are silently inert
 
 - **GIVEN** a deployment whose environment still sets names removed in an
-  earlier batch, such as `CODEX_LB_AUTH_BASE_URL`,
-  `CODEX_LB_QUOTA_PLANNER_TICK_SECONDS`, or
-  `CODEX_LB_DATABASE_POOL_RECYCLE_SECONDS`
+  earlier batch, such as `CLAUDE_LB_AUTH_BASE_URL`,
+  `CLAUDE_LB_QUOTA_PLANNER_TICK_SECONDS`, or
+  `CLAUDE_LB_DATABASE_POOL_RECYCLE_SECONDS`
 - **WHEN** the application starts
 - **THEN** startup succeeds, the fixed built-in values are used
 - **AND** no removed-settings warning is logged for those names
 
 #### Scenario: Trace channels default to off
 
-- **GIVEN** a default install with `CODEX_LB_TRACE` unset
+- **GIVEN** a default install with `CLAUDE_LB_TRACE` unset
 - **WHEN** the proxy serves requests
 - **THEN** no request-shape, payload, service-tier, or upstream trace logs
   are emitted
 
 #### Scenario: A trace channel can be enabled for an incident
 
-- **GIVEN** `CODEX_LB_TRACE=shape,upstream_payload`
+- **GIVEN** `CLAUDE_LB_TRACE=shape,upstream_payload`
 - **WHEN** the proxy serves requests
 - **THEN** request-shape and upstream-payload trace logs are emitted while
   all other trace channels stay off
 
 #### Scenario: Memory warning threshold derives from the reject threshold
 
-- **GIVEN** `CODEX_LB_MEMORY_REJECT_THRESHOLD_MB=100`
+- **GIVEN** `CLAUDE_LB_MEMORY_REJECT_THRESHOLD_MB=100`
 - **WHEN** process RSS reaches 80 MiB
 - **THEN** a memory warning is logged while requests continue to be served
 - **AND** requests are rejected with 503 only once RSS reaches 100 MiB
 
 #### Scenario: Memory guard stays fully disabled by default
 
-- **GIVEN** a default install with `CODEX_LB_MEMORY_REJECT_THRESHOLD_MB`
+- **GIVEN** a default install with `CLAUDE_LB_MEMORY_REJECT_THRESHOLD_MB`
   unset (0)
 - **WHEN** the proxy serves requests under any memory usage
 - **THEN** no memory warning is logged and no request is rejected for
@@ -840,24 +840,24 @@ warning list in the next minor release.
 
 - **GIVEN** a Helm install using the chart's default values
 - **WHEN** the config map is rendered
-- **THEN** it contains no `CODEX_LB_OPENAI_CACHE_AFFINITY_MAX_AGE_SECONDS`,
-  `CODEX_LB_CIRCUIT_BREAKER_FAILURE_THRESHOLD`, or
-  `CODEX_LB_STICKY_SESSION_CLEANUP_INTERVAL_SECONDS` entries
+- **THEN** it contains no `CLAUDE_LB_OPENAI_CACHE_AFFINITY_MAX_AGE_SECONDS`,
+  `CLAUDE_LB_CIRCUIT_BREAKER_FAILURE_THRESHOLD`, or
+  `CLAUDE_LB_STICKY_SESSION_CLEANUP_INTERVAL_SECONDS` entries
 - **AND** startup emits no removed-settings warning
 
 #### Scenario: Dashboard-owned columns seed from their defaults
 
-- **GIVEN** a fresh database and `CODEX_LB_WARMUP_MODEL=gpt-5.4-nano` still
+- **GIVEN** a fresh database and `CLAUDE_LB_WARMUP_MODEL=gpt-5.4-nano` still
   set in the environment
 - **WHEN** the dashboard settings row is created for the first time
 - **THEN** `warmup_model` is `gpt-5.4-mini`, `http_downstream_transport_policy`
   is `smart`, and `openai_cache_affinity_max_age_seconds` is `1800`
-- **AND** the startup warning names `CODEX_LB_WARMUP_MODEL`
+- **AND** the startup warning names `CLAUDE_LB_WARMUP_MODEL`
 
 #### Scenario: Fresh database bootstrap ignores a removed variable
 
 - **GIVEN** an empty database and
-  `CODEX_LB_OPENAI_CACHE_AFFINITY_MAX_AGE_SECONDS=64` still set in the
+  `CLAUDE_LB_OPENAI_CACHE_AFFINITY_MAX_AGE_SECONDS=64` still set in the
   environment
 - **WHEN** the Alembic chain is upgraded to head
 - **THEN** the seeded `dashboard_settings` row has
@@ -866,15 +866,15 @@ warning list in the next minor release.
 
 #### Scenario: Removed names are matched case-insensitively
 
-- **GIVEN** a deployment whose environment sets `codex_lb_warmup_model`
+- **GIVEN** a deployment whose environment sets `claude_lb_warmup_model`
   in lowercase (which the former field honoured)
 - **WHEN** the application starts
-- **THEN** the startup warning lists `CODEX_LB_WARMUP_MODEL`
+- **THEN** the startup warning lists `CLAUDE_LB_WARMUP_MODEL`
 
 #### Scenario: Background pool sizing derives from the main pool settings
 
-- **GIVEN** `CODEX_LB_DATABASE_POOL_SIZE=12` and
-  `CODEX_LB_DATABASE_MAX_OVERFLOW=4` on a PostgreSQL deployment
+- **GIVEN** `CLAUDE_LB_DATABASE_POOL_SIZE=12` and
+  `CLAUDE_LB_DATABASE_MAX_OVERFLOW=4` on a PostgreSQL deployment
 - **WHEN** the application creates the background-task database engine
 - **THEN** the background engine uses pool size 12 and max overflow 4
 - **AND** no separate background pool sizing can be configured
@@ -885,7 +885,7 @@ warning list in the next minor release.
 - **WHEN** an account's primary window usage reaches 85%
 - **THEN** the account enters the draining health tier
 - **AND** a drained account enters the probing tier only after the fixed
-  60-second quiet window, regardless of any `CODEX_LB_PROBE_QUIET_SECONDS`
+  60-second quiet window, regardless of any `CLAUDE_LB_PROBE_QUIET_SECONDS`
   value still present in the environment
 
 #### Scenario: Prewarm stays off by default
@@ -899,7 +899,7 @@ warning list in the next minor release.
 #### Scenario: Prewarm eligibility is the enabled flag alone
 
 - **GIVEN** the Codex session prewarm switch is on, either in the dashboard or
-  through `CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_CODEX_PREWARM_ENABLED=true`
+  through `CLAUDE_LB_HTTP_RESPONSES_SESSION_BRIDGE_CODEX_PREWARM_ENABLED=true`
   while the dashboard value is unset
 - **WHEN** a first-turn Codex bridge request arrives on a session that has
   not been prewarmed
@@ -936,7 +936,7 @@ warning list in the next minor release.
 
 #### Scenario: Prewarm env alias applies only until the dashboard sets a value
 
-- **GIVEN** `CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_CODEX_PREWARM_ENABLED=true`
+- **GIVEN** `CLAUDE_LB_HTTP_RESPONSES_SESSION_BRIDGE_CODEX_PREWARM_ENABLED=true`
   and a `dashboard_settings` row whose
   `http_responses_session_bridge_codex_prewarm_enabled` column is NULL
 - **WHEN** an operator turns the Codex session prewarm off in the dashboard
@@ -948,7 +948,7 @@ warning list in the next minor release.
 
 #### Scenario: Resilience toggle env aliases apply only until the dashboard sets a value
 
-- **GIVEN** `CODEX_LB_CIRCUIT_BREAKER_ENABLED=true` and a `dashboard_settings`
+- **GIVEN** `CLAUDE_LB_CIRCUIT_BREAKER_ENABLED=true` and a `dashboard_settings`
   row whose `circuit_breaker_enabled` column is NULL
 - **WHEN** an operator sets the circuit breaker off in the dashboard
 - **THEN** the next request runs with the breaker off on every replica without
@@ -967,12 +967,12 @@ The chart README's `Upgrading` section MUST state that the shim is removed in th
 - **GIVEN** any release of the chart
 - **WHEN** the chart is rendered with `--is-upgrade`
 - **THEN** no `legacy-prepare` or `legacy-cleanup` Job, ServiceAccount, Role or RoleBinding is rendered
-- **AND** no rendered resource carries the `codex-lb.soju.dev/traffic: legacy` lane
+- **AND** no rendered resource carries the `claude-lb.soju.dev/traffic: legacy` lane
 
 #### Scenario: Public Service always selects the StatefulSet lane
 
 - **WHEN** the public Service is rendered on install, on upgrade, or with a stale `migration.serviceSelectorMode` override
-- **THEN** its selector is exactly the workload selector labels, including `codex-lb.soju.dev/traffic: workload`
+- **THEN** its selector is exactly the workload selector labels, including `claude-lb.soju.dev/traffic: workload`
 
 #### Scenario: Operator on a pre-1.13 chart reads the upgrade path
 

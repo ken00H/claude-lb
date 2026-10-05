@@ -24,7 +24,7 @@ HEAD = ScriptDirectory(str(ROOT / "app/db/alembic")).get_current_head()
 
 @pytest.fixture
 def disposable_url() -> Iterator[str]:
-    url = os.environ.get("CODEX_LB_TEST_DATABASE_URL", "")
+    url = os.environ.get("CLAUDE_LB_TEST_DATABASE_URL", "")
     if not url.startswith("postgresql"):
         pytest.skip("requires disposable PostgreSQL with CREATEDB; failure injection also requires a superuser")
     database = "migration_benchmark_" + uuid4().hex
@@ -40,7 +40,12 @@ def disposable_url() -> Iterator[str]:
 
 
 def invoke(url: str, output: Path, *extra: str) -> subprocess.CompletedProcess[str]:
-    env = {**os.environ, "CODEX_LB_DATABASE_URL": url, "CODEX_LB_TEST_DATABASE_URL": url, "BENCHMARK_DATABASE_URL": url}
+    env = {
+        **os.environ,
+        "CLAUDE_LB_DATABASE_URL": url,
+        "CLAUDE_LB_TEST_DATABASE_URL": url,
+        "BENCHMARK_DATABASE_URL": url,
+    }
     return subprocess.run(
         [
             sys.executable,

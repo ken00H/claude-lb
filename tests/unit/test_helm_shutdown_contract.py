@@ -12,7 +12,7 @@ from app.core.server import POST_DRAIN_CLEANUP_TIMEOUT_SECONDS
 pytestmark = pytest.mark.unit
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
-_CHART_DIR = _REPO_ROOT / "deploy" / "helm" / "codex-lb"
+_CHART_DIR = _REPO_ROOT / "deploy" / "helm" / "claude-lb"
 
 
 def test_shutdown_defaults_satisfy_shared_deadline_and_cleanup_buffer() -> None:

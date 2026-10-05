@@ -248,7 +248,7 @@ Migration state inspection SHALL classify `alembic_version` revisions that are n
 
 ### Requirement: Migration CLI distinguishes omitted and empty targets
 
-The `app.db.migrate` / `codex-lb-db` CLI SHALL use the settings-derived database URL only when `--db-url` is omitted. If `--db-url` is explicitly supplied as an exact empty string, the CLI MUST terminate with an argument error before resolving or opening a settings-derived database target. This validation MUST apply to every supported migration subcommand: `upgrade`, `current`, `check`, `wait-for-head`, `wait-for-connection`, and `stamp`.
+The `app.db.migrate` / `claude-lb-db` CLI SHALL use the settings-derived database URL only when `--db-url` is omitted. If `--db-url` is explicitly supplied as an exact empty string, the CLI MUST terminate with an argument error before resolving or opening a settings-derived database target. This validation MUST apply to every supported migration subcommand: `upgrade`, `current`, `check`, `wait-for-head`, `wait-for-connection`, and `stamp`.
 
 #### Scenario: Explicit empty target is rejected before side effects
 

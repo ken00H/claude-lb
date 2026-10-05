@@ -27,5 +27,5 @@ Recent rollout and transport changes introduced multiple fail-open or race-prone
 ## Impact
 
 - Code: `app/db/session.py`, `app/modules/health/api.py`, `app/core/clients/proxy.py`, `app/main.py`, `app/modules/dashboard_auth/api.py`
-- Deployment: `deploy/helm/codex-lb/templates/configmap.yaml`, `deploy/helm/codex-lb/templates/hooks/migration-job.yaml`, `deploy/helm/codex-lb/templates/deployment.yaml`, `docker-compose.prod.yml`
+- Deployment: `deploy/helm/claude-lb/templates/configmap.yaml`, `deploy/helm/claude-lb/templates/hooks/migration-job.yaml`, `deploy/helm/claude-lb/templates/deployment.yaml`, `docker-compose.prod.yml`
 - Tests: Helm rendering tests, health probe tests, websocket proxy tests, shutdown tests, dashboard auth tests

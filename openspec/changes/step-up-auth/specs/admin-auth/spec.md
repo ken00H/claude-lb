@@ -25,7 +25,7 @@ Every non-safe request (`POST`, `PUT`, `PATCH`, `DELETE`) authorised by `securit
 
 ### Requirement: Step-up endpoint and cookies
 
-`POST /api/dashboard-auth/step-up` `{password?, code?}` SHALL re-verify the signed-in account principal (session cookie or trusted-header identity; guests and account-less principals answer `401 user_account_required`). The account MUST present every factor it holds: its password when it has a hash, its TOTP code when it has a secret (the replay counter advances). Any refusal SHALL answer `401 invalid_credentials` with an identical body; attempts SHALL spend the per-client password limiter budget (8 per 60 s, `429 step_up_rate_limited`); an account with no factor SHALL answer `403 step_up_unavailable`. Success SHALL audit `step_up_verified` (actor = the account, `details.methods`) and answer `{verifiedAt, expiresAt = verifiedAt + 300}`. For a password session it SHALL re-issue the session cookie with `su = now`, keeping the method, TOTP step and remaining lifetime; for a trusted-header account it SHALL set the cookie `codex_lb_step_up` (sealed `{v: 1, uid, su, exp = su + 300}`, HttpOnly, SameSite=Lax, Secure on HTTPS, five-minute max-age), which SHALL be honoured only when its `uid` is the acting account. Password login and invite acceptance SHALL mint `su = now` when the account has no TOTP secret; `/totp/verify` SHALL mint `su = now`; a password change SHALL copy `su` unchanged into the re-issued cookie.
+`POST /api/dashboard-auth/step-up` `{password?, code?}` SHALL re-verify the signed-in account principal (session cookie or trusted-header identity; guests and account-less principals answer `401 user_account_required`). The account MUST present every factor it holds: its password when it has a hash, its TOTP code when it has a secret (the replay counter advances). Any refusal SHALL answer `401 invalid_credentials` with an identical body; attempts SHALL spend the per-client password limiter budget (8 per 60 s, `429 step_up_rate_limited`); an account with no factor SHALL answer `403 step_up_unavailable`. Success SHALL audit `step_up_verified` (actor = the account, `details.methods`) and answer `{verifiedAt, expiresAt = verifiedAt + 300}`. For a password session it SHALL re-issue the session cookie with `su = now`, keeping the method, TOTP step and remaining lifetime; for a trusted-header account it SHALL set the cookie `claude_lb_step_up` (sealed `{v: 1, uid, su, exp = su + 300}`, HttpOnly, SameSite=Lax, Secure on HTTPS, five-minute max-age), which SHALL be honoured only when its `uid` is the acting account. Password login and invite acceptance SHALL mint `su = now` when the account has no TOTP secret; `/totp/verify` SHALL mint `su = now`; a password change SHALL copy `su` unchanged into the re-issued cookie.
 
 #### Scenario: Password account confirms and the change goes through
 
@@ -44,7 +44,7 @@ Every non-safe request (`POST`, `PUT`, `PATCH`, `DELETE`) authorised by `securit
 
 - **GIVEN** a trusted-header account that enrolled TOTP and has no password
 - **WHEN** it posts `{code}` to `/step-up`
-- **THEN** the response sets `codex_lb_step_up`, the sensitive route succeeds for that account and stays refused for another identity presenting the same cookie
+- **THEN** the response sets `claude_lb_step_up`, the sensitive route succeeds for that account and stays refused for another identity presenting the same cookie
 - **AND** 301 seconds later the route answers `403 step_up_required` again
 
 ## MODIFIED Requirements

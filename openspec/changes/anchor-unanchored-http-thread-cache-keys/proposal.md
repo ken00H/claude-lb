@@ -94,7 +94,7 @@ user item* `[:512]`. Append-only histories do stay stable, which is why one
 - Diagnostics: every resolution reports `payload` / `disabled` / `anchor_hit` /
   `anchor_new` / `anchor_reset` / `unanchorable` on the existing
   `proxy_request_shape` trace line next to `sticky_key_source`, and on a new
-  `codex_lb_prompt_cache_key_derivation_total{outcome}` counter. This answers
+  `claude_lb_prompt_cache_key_derivation_total{outcome}` counter. This answers
   the open objection on #2347 — that the production percentages were
   reconstructed rather than correlated to resolved keys — from the fleet
   itself.
@@ -111,7 +111,7 @@ user item* `[:512]`. Append-only histories do stay stable, which is why one
 
 No new setting. The behaviour rides the existing dashboard
 `openai_cache_affinity` boolean, as the audit recommends, so the settings
-ratchet is unchanged and there is no new `CODEX_LB_*` env var, dashboard column
+ratchet is unchanged and there is no new `CLAUDE_LB_*` env var, dashboard column
 or migration.
 
 ## Capabilities
@@ -149,7 +149,7 @@ None.
 - Operators: no action. Anchors are per process, so a restart or a blue/green
   window where both colors serve can leave one thread holding two keys and two
   owners for that window — bounded by the freshness window and worth one
-  prefix-cache miss. Watch `codex_lb_prompt_cache_key_derivation_total` after
+  prefix-cache miss. Watch `claude_lb_prompt_cache_key_derivation_total` after
   deploy: a healthy fleet shows `anchor_hit` dominating `anchor_new` +
   `anchor_reset` for unanchored traffic.
 

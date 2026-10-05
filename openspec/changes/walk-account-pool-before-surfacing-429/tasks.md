@@ -107,6 +107,6 @@
   of per-account failures, dispatches are bounded, the excluded set is strictly
   monotone, and there is exactly one health write per attempted account.
 - [ ] Confirm the `[settings_fields]` ratchet does not move and no new
-  `CODEX_LB_*` name is introduced.
+  `CLAUDE_LB_*` name is introduced.
 - [ ] `openspec validate --specs`, `uv run ruff check`,
   `codex review --base origin/main`.

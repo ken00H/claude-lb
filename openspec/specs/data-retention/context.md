@@ -24,7 +24,7 @@ The scheduler always starts and re-resolves the effective retention at the top o
 
 ## Env-alias retirement (done)
 
-- `retention-dashboard-settings` (PR #1364, v1.21.x) moved retention to the dashboard and kept `CODEX_LB_REQUEST_LOG_RETENTION_DAYS` / `CODEX_LB_USAGE_HISTORY_RETENTION_DAYS` as deprecated aliases for NULL dashboard values.
+- `retention-dashboard-settings` (PR #1364, v1.21.x) moved retention to the dashboard and kept `CLAUDE_LB_REQUEST_LOG_RETENTION_DAYS` / `CLAUDE_LB_USAGE_HISTORY_RETENTION_DAYS` as deprecated aliases for NULL dashboard values.
 - `remove-dead-env-settings` (first release after v1.24.0; v1.22–v1.24 shipped the deprecation window) removed the env fields. The two names are in `_REMOVED_SETTINGS`, so an operator who still sets them gets the one-release startup warning; the effective window for a NULL dashboard value is now `0` (disabled), so such an operator must set the window from the dashboard once.
 
 ## Decisions
@@ -32,7 +32,7 @@ The scheduler always starts and re-resolves the effective retention at the top o
 - **Floors**: 30 days keeps default report ranges and `previous_response_id` owner lookups inside retained data; 45 days exceeds the monthly usage window (~31 days) plus margin. Sub-floor non-zero values are rejected with a validation error by the dashboard API.
 - **Rollup gate**: request-log pruning deletes only rows at or below the account-usage-rollup watermark (`min(cutoff, folded_through)`), so lifetime account totals survive pruning by construction; with no watermark (fold never ran) request-log pruning is skipped entirely.
 - **Latest-row preservation**: usage-history pruning always retains the newest row per `(account_id, coalesce(window,'primary'))` and per `(account_id, quota_key, window)` so idle or paused accounts keep their last-known usage on the dashboard, regardless of age.
-- **No partitioning**: batched deletes are sufficient at codex-lb volumes and avoid a heavyweight migration; revisit if tables reach hundreds of millions of rows.
+- **No partitioning**: batched deletes are sufficient at claude-lb volumes and avoid a heavyweight migration; revisit if tables reach hundreds of millions of rows.
 
 ## Operational Notes
 
@@ -45,4 +45,4 @@ The scheduler always starts and re-resolves the effective retention at the top o
 
 ## Example
 
-An operator upgrading with `CODEX_LB_REQUEST_LOG_RETENTION_DAYS=90` still in `.env.local` sees the startup warning naming it, opens Settings → Advanced → Data retention (effective value 0 = disabled, input empty), and stores 30. Within one scheduler tick the leader prunes request logs older than 30 days — no restart. With a fold watermark at `now − 24h`, a row requested 31 days ago is deleted (older than cutoff, below watermark), while a row requested 2 hours ago is kept at any retention setting (above the watermark, unfolded).
+An operator upgrading with `CLAUDE_LB_REQUEST_LOG_RETENTION_DAYS=90` still in `.env.local` sees the startup warning naming it, opens Settings → Advanced → Data retention (effective value 0 = disabled, input empty), and stores 30. Within one scheduler tick the leader prunes request logs older than 30 days — no restart. With a fold watermark at `now − 24h`, a row requested 31 days ago is deleted (older than cutoff, below watermark), while a row requested 2 hours ago is kept at any retention setting (above the watermark, unfolded).

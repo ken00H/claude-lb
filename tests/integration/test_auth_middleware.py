@@ -144,10 +144,10 @@ def _set_dashboard_auth_env(
     trusted_proxy_cidrs: str = "127.0.0.1/32",
     proxy_header: str = "Remote-User",
 ) -> None:
-    monkeypatch.setenv("CODEX_LB_DASHBOARD_AUTH_MODE", mode)
-    monkeypatch.setenv("CODEX_LB_FIREWALL_TRUST_PROXY_HEADERS", str(trust_proxy_headers).lower())
-    monkeypatch.setenv("CODEX_LB_FIREWALL_TRUSTED_PROXY_CIDRS", trusted_proxy_cidrs)
-    monkeypatch.setenv("CODEX_LB_DASHBOARD_AUTH_PROXY_HEADER", proxy_header)
+    monkeypatch.setenv("CLAUDE_LB_DASHBOARD_AUTH_MODE", mode)
+    monkeypatch.setenv("CLAUDE_LB_FIREWALL_TRUST_PROXY_HEADERS", str(trust_proxy_headers).lower())
+    monkeypatch.setenv("CLAUDE_LB_FIREWALL_TRUSTED_PROXY_CIDRS", trusted_proxy_cidrs)
+    monkeypatch.setenv("CLAUDE_LB_DASHBOARD_AUTH_PROXY_HEADER", proxy_header)
     get_settings.cache_clear()
 
 
@@ -156,7 +156,7 @@ def _set_proxy_unauthenticated_client_cidrs_env(
     *,
     cidrs: str,
 ) -> None:
-    monkeypatch.setenv("CODEX_LB_PROXY_UNAUTHENTICATED_CLIENT_CIDRS", cidrs)
+    monkeypatch.setenv("CLAUDE_LB_PROXY_UNAUTHENTICATED_CLIENT_CIDRS", cidrs)
     get_settings.cache_clear()
 
 
@@ -396,7 +396,7 @@ async def test_proxy_family_consensus_controls_local_proxy_and_dashboard_access(
     forwarded_value: str,
     expected_status: int,
 ) -> None:
-    monkeypatch.setenv("CODEX_LB_DASHBOARD_BOOTSTRAP_TOKEN", "bootstrap-secret")
+    monkeypatch.setenv("CLAUDE_LB_DASHBOARD_BOOTSTRAP_TOKEN", "bootstrap-secret")
     monkeypatch.setenv("FORWARDED_ALLOW_IPS", "10.0.0.2")
     get_settings.cache_clear()
     _set_dashboard_auth_env(
@@ -494,7 +494,7 @@ async def test_proxy_unauthenticated_client_cidr_rejects_projected_client_when_r
 
 @pytest.mark.asyncio
 async def test_untrusted_loopback_proxy_hint_does_not_bypass_dashboard_bootstrap(app_instance, monkeypatch):
-    monkeypatch.setenv("CODEX_LB_DASHBOARD_BOOTSTRAP_TOKEN", "bootstrap-secret")
+    monkeypatch.setenv("CLAUDE_LB_DASHBOARD_BOOTSTRAP_TOKEN", "bootstrap-secret")
     _set_dashboard_auth_env(
         monkeypatch,
         mode=DashboardAuthMode.STANDARD,
@@ -518,7 +518,7 @@ async def test_untrusted_loopback_proxy_hint_does_not_bypass_dashboard_bootstrap
 
 @pytest.mark.asyncio
 async def test_duplicate_forwarded_hint_does_not_bypass_direct_local_auth(app_instance, monkeypatch):
-    monkeypatch.setenv("CODEX_LB_DASHBOARD_BOOTSTRAP_TOKEN", "bootstrap-secret")
+    monkeypatch.setenv("CLAUDE_LB_DASHBOARD_BOOTSTRAP_TOKEN", "bootstrap-secret")
     _set_dashboard_auth_env(
         monkeypatch,
         mode=DashboardAuthMode.STANDARD,
@@ -548,7 +548,7 @@ async def test_duplicate_forwarded_hint_does_not_bypass_direct_local_auth(app_in
 
 @pytest.mark.asyncio
 async def test_remote_first_run_requires_bootstrap_token(app_instance, monkeypatch):
-    monkeypatch.setenv("CODEX_LB_DASHBOARD_BOOTSTRAP_TOKEN", "bootstrap-secret")
+    monkeypatch.setenv("CLAUDE_LB_DASHBOARD_BOOTSTRAP_TOKEN", "bootstrap-secret")
     from app.core.config.settings import get_settings
     from app.core.config.settings_cache import get_settings_cache
 
@@ -609,7 +609,7 @@ async def test_remote_first_run_requires_bootstrap_token(app_instance, monkeypat
 
 @pytest.mark.asyncio
 async def test_separate_forwarded_field_cannot_spoof_local_first_run(app_instance, monkeypatch):
-    monkeypatch.setenv("CODEX_LB_DASHBOARD_BOOTSTRAP_TOKEN", "bootstrap-secret")
+    monkeypatch.setenv("CLAUDE_LB_DASHBOARD_BOOTSTRAP_TOKEN", "bootstrap-secret")
     _set_dashboard_auth_env(
         monkeypatch,
         mode=DashboardAuthMode.STANDARD,
@@ -635,7 +635,7 @@ async def test_separate_forwarded_field_cannot_spoof_local_first_run(app_instanc
 
 @pytest.mark.asyncio
 async def test_repeated_singleton_proxy_header_cannot_spoof_local_first_run(app_instance, monkeypatch):
-    monkeypatch.setenv("CODEX_LB_DASHBOARD_BOOTSTRAP_TOKEN", "bootstrap-secret")
+    monkeypatch.setenv("CLAUDE_LB_DASHBOARD_BOOTSTRAP_TOKEN", "bootstrap-secret")
     _set_dashboard_auth_env(
         monkeypatch,
         mode=DashboardAuthMode.STANDARD,

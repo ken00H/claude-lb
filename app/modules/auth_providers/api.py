@@ -51,7 +51,7 @@ def _config(provider: DashboardAuthProvider) -> dict[str, str]:
     """Provider configuration the settings UI shows, with every secret masked.
 
     The trusted-header provider is configured by the deployment topology, not
-    by the database: both header names come from ``CODEX_LB_DASHBOARD_AUTH_PROXY_*``
+    by the database: both header names come from ``CLAUDE_LB_DASHBOARD_AUTH_PROXY_*``
     and have to match the reverse proxy. Returning them lets the settings card
     name the values it cannot edit instead of only naming the variables.
 

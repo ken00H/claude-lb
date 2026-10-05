@@ -109,7 +109,7 @@ def validate_config(config: FastCanaryConfig) -> FastCanaryConfig:
 def stamp_isolated_auth_refresh(auth_json: Path) -> str:
     """Record the isolated canary credential as having just been refreshed.
 
-    codex-lb proactively exchanges an account's refresh token on the first
+    claude-lb proactively exchanges an account's refresh token on the first
     request once the account's ``last_refresh`` is older than the fixed
     ``TOKEN_REFRESH_INTERVAL_DAYS`` window (eight days,
     ``app/core/auth/refresh.py``), and an imported account inherits
@@ -125,7 +125,7 @@ def stamp_isolated_auth_refresh(auth_json: Path) -> str:
 
     Stamping the file keeps the whole run inside the window (a run lasts
     minutes, the window is days) without widening the window for the process,
-    which is what the removed ``CODEX_LB_TOKEN_REFRESH_INTERVAL_DAYS=365``
+    which is what the removed ``CLAUDE_LB_TOKEN_REFRESH_INTERVAL_DAYS=365``
     injection used to do for the failure matrix only. The recorded refresh time
     is the only value that changes (the file is rewritten as formatted JSON);
     tokens are neither inspected nor logged.
@@ -236,9 +236,9 @@ def run_suite(
                 "--locked",
                 "--release",
                 "--package",
-                "codex-lb-egress-worker",
+                "claude-lb-egress-worker",
                 "--bin",
-                "codex-lb-native-egress",
+                "claude-lb-native-egress",
                 "--manifest-path",
                 str(config.native_manifest),
             ),

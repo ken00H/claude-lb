@@ -17,7 +17,7 @@ JsonObject = dict[str, object]
 ProgressLogger = Callable[[str], None]
 
 PROVIDER_RETAG_BACKUP_DIR = "provider-retag"
-_SUPPORTED_PROVIDERS = {"openai", "codex-lb"}
+_SUPPORTED_PROVIDERS = {"openai", "claude-lb"}
 _STATE_DB_PATTERN = "state_*.sqlite"
 
 

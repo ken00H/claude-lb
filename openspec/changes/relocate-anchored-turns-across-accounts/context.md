@@ -200,7 +200,7 @@ The eligibility question is already answered independently in
 `_service/streaming/retry.py`, twice in `_service/http_bridge/streaming.py`, in
 `_service/compact.py`, and in `_service/websocket/helpers.py`. They do not agree
 on scope, which is why the durable-transcript case is missing from all of them
-rather than from one. The downstream fork `aafqaq/codex-lb-enhanced` implemented
+rather than from one. The downstream fork `aafqaq/claude-lb-enhanced` implemented
 the same feature by calling its projection directly from fourteen sites across
 seven modules and then spent a day emitting roughly twenty consecutive
 single-line corrections to those sites. The decision table in

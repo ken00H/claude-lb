@@ -21,8 +21,8 @@ _LIMITED_MULTIPART_PATHS = frozenset(
     }
 )
 _OPENAI_MULTIPART_PATH_PREFIXES = ("/backend-api", "/v1")
-_CONTENT_ENCODING_GATE_HANDLED_STATE = "_codex_lb_multipart_content_encoding_gate_handled"
-_UNSUPPORTED_CONTENT_ENCODING_STATE = "_codex_lb_unsupported_multipart_content_encoding"
+_CONTENT_ENCODING_GATE_HANDLED_STATE = "_claude_lb_multipart_content_encoding_gate_handled"
+_UNSUPPORTED_CONTENT_ENCODING_STATE = "_claude_lb_unsupported_multipart_content_encoding"
 
 logger = logging.getLogger(__name__)
 

@@ -39,7 +39,7 @@ deliberate, because not all of them are provably pre-dispatch.
 
 - **GIVEN** an OpenAI SDK or other non-native client receives the same upstream
   truncation
-- **WHEN** codex-lb normalizes the stream
+- **WHEN** claude-lb normalizes the stream
 - **THEN** the client receives the existing terminal `response.failed` shape
 
 #### Scenario: Native Codex sees a local pre-dispatch refusal before commit
@@ -246,7 +246,7 @@ allowing an already-prepared request to redispatch a denied anchor.
 - **WHEN** it reaches its final dispatch check
 - **THEN** the proxy fails it closed as `stream_incomplete`
 - **AND** the client receives that error rather than a committed empty stream
-- **AND** `codex_lb_continuity_fail_closed_total{surface="http_bridge",reason="denied_proxy_anchor_before_dispatch"}` is still incremented
+- **AND** `claude_lb_continuity_fail_closed_total{surface="http_bridge",reason="denied_proxy_anchor_before_dispatch"}` is still incremented
 
 #### Scenario: A forwarded before-dispatch refusal reaches the origin's client
 

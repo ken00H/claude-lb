@@ -25,8 +25,8 @@ def test_development_compose_uses_owned_launcher_and_restarts_synced_source() ->
 @pytest.mark.parametrize(
     ("relative_path", "command"),
     [
-        ("README.md", "uv run codex-lb"),
-        ("README.zh-CN.md", "uv run codex-lb"),
+        ("README.md", "uv run claude-lb"),
+        ("README.zh-CN.md", "uv run claude-lb"),
         (
             "openspec/specs/responses-api-compat/ops.md",
             ".venv/bin/python -m app.cli --host 127.0.0.1 --port 2460",
@@ -47,7 +47,7 @@ def test_documented_launchers_delegate_to_app_cli(
         ("scripts/docker-entrypoint.sh", "exec python -m app.cli"),
         ("Dockerfile.distroless", 'CMD ["python", "/app/scripts/distroless-entrypoint.py"]'),
         ("scripts/distroless-entrypoint.py", '[sys.executable, "-m", "app.cli"'),
-        ("deploy/helm/codex-lb/templates/deployment.yaml", "            - app.cli\n"),
+        ("deploy/helm/claude-lb/templates/deployment.yaml", "            - app.cli\n"),
     ],
 )
 def test_production_launchers_delegate_to_app_cli(relative_path: str, contract: str) -> None:

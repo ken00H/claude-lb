@@ -207,12 +207,12 @@ def test_init_tracing_returns_false_when_opentelemetry_is_unavailable(monkeypatc
 def test_init_tracing_returns_true_when_opentelemetry_modules_are_available(monkeypatch: pytest.MonkeyPatch):
     state = _install_fake_otel(monkeypatch)
 
-    assert otel.init_tracing(service_name="codex-lb", endpoint="http://collector:4317") is True
+    assert otel.init_tracing(service_name="claude-lb", endpoint="http://collector:4317") is True
     assert otel.is_initialized() is True
     assert state.provider is not None
     assert len(state.provider.processors) == 1
     assert state.exporter_endpoint == "http://collector:4317"
-    assert state.resource_attributes == {"service.name": "codex-lb"}
+    assert state.resource_attributes == {"service.name": "claude-lb"}
     assert state.fastapi_instrumented == 1
     assert callable(state.fastapi_server_request_hook)
     assert state.aiohttp_instrumented == 1
@@ -394,7 +394,7 @@ def test_init_tracing_redacts_private_live_server_span_attributes(
     redacted_path: str,
 ) -> None:
     state = _install_fake_otel(monkeypatch)
-    raw_url = f"wss://codex-lb.test{path}?{query}#private-fragment"
+    raw_url = f"wss://claude-lb.test{path}?{query}#private-fragment"
     span = _RecordingSpan(
         {
             "http.target": path,
@@ -413,14 +413,14 @@ def test_init_tracing_redacts_private_live_server_span_attributes(
         {
             "type": "websocket",
             "scheme": "wss",
-            "server": ("codex-lb.test", 443),
-            "headers": [(b"host", b"codex-lb.test")],
+            "server": ("claude-lb.test", 443),
+            "headers": [(b"host", b"claude-lb.test")],
             "path": path,
             "query_string": query.encode(),
         },
     )
 
-    redacted_url = f"wss://codex-lb.test{redacted_path}"
+    redacted_url = f"wss://claude-lb.test{redacted_path}"
     assert span.attributes == {
         "http.target": redacted_path,
         "http.url": redacted_url,
@@ -437,7 +437,7 @@ def test_init_tracing_keeps_ordinary_responses_server_span_attributes(
     state = _install_fake_otel(monkeypatch)
     path = "/backend-api/codex/responses"
     query = "model=gpt-5.6"
-    raw_url = f"https://codex-lb.test{path}?{query}#ordinary-fragment"
+    raw_url = f"https://claude-lb.test{path}?{query}#ordinary-fragment"
     attributes = {
         "http.target": path,
         "http.url": raw_url,
@@ -454,8 +454,8 @@ def test_init_tracing_keeps_ordinary_responses_server_span_attributes(
         {
             "type": "http",
             "scheme": "https",
-            "server": ("codex-lb.test", 443),
-            "headers": [(b"host", b"codex-lb.test")],
+            "server": ("claude-lb.test", 443),
+            "headers": [(b"host", b"claude-lb.test")],
             "path": path,
             "query_string": query.encode(),
         },

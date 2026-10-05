@@ -693,7 +693,7 @@ def test_level_does_not_decay_while_the_account_is_held_out() -> None:
 async def test_record_upstream_overload_logs_isolation_at_the_trip_level(
     caplog: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setenv("CODEX_LB_PROXY_OVERLOAD_ISOLATION_SECONDS", "900")
+    monkeypatch.setenv("CLAUDE_LB_PROXY_OVERLOAD_ISOLATION_SECONDS", "900")
     get_settings.cache_clear()
     try:
         clock = VirtualClock(epoch_value=2_000_000_000.0)

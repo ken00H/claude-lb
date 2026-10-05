@@ -15,9 +15,9 @@ both new and existing users; settings toggle; expanded field set over the minima
 
 Self-hosted SHM (kOlapsis/shm) server operated by the maintainer at
 `https://telemetry.tokmaxxing.com`. SHM provides Ed25519 instance signing, aggregate dashboards,
-and public README badges (`/badge/codex-lb/instances`, `/badge/codex-lb/version`).
+and public README badges (`/badge/claude-lb/instances`, `/badge/claude-lb/version`).
 The SDK path is `/v1/register`, `/v1/activate`, `/v1/snapshot` (note: NOT `/api/v1/`,
-which is SHM's admin namespace). codex-lb implements a small Python client (SHM ships
+which is SHM's admin namespace). claude-lb implements a small Python client (SHM ships
 Go/Node SDKs only).
 
 ## Payload schema v1 (the allowlist)
@@ -30,7 +30,7 @@ allowlist test. The registration body sent to `/v1/register` is:
 
 ```json
 {
-  "app_name": "codex-lb",
+  "app_name": "claude-lb",
   "app_version": "1.20.2",
   "deployment_mode": "docker | k8s | pip | bare",
   "environment": "",
@@ -157,7 +157,7 @@ Field notes:
 
 ## Consent resolution precedence
 
-persisted decision > `CODEX_LB_TELEMETRY_ENABLED` env (when set) > default
+persisted decision > `CLAUDE_LB_TELEMETRY_ENABLED` env (when set) > default
 (`undecided` ⇒ active). The env value only decides while the persisted state is `undecided`
 (headless opt-out before first boot); a saved dashboard decision always wins. The dialog is
 only shown while persisted state is `undecided` and no env value is set.
@@ -179,7 +179,7 @@ notice. Followers perform none of that work, avoiding duplicate snapshots and du
 
 ## Retention
 
-Each snapshot summarizes the previous seven days of existing local request logs. codex-lb does
+Each snapshot summarizes the previous seven days of existing local request logs. claude-lb does
 not create a second local telemetry history or queue failed transmissions. The project-operated
 collector is `https://telemetry.tokmaxxing.com`; its server-side retention duration is not yet
 specified, so operators should assume transmitted snapshots remain stored until a published

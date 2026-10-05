@@ -38,7 +38,7 @@ The proxy MUST enforce separate in-process admission limits for token refresh, u
 
 #### Scenario: Fixed gates are not environment settings
 
-- **WHEN** the process starts with `CODEX_LB_PROXY_TOKEN_REFRESH_LIMIT`, `CODEX_LB_PROXY_UPSTREAM_WEBSOCKET_CONNECT_LIMIT`, `CODEX_LB_PROXY_COMPACT_RESPONSE_CREATE_LIMIT` or `CODEX_LB_PROXY_ADMISSION_WAIT_TIMEOUT_SECONDS` set
+- **WHEN** the process starts with `CLAUDE_LB_PROXY_TOKEN_REFRESH_LIMIT`, `CLAUDE_LB_PROXY_UPSTREAM_WEBSOCKET_CONNECT_LIMIT`, `CLAUDE_LB_PROXY_COMPACT_RESPONSE_CREATE_LIMIT` or `CLAUDE_LB_PROXY_ADMISSION_WAIT_TIMEOUT_SECONDS` set
 - **THEN** the values are ignored, startup logs the removed-setting warning once, and the fixed gate sizes and wait apply
 
 #### Scenario: Owner-switch blocked websocket releases response-create admission
@@ -431,8 +431,8 @@ from the process environment.
 
 #### Scenario: Environment change after first boot takes effect on a fresh install
 
-- **GIVEN** a fresh install whose settings row was created while `CODEX_LB_PROXY_ACCOUNT_STREAM_LIMIT=8` was set and no operator has edited the stream cap
-- **WHEN** the process is restarted with `CODEX_LB_PROXY_ACCOUNT_STREAM_LIMIT=12`
+- **GIVEN** a fresh install whose settings row was created while `CLAUDE_LB_PROXY_ACCOUNT_STREAM_LIMIT=8` was set and no operator has edited the stream cap
+- **WHEN** the process is restarted with `CLAUDE_LB_PROXY_ACCOUNT_STREAM_LIMIT=12`
 - **THEN** new stream selection and lease decisions use a cap of 12
 - **AND** the settings API reports the stream cap as inherited from the environment
 
@@ -643,32 +643,32 @@ Each replica MUST derive its local share of every configured account concurrency
 
 ### Requirement: Multiple worker processes per instance are rejected for shared per-account caps
 
-Per-account concurrency caps are partitioned per bridge-ring replica and are correct only when a single worker process runs behind each bridge-ring instance id. `CODEX_LB_WORKERS_PER_INSTANCE` MUST be treated as a startup guard on the environment rather than a configurable setting: the only supported value is `1`, so it MUST NOT be a `Settings` field or appear in the settings reference as a tunable. When the environment (process environment or the loaded env files) declares `CODEX_LB_WORKERS_PER_INSTANCE` — matched case-insensitively, as the former `Settings` field was — with any value other than `1` — a larger integer, zero, a negative number, or a non-integer — the process MUST fail fast at startup with a settings validation error that names `CODEX_LB_WORKERS_PER_INSTANCE`; for values greater than 1 the error MUST state that running more than one worker per instance is not supported for shared per-account caps and that operators MUST run one worker per pod/container and scale horizontally via replicas. When the variable is unset or `1`, startup MUST proceed with no operator action required and behavior MUST be identical to a deployment that does not set the variable. The system MUST NOT attempt to auto-detect the worker count and MUST NOT partition per-account caps across intra-pod worker processes.
+Per-account concurrency caps are partitioned per bridge-ring replica and are correct only when a single worker process runs behind each bridge-ring instance id. `CLAUDE_LB_WORKERS_PER_INSTANCE` MUST be treated as a startup guard on the environment rather than a configurable setting: the only supported value is `1`, so it MUST NOT be a `Settings` field or appear in the settings reference as a tunable. When the environment (process environment or the loaded env files) declares `CLAUDE_LB_WORKERS_PER_INSTANCE` — matched case-insensitively, as the former `Settings` field was — with any value other than `1` — a larger integer, zero, a negative number, or a non-integer — the process MUST fail fast at startup with a settings validation error that names `CLAUDE_LB_WORKERS_PER_INSTANCE`; for values greater than 1 the error MUST state that running more than one worker per instance is not supported for shared per-account caps and that operators MUST run one worker per pod/container and scale horizontally via replicas. When the variable is unset or `1`, startup MUST proceed with no operator action required and behavior MUST be identical to a deployment that does not set the variable. The system MUST NOT attempt to auto-detect the worker count and MUST NOT partition per-account caps across intra-pod worker processes.
 
 #### Scenario: A single worker per instance is accepted
 
-- **GIVEN** `CODEX_LB_WORKERS_PER_INSTANCE` is unset or explicitly `1`
+- **GIVEN** `CLAUDE_LB_WORKERS_PER_INSTANCE` is unset or explicitly `1`
 - **WHEN** the process loads its settings at startup
 - **THEN** startup succeeds and per-account caps remain partitioned per replica via the bridge ring
 
 #### Scenario: More than one worker per instance fails fast
 
-- **GIVEN** `CODEX_LB_WORKERS_PER_INSTANCE=2`
+- **GIVEN** `CLAUDE_LB_WORKERS_PER_INSTANCE=2`
 - **WHEN** the process loads its settings at startup
-- **THEN** startup fails with a settings validation error naming `CODEX_LB_WORKERS_PER_INSTANCE`
+- **THEN** startup fails with a settings validation error naming `CLAUDE_LB_WORKERS_PER_INSTANCE`
 - **AND** the error states multi-worker-per-instance is not supported and directs the operator to run one worker per pod/container and scale via replicas
 
 #### Scenario: A lowercase declaration is not a bypass
 
-- **GIVEN** `codex_lb_workers_per_instance=2` declared in lowercase
+- **GIVEN** `claude_lb_workers_per_instance=2` declared in lowercase
 - **WHEN** the process loads its settings at startup
-- **THEN** startup fails with the same settings validation error naming `CODEX_LB_WORKERS_PER_INSTANCE`
+- **THEN** startup fails with the same settings validation error naming `CLAUDE_LB_WORKERS_PER_INSTANCE`
 
 #### Scenario: A malformed declaration fails fast
 
-- **GIVEN** `CODEX_LB_WORKERS_PER_INSTANCE=0` or `CODEX_LB_WORKERS_PER_INSTANCE=two`
+- **GIVEN** `CLAUDE_LB_WORKERS_PER_INSTANCE=0` or `CLAUDE_LB_WORKERS_PER_INSTANCE=two`
 - **WHEN** the process loads its settings at startup
-- **THEN** startup fails with a settings validation error naming `CODEX_LB_WORKERS_PER_INSTANCE` and stating that only `1` is supported
+- **THEN** startup fails with a settings validation error naming `CLAUDE_LB_WORKERS_PER_INSTANCE` and stating that only `1` is supported
 
 ### Requirement: Stream leases reflect in-flight turns, not session lifetime
 
@@ -1059,7 +1059,7 @@ When WebSocket terminal cleanup has captured an account response-create lease, i
 
 The Helm chart MUST default `config.backpressureMaxConcurrentRequests` to
 `0` so a default install sets
-`CODEX_LB_BACKPRESSURE_MAX_CONCURRENT_REQUESTS` to `"0"`. A value of `0`
+`CLAUDE_LB_BACKPRESSURE_MAX_CONCURRENT_REQUESTS` to `"0"`. A value of `0`
 MUST leave the process-wide backpressure semaphore uninstalled. A positive
 operator override MUST still render into that ConfigMap key. The default
 MUST NOT install one global concurrent-request cap across proxy HTTP,
@@ -1068,13 +1068,13 @@ websocket, compact, and dashboard traffic.
 #### Scenario: Default Helm ConfigMap disables global backpressure
 
 - **WHEN** the chart is rendered with default values
-- **THEN** the ConfigMap `CODEX_LB_BACKPRESSURE_MAX_CONCURRENT_REQUESTS`
+- **THEN** the ConfigMap `CLAUDE_LB_BACKPRESSURE_MAX_CONCURRENT_REQUESTS`
   value is `"0"`
 
 #### Scenario: Explicit Helm override renders the global cap
 
 - **WHEN** an operator sets `config.backpressureMaxConcurrentRequests=37`
-- **THEN** the ConfigMap `CODEX_LB_BACKPRESSURE_MAX_CONCURRENT_REQUESTS`
+- **THEN** the ConfigMap `CLAUDE_LB_BACKPRESSURE_MAX_CONCURRENT_REQUESTS`
   value is `"37"`
 
 ### Requirement: Live stream lease release survives caller cancellation
@@ -1093,7 +1093,7 @@ or explicitly settle the release before propagating the cancellation.
 
 ### Requirement: Daybreak capability intent bypasses ordinary opportunistic admission
 
-`GET /backend-api/codex/opportunistic/admission` MUST require a valid proxy API key whenever `X-Codex-LB-Required-Capability` is present and MUST then return HTTP 400 with `error.code = "required_capability_transport_unsupported"` before model-source or ordinary account-capacity evaluation. Headerless admission requests MUST retain their existing behavior.
+`GET /backend-api/codex/opportunistic/admission` MUST require a valid proxy API key whenever `X-Claude-LB-Required-Capability` is present and MUST then return HTTP 400 with `error.code = "required_capability_transport_unsupported"` before model-source or ordinary account-capacity evaluation. Headerless admission requests MUST retain their existing behavior.
 
 #### Scenario: Authenticated carrier is denied before admission evaluation
 
@@ -1112,7 +1112,7 @@ The settings API MUST report, for each of `proxy_account_response_create_limit`,
 
 #### Scenario: Inherited cap is labelled with its layer
 
-- **GIVEN** the response-create limit column is NULL and `CODEX_LB_PROXY_ACCOUNT_RESPONSE_CREATE_LIMIT=6` differs from the code default 4
+- **GIVEN** the response-create limit column is NULL and `CLAUDE_LB_PROXY_ACCOUNT_RESPONSE_CREATE_LIMIT=6` differs from the code default 4
 - **WHEN** an operator opens routing settings
 - **THEN** the response-create input is empty and labelled as inherited from the environment with the value 6, while a cap whose environment value equals the code default is labelled as the default
 

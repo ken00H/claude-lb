@@ -38,7 +38,7 @@
 
 ## 3. Diagnostics
 
-- [x] 3.1 Add `codex_lb_prompt_cache_key_derivation_total{outcome}`.
+- [x] 3.1 Add `claude_lb_prompt_cache_key_derivation_total{outcome}`.
 - [x] 3.2 Carry the outcome on `_AffinityPolicy` and log it on
   `proxy_request_shape` next to `sticky_key_source` for both stream and
   compact.

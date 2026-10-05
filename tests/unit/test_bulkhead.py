@@ -360,7 +360,7 @@ async def test_bulkhead_dashboard_websocket_uses_detail_payload_when_lane_full()
 
     assert app_called is False
     payload = json.loads(cast(bytes, sent_events[1]["body"]).decode("utf-8"))
-    assert payload == {"detail": "codex-lb is temporarily overloaded in the dashboard lane"}
+    assert payload == {"detail": "claude-lb is temporarily overloaded in the dashboard lane"}
 
 
 def test_bulkhead_semaphore_derives_per_class_limits_from_single_proxy_limit():

@@ -259,7 +259,7 @@ _WEBSOCKET_AUTH_INVALIDATED_FAILURE_CODE = "account_auth_invalidated"
 _NO_SECURITY_WORK_AUTHORIZED_ACCOUNTS_CODE = "no_security_work_authorized_accounts"
 _SECURITY_WORK_NO_AUTHORIZED_ACCOUNTS_MESSAGE = (
     "Upstream flagged this request as possible cybersecurity work, but no account is marked as authorized for "
-    "security work. codex-lb is continuing with normal account selection; the upstream request may still fail until "
+    "security work. claude-lb is continuing with normal account selection; the upstream request may still fail until "
     "an account with Trusted Access for Cyber is marked as security-work-authorized."
 )
 
@@ -552,7 +552,7 @@ def _text_with_operation_id(text_data: str, operation_id: str | None) -> str:
     metadata = dict(raw_metadata) if isinstance(raw_metadata, dict) else {}
     # This namespace is reserved by the bridge; never trust a caller-supplied
     # value to stand in for the durable operation identity.
-    metadata["codex_lb_operation_id"] = operation_id
+    metadata["claude_lb_operation_id"] = operation_id
     payload["client_metadata"] = metadata
     return json.dumps(payload, ensure_ascii=True, separators=(",", ":"))
 
@@ -566,10 +566,10 @@ def _text_without_operation_id(text_data: str) -> str:
     if not isinstance(payload, dict):
         return text_data
     raw_metadata = payload.get("client_metadata")
-    if not isinstance(raw_metadata, dict) or "codex_lb_operation_id" not in raw_metadata:
+    if not isinstance(raw_metadata, dict) or "claude_lb_operation_id" not in raw_metadata:
         return text_data
     metadata = dict(raw_metadata)
-    metadata.pop("codex_lb_operation_id", None)
+    metadata.pop("claude_lb_operation_id", None)
     if metadata:
         payload["client_metadata"] = metadata
     else:
@@ -3959,7 +3959,7 @@ class _HTTPBridgeRequestSubmitMixin:
                     else request_state.request_text
                 )
                 # The send boundary decorates durable operations with
-                # codex_lb_operation_id after selection. Keep that operation
+                # claude_lb_operation_id after selection. Keep that operation
                 # identity on its owner unless a dedicated rebind path has
                 # already replaced the operation ID.
                 candidate_portable = request_state.operation_id is None and (

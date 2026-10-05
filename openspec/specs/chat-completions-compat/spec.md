@@ -353,7 +353,7 @@ The service MUST treat the `messages`, `tools` and `input` fields of `/v1/chat/c
 
 ### Requirement: Daybreak capability intent fails closed on Chat Completions
 
-`POST /v1/chat/completions` MUST require a valid proxy API key whenever `X-Codex-LB-Required-Capability` is present, even when deployment-wide API-key authentication is disabled. After authentication it MUST return HTTP 400 with `error.code = "required_capability_transport_unsupported"` before model-source lookup, usage reservation, account selection, Responses conversion, or upstream dispatch. Headerless Chat Completions requests MUST retain their existing behavior.
+`POST /v1/chat/completions` MUST require a valid proxy API key whenever `X-Claude-LB-Required-Capability` is present, even when deployment-wide API-key authentication is disabled. After authentication it MUST return HTTP 400 with `error.code = "required_capability_transport_unsupported"` before model-source lookup, usage reservation, account selection, Responses conversion, or upstream dispatch. Headerless Chat Completions requests MUST retain their existing behavior.
 
 #### Scenario: Authenticated carrier is denied before chat routing
 

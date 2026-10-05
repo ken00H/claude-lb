@@ -26,7 +26,7 @@ def test_postgres18_compose_upgrade_helper_is_digest_pinned() -> None:
     upgrade = services["postgres-upgrade"]
 
     assert postgres["image"] == "postgres:18-alpine"
-    assert postgres["volumes"] == ["codex-lb-postgres-data:/var/lib/postgresql"]
+    assert postgres["volumes"] == ["claude-lb-postgres-data:/var/lib/postgresql"]
 
     entrypoint = postgres["entrypoint"]
     assert entrypoint[:2] == ["sh", "-ceu"]
@@ -40,5 +40,5 @@ def test_postgres18_compose_upgrade_helper_is_digest_pinned() -> None:
     assert len(image.rsplit("@sha256:", 1)[1]) == 64
     assert upgrade["profiles"] == ["postgres-upgrade"]
     assert upgrade["environment"]["PGAUTO_ONESHOT"] == "yes"
-    assert upgrade["volumes"] == ["codex-lb-postgres-data:/var/lib/postgresql"]
+    assert upgrade["volumes"] == ["claude-lb-postgres-data:/var/lib/postgresql"]
     assert upgrade["restart"] == "no"

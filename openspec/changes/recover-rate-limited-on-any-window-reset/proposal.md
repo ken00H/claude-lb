@@ -1,7 +1,7 @@
 ## Why
 
 When upstream resets a quota window earlier than the deadline a 429 persisted,
-codex-lb keeps the account benched until that stale deadline. The persisted
+claude-lb keeps the account benched until that stale deadline. The persisted
 `reset_at` is a prediction made at block time; an upstream-side early or
 compensatory reset silently invalidates it, and nothing re-evaluates it.
 

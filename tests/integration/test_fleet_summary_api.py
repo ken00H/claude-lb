@@ -677,7 +677,7 @@ async def test_fleet_observability_reports_pressure_and_sticky_without_sensitive
     payload = response.json()
     _assert_no_forbidden_keys(payload)
     assert payload["available"] is True
-    assert payload["source"] == "codex-lb fleet observability"
+    assert payload["source"] == "claude-lb fleet observability"
     assert payload["generatedAt"] is not None
     assert payload["pressure"]["available"] is True
     assert {window["key"] for window in payload["pressure"]["windows"]} == {"30m", "2h"}

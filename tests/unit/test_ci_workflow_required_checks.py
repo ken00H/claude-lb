@@ -100,7 +100,7 @@ def test_rust_job_runs_native_routed_wire_probe_with_built_helper() -> None:
     rust_job = _job_block(workflow, "rust")
     required_job = _job_block(workflow, "ci-required")
 
-    build = "cargo build --locked -p codex-lb-egress-worker --bin codex-lb-native-egress"
+    build = "cargo build --locked -p claude-lb-egress-worker --bin claude-lb-native-egress"
     probe = "uv run pytest -q -ra tests/integration/test_native_routed_egress.py"
     assert build in rust_job
     assert probe in rust_job
@@ -108,7 +108,7 @@ def test_rust_job_runs_native_routed_wire_probe_with_built_helper() -> None:
     assert "uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7" in rust_job
     assert "uv sync --dev --frozen" in rust_job
     assert (
-        "CODEX_LB_NATIVE_EGRESS_TEST_BINARY: ${{ github.workspace }}/target/debug/codex-lb-native-egress"
+        "CLAUDE_LB_NATIVE_EGRESS_TEST_BINARY: ${{ github.workspace }}/target/debug/claude-lb-native-egress"
     ) in rust_job
     assert "- rust" in required_job
 

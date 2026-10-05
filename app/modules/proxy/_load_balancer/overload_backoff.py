@@ -126,7 +126,7 @@ BURST_BACKOFF_MAX_SECONDS = 30.0
 class OverloadIsolationPolicy:
     """Operator knob for the isolation stage: the dashboard setting
     ``proxy_overload_isolation_seconds`` (environment fallback
-    ``CODEX_LB_PROXY_OVERLOAD_ISOLATION_SECONDS``), resolved through
+    ``CLAUDE_LB_PROXY_OVERLOAD_ISOLATION_SECONDS``), resolved through
     ``RoutingTunables`` (C2-2 routing/overload)."""
 
     seconds: float = 1800.0

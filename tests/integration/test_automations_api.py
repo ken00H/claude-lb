@@ -603,7 +603,7 @@ async def test_automations_run_now_times_out_hung_compact_ping(async_client, mon
     compact_call_started = asyncio.Event()
     compact_call_cancelled = asyncio.Event()
 
-    monkeypatch.setenv("CODEX_LB_COMPACT_REQUEST_BUDGET_SECONDS", "0.01")
+    monkeypatch.setenv("CLAUDE_LB_COMPACT_REQUEST_BUDGET_SECONDS", "0.01")
     get_settings.cache_clear()
 
     async def _hung_compact(*_args, **_kwargs):

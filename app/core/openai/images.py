@@ -1,8 +1,8 @@
 """OpenAI Images API (`/v1/images/*`) request/response schemas.
 
-These schemas describe the *public* surface that codex-lb exposes. They mirror
+These schemas describe the *public* surface that claude-lb exposes. They mirror
 the OpenAI Images API request shape so SDKs (e.g. ``openai`` Python client,
-the codex CLI image fallback) can target codex-lb without modification.
+the codex CLI image fallback) can target claude-lb without modification.
 
 The endpoints themselves are implemented as a thin translation layer over
 ``/v1/responses`` with the built-in ``image_generation`` tool — see
@@ -185,7 +185,7 @@ def validate_image_request_parameters(
 
     # ``n`` is unconditionally capped at 1: the upstream
     # ``image_generation`` tool accepts only a single image per call and
-    # codex-lb does not yet implement client-side fan-out (multiple
+    # claude-lb does not yet implement client-side fan-out (multiple
     # internal Responses calls whose ``image_generation_call`` results
     # are concatenated into one public envelope). The cap will be
     # relaxed in the same change that introduces fan-out, alongside a

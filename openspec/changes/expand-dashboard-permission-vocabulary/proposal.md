@@ -1,6 +1,6 @@
 ## Why
 
-Dashboard authorization today is a single flat `write` permission. Renaming an account alias, disabling proxy API-key authentication, deleting a firewall rule, and exporting an upstream account's OAuth tokens are all authorized by the same check. Guest is the only other role, so every teammate who can change anything can change everything, and a future operator or member role would have nothing finer to be granted. The plan for per-user accounts and roles (`~/work/codex-lb/rbac-plan-0908/PLAN.md`, Phase 0 PR-0a) needs the permission vocabulary in place first, so later phases can add roles by editing one grant table instead of re-touching ~40 route gates.
+Dashboard authorization today is a single flat `write` permission. Renaming an account alias, disabling proxy API-key authentication, deleting a firewall rule, and exporting an upstream account's OAuth tokens are all authorized by the same check. Guest is the only other role, so every teammate who can change anything can change everything, and a future operator or member role would have nothing finer to be granted. The plan for per-user accounts and roles (`~/work/claude-lb/rbac-plan-0908/PLAN.md`, Phase 0 PR-0a) needs the permission vocabulary in place first, so later phases can add roles by editing one grant table instead of re-touching ~40 route gates.
 
 ## What Changes
 

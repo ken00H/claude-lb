@@ -89,7 +89,7 @@ None.
   issues `select(DashboardSettings)` — so a pod of an earlier release that is
   still serving when the drop commits fails every settings read (PostgreSQL
   `UndefinedColumn`). The chart's migration Job is a `pre-upgrade` hook
-  (`codex-lb.migrationHookPhases` resolves to `pre-upgrade` on every values
+  (`claude-lb.migrationHookPhases` resolves to `pre-upgrade` on every values
   branch), so it runs *before* the new pods roll and therefore before the old
   ones drain: an ordinary `helm upgrade` leaves that window open. Stop or scale
   every pre-withdrawal replica to zero before this migration runs — or disable

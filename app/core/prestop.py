@@ -175,7 +175,7 @@ def run_prestop(
 
 
 def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Coordinate codex-lb preStop drain.")
+    parser = argparse.ArgumentParser(description="Coordinate claude-lb preStop drain.")
     parser.add_argument("--base-url", required=True)
     parser.add_argument("--routing-dwell-seconds", required=True, type=float)
     parser.add_argument("--drain-timeout-seconds", required=True, type=float)

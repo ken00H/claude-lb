@@ -1,7 +1,7 @@
 """Provider settings: read the rows, edit the resolver knobs, audit the change.
 
 A provider row can be turned on and off here (whether it then *serves* also
-depends on ``CODEX_LB_DASHBOARD_AUTH_MODE``); turning on a method that offers
+depends on ``CLAUDE_LB_DASHBOARD_AUTH_MODE``); turning on a method that offers
 no local password fallback needs a qualifying break-glass account, for the
 same reason tightening ``local_login_policy`` does, and turning on the OIDC
 row additionally needs the acting admin's own browser to have completed a test

@@ -6,7 +6,7 @@ Create Date: 2026-09-09
 
 Adds the nullable ``dashboard_settings.http_responses_session_bridge_codex_prewarm_enabled``
 column (M3 of the slop-removal campaign). NULL inherits the deprecated
-``CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_CODEX_PREWARM_ENABLED`` environment
+``CLAUDE_LB_HTTP_RESPONSES_SESSION_BRIDGE_CODEX_PREWARM_ENABLED`` environment
 alias (then the code default, off) at read time; the first-boot seed and this
 migration never copy the environment value into the row.
 """

@@ -398,7 +398,7 @@ class _AnthropicMixin:
                 openai_error("no_accounts", "No active accounts available"),
             )
         except ProxyResponseError as exc:
-            failed_account = getattr(exc, "_codex_lb_failed_account", None)
+            failed_account = getattr(exc, "_claude_lb_failed_account", None)
             if isinstance(failed_account, Account):
                 account_id_value = failed_account.id
             failure_metadata = _request_log_failure_metadata(exc)
@@ -641,7 +641,7 @@ class _AnthropicMixin:
                 openai_error("no_accounts", "No active accounts available"),
             )
         except ProxyResponseError as exc:
-            failed_account = getattr(exc, "_codex_lb_failed_account", None)
+            failed_account = getattr(exc, "_claude_lb_failed_account", None)
             if isinstance(failed_account, Account):
                 account_id_value = failed_account.id
             failure_metadata = _request_log_failure_metadata(exc)

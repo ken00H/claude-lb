@@ -4,7 +4,7 @@ description: |
   Adversarial PR code review using Codex CLI.
   Codex review (~20-50 min) -> structured findings -> HITL approval -> fix loop.
 metadata:
-  author: codex-lb
+  author: claude-lb
   version: "2.0.0"
   argument-hint: "[--pr <N>] [--base <branch>] [--uncommitted]"
 ---

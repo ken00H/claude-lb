@@ -26,7 +26,7 @@ umbrella):
    surface: request translation is none (Anthropic-native passthrough shaping), account
    selection via the existing balancer, per-account 5-hour-window + weekly-cap rate
    tracking for subscription seats and `anthropic-ratelimit-*` header tracking for API
-   keys, SSE streaming passthrough, failover/retry with codex-lb's ownership and
+   keys, SSE streaming passthrough, failover/retry with claude-lb's ownership and
    settlement invariants preserved.
 4. **Usage tracking + dashboard adaptation** — usage rollups keyed to Anthropic usage
    fields (`input_tokens`, `output_tokens`, `cache_read_input_tokens`,
@@ -40,7 +40,7 @@ umbrella):
 - `anthropic-proxy`: `/v1/messages` endpoint, load balancing, rate-limit windows,
   streaming, failover invariants.
 
-### Affected Capabilities (inherited from codex-lb, to be re-scoped per increment)
+### Affected Capabilities (inherited from claude-lb, to be re-scoped per increment)
 - `account-routing`, `api-keys`, `account-pool-usage-v1-usage`, `dashboard-*`,
   `database-migrations`, `configuration-tiers`.
 
@@ -48,7 +48,7 @@ umbrella):
 
 - Deletes Codex proxy/OpenAI-compat client code when increment 3 lands (kept until then
   as reference).
-- `CODEX_LB_*` env-var prefix stays until a dedicated compatibility increment decides
+- `CLAUDE_LB_*` env-var prefix stays until a dedicated compatibility increment decides
   rename vs. alias (breaking-change decision — do not rename silently).
 - `.github/` workflows and `flake.nix` still reference Rust builds and codex naming;
   must be fixed before the first push to a remote. Not touched in increment 1 (local-only).

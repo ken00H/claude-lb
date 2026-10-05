@@ -1,7 +1,7 @@
 # Responses traffic parity analysis
 
 Use the traffic parity toolkit to compare a direct Codex request with both
-edges of the same request through codex-lb. The analyzer keeps HTTP JSON, HTTP
+edges of the same request through claude-lb. The analyzer keeps HTTP JSON, HTTP
 SSE, and WebSocket as distinct transports while projecting them into a common
 Responses turn model.
 
@@ -19,8 +19,8 @@ and
 |---|---|---|
 | A′ | Codex client → controlled origin directly | Optional direct-only TLS randomization reference |
 | A | Codex client → OpenAI/ChatGPT directly | Optional structural baseline from a separate invocation |
-| B | Codex client → codex-lb | Client-visible side of the same proxied invocation |
-| C | codex-lb → OpenAI/ChatGPT | Upstream side of the Path B invocation |
+| B | Codex client → claude-lb | Client-visible side of the same proxied invocation |
+| C | claude-lb → OpenAI/ChatGPT | Upstream side of the Path B invocation |
 
 Paths B and C are the fidelity oracle. Path A is useful context, but generated
 text, response ids, token counts, and timing from a separate model invocation
@@ -42,7 +42,7 @@ Codex session/thread identifiers and `x-codex-turn-metadata` are also hashed in
 metadata mode because those headers can contain workspace and repository
 details even when they contain no credential.
 
-For request fields that codex-lb legitimately rewrites, the addon also records
+For request fields that claude-lb legitimately rewrites, the addon also records
 an adapter-aware semantic projection before discarding raw text. This lets
 metadata mode compare joined instructions, normalized multimodal parts, and
 assistant/tool message conversions while still treating role, item type, tool
@@ -70,7 +70,7 @@ worth retaining to the appropriate durable storage tier.
 
 ## Start a capture
 
-The addon is an optional mitmproxy tool and is not part of the codex-lb runtime
+The addon is an optional mitmproxy tool and is not part of the claude-lb runtime
 dependencies:
 
 ```bash
@@ -115,7 +115,7 @@ explicitly supplied. The recommended topology keeps the fixture private and
 exposes only a TLS reverse-capture process:
 
 ```text
-Codex or codex-lb ── TLS/HTTP/WS ──> public reverse capture ── HTTP ──> 127.0.0.1:19090
+Codex or claude-lb ── TLS/HTTP/WS ──> public reverse capture ── HTTP ──> 127.0.0.1:19090
 ```
 
 On the controlled origin, use a real DNS name and a certificate PEM containing
@@ -149,8 +149,8 @@ uvx --with maxminddb --from mitmproxy mitmdump \
 Collect Path A, stop the public listener, restart it with
 `capture_output="$RUN_DIR/path_c-origin.jsonl"`, and collect Path C using the
 same hostname and observer id. Point direct Codex at
-`https://probe.example/v1`; point an isolated codex-lb instance at
-`CODEX_LB_UPSTREAM_BASE_URL=https://probe.example/backend-api`. Capture Path B
+`https://probe.example/v1`; point an isolated claude-lb instance at
+`CLAUDE_LB_UPSTREAM_BASE_URL=https://probe.example/backend-api`. Capture Path B
 normally while invoking the isolated instance.
 
 For Path A, a provider with a disposable token avoids sending the user's
@@ -183,7 +183,7 @@ encoded and decoded bodies. Malformed zstd and other content encodings are
 rejected as client errors.
 
 Use a disposable direct-provider token rather than a real OpenAI key wherever
-the Codex provider configuration permits it. codex-lb still sends its selected
+the Codex provider configuration permits it. claude-lb still sends its selected
 account authorization to its configured upstream, so use an isolated
 short-lived test account and a controlled host you trust. Metadata capture
 redacts the authorization value, but the TLS endpoint necessarily receives
@@ -234,7 +234,7 @@ in-process origin imports FastAPI, uvicorn and `zstandard` from the project
 environment, and a bare system interpreter fails at import — on many hosts
 `python` is not a command at all. The rebuild and the privacy scan are
 stdlib-only and run on any Python 3.11+; they are written with `uv run` below for
-consistency with the rest of this document. None of the three needs codex-lb
+consistency with the rest of this document. None of the three needs claude-lb
 *configured*: they read no settings and touch no database.
 
 `--transport websocket` sets `supports_websockets = true` on the generated
@@ -272,7 +272,7 @@ provenance key.
 Every refusal fires before any process starts: an `--out` inside the repository
 or under a temporary filesystem, an exported `CODEX_HOME` holding an
 `auth.json`, a shell
-carrying `CODEX_LB_*` / `OPENAI_API_KEY` / `OPENAI_BASE_URL` /
+carrying `CLAUDE_LB_*` / `OPENAI_API_KEY` / `OPENAI_BASE_URL` /
 `CHATGPT_BASE_URL` / `CODEX_ACCESS_TOKEN` / `CODEX_API_BASE_URL` /
 `CODEX_SESSION_ID`, a shell carrying any outbound proxy variable
 (`HTTP_PROXY` / `HTTPS_PROXY` / `ALL_PROXY` / `WS_PROXY` / `WSS_PROXY` /
@@ -438,7 +438,7 @@ python scripts/traffic_analysis/origin_fixture.py \
   --failure-delay-seconds 30
 ```
 
-Use the same scenario for the direct Codex path and the codex-lb path:
+Use the same scenario for the direct Codex path and the claude-lb path:
 
 | Scenario | Transport | Controlled outcome |
 | --- | --- | --- |
@@ -452,7 +452,7 @@ Use the same scenario for the direct Codex path and the codex-lb path:
 The comparison output records the same HTTP status, normalized retry hint,
 terminal class, completeness, incomplete reason, and bounded network-error
 category in two views. `failure_path_a_vs_b` shows direct Codex versus the
-client-visible codex-lb outcome, including attempt counts and the final outcome;
+client-visible claude-lb outcome, including attempt counts and the final outcome;
 `failure_path_b_vs_c` shows the same-run LB ingress/egress translation. Both
 views label exact matches, failure translations, and success/failure mismatches.
 They remain explanatory: incomplete or malformed turns still fail the strict
@@ -476,9 +476,9 @@ B/C strict failure while still passing the A/B client-visible recovery gate.
 On first use mitmproxy creates a local CA under `~/.mitmproxy`. Only install or
 trust that CA in the test process or disposable test environment.
 
-### Path C: codex-lb to upstream
+### Path C: claude-lb to upstream
 
-Run the Path C proxy on port `18081`, then start codex-lb with its upstream
+Run the Path C proxy on port `18081`, then start claude-lb with its upstream
 proxy variables pointing at it:
 
 ```bash
@@ -495,7 +495,7 @@ then run both lanes when investigating a transport-specific regression. If the a
 route, route it through the capture proxy as well; explicit account routing can
 otherwise bypass environment proxies.
 
-### Path B: client to codex-lb
+### Path B: client to claude-lb
 
 Use mitmproxy reverse mode so localhost proxy bypass rules cannot skip the
 capture:
@@ -509,15 +509,15 @@ uvx --from mitmproxy mitmdump \
   -p 18082
 ```
 
-Point the test Codex provider at the reverse proxy instead of codex-lb
+Point the test Codex provider at the reverse proxy instead of claude-lb
 directly:
 
 ```toml
-[model_providers.codex-lb-capture]
+[model_providers.claude-lb-capture]
 name = "openai"
 base_url = "http://127.0.0.1:18082/backend-api/codex"
 wire_api = "responses"
-env_key = "CODEX_LB_API_KEY"
+env_key = "CLAUDE_LB_API_KEY"
 supports_websockets = true
 requires_openai_auth = true
 ```
@@ -640,18 +640,18 @@ journalctl --user -u codex-traffic-parity-canary.service -n 100
 
 # Check whether work is due without changing state.
 uv run python -m scripts.traffic_analysis.canary_runner \
-  --config /home/ubuntu/work/codex-lb/traffic-parity-canary/config.json \
+  --config /home/ubuntu/work/claude-lb/traffic-parity-canary/config.json \
   --dry-run
 
 # Operator-forced run through the same lock and success contract.
 uv run python -m scripts.traffic_analysis.canary_runner \
-  --config /home/ubuntu/work/codex-lb/traffic-parity-canary/config.json \
+  --config /home/ubuntu/work/claude-lb/traffic-parity-canary/config.json \
   --force
 ```
 
 The timer unit is `codex-traffic-parity-canary.timer`; its host-local config,
 state, and lock live under
-`/home/ubuntu/work/codex-lb/traffic-parity-canary/`. The config invokes the
+`/home/ubuntu/work/claude-lb/traffic-parity-canary/`. The config invokes the
 repository-owned `scripts.traffic_analysis.fast_canary_suite` module with
 explicit repo, runner, auth, and approved scratch paths; it contains no suite
 logic. Each run receives a new directory under
@@ -664,15 +664,15 @@ Before either runner starts, the suite stamps the isolated `auth.json`'s
 recorded refresh time to the current instant — every key the account importer
 accepts (`lastRefreshAt`, `last_refresh`), so no stale alias outranks the stamp
 — with mode 600 preserved and tokens untouched. An imported
-account inherits that timestamp, and codex-lb proactively exchanges a refresh
+account inherits that timestamp, and claude-lb proactively exchanges a refresh
 token once the account is older than the fixed eight-day
 `TOKEN_REFRESH_INTERVAL_DAYS` window (`app/core/auth/refresh.py`). Without the
 stamp, a run started with a week-old isolated credential would exchange that
 real, single-use refresh token against `https://auth.openai.com` — the OAuth
-host is a protocol constant, so redirecting `CODEX_LB_UPSTREAM_BASE_URL` at the
+host is a protocol constant, so redirecting `CLAUDE_LB_UPSTREAM_BASE_URL` at the
 fixture does not cover it — rotating the credential into a database the suite
 deletes on cleanup and leaving every later run with a dead file. The stamp
-replaces the former `CODEX_LB_TOKEN_REFRESH_INTERVAL_DAYS=365` pin, which is a
+replaces the former `CLAUDE_LB_TOKEN_REFRESH_INTERVAL_DAYS=365` pin, which is a
 removed setting; delete that line from host-local runner scripts to silence its
 startup WARN.
 
@@ -749,7 +749,7 @@ run. The tool does not generate or persist certificate material itself.
 
 Point the direct Codex provider at this origin and collect the HTTP lane. Stop
 the listener, restart it with `--output "$RUN_DIR/path_c-h2.jsonl"`, and point
-the isolated codex-lb upstream at the same origin. Use a disposable probe token
+the isolated claude-lb upstream at the same origin. Use a disposable probe token
 because a TLS endpoint necessarily receives credentials even though its
 capture record omits their values. An optional second direct run supplies A′:
 
@@ -815,7 +815,7 @@ parity.
 
 ## Native Codex egress
 
-Official Linux containers include the locked `codex-lb-native-egress` helper.
+Official Linux containers include the locked `claude-lb-native-egress` helper.
 When present, direct and account-routed model discovery, Responses HTTP/SSE,
 and Responses or Live WebSockets use the pinned Codex-family Rust stack.
 WebSockets use the OpenAI Codex 0.150.1 tungstenite fork revisions, default
@@ -831,7 +831,7 @@ HTTP, HTTPS, SOCKS5, or SOCKS5H endpoint to the helper for each attempt. Only a
 confirmed pre-dispatch connection failure can gain the existing safe endpoint
 fallback; TLS verification and ambiguous delivery remain non-replayable.
 
-Each codex-lb worker owns one persistent helper. Compatible direct and routed
+Each claude-lb worker owns one persistent helper. Compatible direct and routed
 HTTP requests share reqwest pools partitioned by effective proxy and connect
 timeout, and WebSockets are independently multiplexed in that process. Workers
 do not share pools with each other. The native HTTP pool uses the maintained

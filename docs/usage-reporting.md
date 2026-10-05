@@ -1,6 +1,6 @@
 # Usage Reporting
 
-codex-lb records the token counts reported in the terminal Responses API event. It does not retokenize prompts or responses, and it does not estimate hidden reasoning usage.
+claude-lb records the token counts reported in the terminal Responses API event. It does not retokenize prompts or responses, and it does not estimate hidden reasoning usage.
 
 For direct Codex traffic over HTTP or WebSocket, the reported buckets have these relationships:
 
@@ -17,13 +17,13 @@ The **Reports** page shows the reported reasoning total for the selected date ra
 
 ## Missing Usage
 
-A reported zero remains `0`. A missing value remains unknown and appears as `—` in the daily report or is omitted from request details. codex-lb does not turn missing usage into zero.
+A reported zero remains `0`. A missing value remains unknown and appears as `—` in the daily report or is omitted from request details. claude-lb does not turn missing usage into zero.
 
 Reasoning usage may be missing when the upstream terminal event does not include it, when a stream ends before that event arrives, or for older request-log rows. The dashboard does not backfill those rows. Custom OpenAI-compatible model sources do not currently feed reasoning details into this reporting path.
 
 ## Pricing and Missing Costs
 
-codex-lb refreshes OpenAI text-token pricing hourly from models.dev. Compatible LiteLLM data supplies missing tier rates and additional models. Price lookups use the in-memory catalog; an upstream outage falls back to the last successful disk cache and bundled pricing snapshot. These amounts use API-equivalent token prices, not ChatGPT subscription credit multipliers.
+claude-lb refreshes OpenAI text-token pricing hourly from models.dev. Compatible LiteLLM data supplies missing tier rates and additional models. Price lookups use the in-memory catalog; an upstream outage falls back to the last successful disk cache and bundled pricing snapshot. These amounts use API-equivalent token prices, not ChatGPT subscription credit multipliers.
 
 When a model's price becomes available, retained subscription requests with missing costs are repaired automatically in small batches. Their dashboard, report, account, and API-key usage aggregates are corrected in the same transaction. Existing costs, including zero, and API-key limit counters are preserved. Requests whose raw logs have already been deleted by retention cannot be reconstructed.
 

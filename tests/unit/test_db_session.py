@@ -73,7 +73,7 @@ class _FakeMigrationRunResult:
 def test_import_session_with_sqlite_memory_url_does_not_error() -> None:
     repo_root = Path(__file__).resolve().parents[2]
     env = os.environ.copy()
-    env["CODEX_LB_DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
+    env["CLAUDE_LB_DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
 
     result = subprocess.run(
         [sys.executable, "-c", "import sys; import app.db.session; assert 'app.db.migrate' not in sys.modules"],
@@ -90,7 +90,7 @@ def test_import_session_with_sqlite_memory_url_does_not_error() -> None:
 def test_import_session_with_postgres_url_does_not_error() -> None:
     repo_root = Path(__file__).resolve().parents[2]
     env = os.environ.copy()
-    env["CODEX_LB_DATABASE_URL"] = "postgresql+asyncpg://codex_lb:codex_lb@127.0.0.1:5432/codex_lb"
+    env["CLAUDE_LB_DATABASE_URL"] = "postgresql+asyncpg://claude_lb:claude_lb@127.0.0.1:5432/claude_lb"
 
     result = subprocess.run(
         [sys.executable, "-c", "import app.db.session"],
@@ -171,8 +171,8 @@ def test_postgres_engine_kwargs_enable_pre_ping_and_recycle(monkeypatch) -> None
     Both the main and the background engine build their kwargs through this
     single helper, so one assertion covers both engines.
     """
-    monkeypatch.setenv("CODEX_LB_TEST_DATABASE_URL", "")
-    monkeypatch.delenv("CODEX_LB_TEST_DATABASE_URL", raising=False)
+    monkeypatch.setenv("CLAUDE_LB_TEST_DATABASE_URL", "")
+    monkeypatch.delenv("CLAUDE_LB_TEST_DATABASE_URL", raising=False)
     monkeypatch.setattr(
         session_module,
         "_settings",
@@ -192,7 +192,7 @@ def test_postgres_engine_kwargs_enable_pre_ping_and_recycle(monkeypatch) -> None
 
 
 def test_postgres_engine_kwargs_use_fixed_timeout_and_recycle_constants(monkeypatch) -> None:
-    monkeypatch.delenv("CODEX_LB_TEST_DATABASE_URL", raising=False)
+    monkeypatch.delenv("CLAUDE_LB_TEST_DATABASE_URL", raising=False)
     monkeypatch.setattr(
         session_module,
         "_settings",
@@ -227,7 +227,7 @@ async def test_postgres_creation_paths_cover_every_budgeted_engine_role_once(mon
             database_max_overflow=2,
         ),
     )
-    monkeypatch.delenv("CODEX_LB_TEST_DATABASE_URL", raising=False)
+    monkeypatch.delenv("CLAUDE_LB_TEST_DATABASE_URL", raising=False)
 
     def recording_factory(
         url: str,
@@ -254,7 +254,7 @@ async def test_postgres_creation_paths_cover_every_budgeted_engine_role_once(mon
 
 @pytest.mark.asyncio
 async def test_postgres_test_engines_keep_declared_roles_but_disable_pooling(monkeypatch) -> None:
-    monkeypatch.setenv("CODEX_LB_TEST_DATABASE_URL", "1")
+    monkeypatch.setenv("CLAUDE_LB_TEST_DATABASE_URL", "1")
     engines = [
         session_module._create_postgres_async_engine(
             "postgresql+asyncpg://u:p@h/db",
@@ -271,11 +271,11 @@ async def test_postgres_test_engines_keep_declared_roles_but_disable_pooling(mon
 
 
 def test_postgres_engine_kwargs_use_nullpool_under_test_db_url(monkeypatch) -> None:
-    """The CODEX_LB_TEST_DATABASE_URL escape hatch keeps NullPool semantics —
+    """The CLAUDE_LB_TEST_DATABASE_URL escape hatch keeps NullPool semantics —
     pool_pre_ping/recycle are irrelevant when each session opens a fresh
     connection.
     """
-    monkeypatch.setenv("CODEX_LB_TEST_DATABASE_URL", "1")
+    monkeypatch.setenv("CLAUDE_LB_TEST_DATABASE_URL", "1")
     monkeypatch.setattr(
         session_module,
         "_settings",
@@ -309,7 +309,7 @@ def test_sqlite_file_engine_kwargs_use_nullpool_without_pool_controls(monkeypatc
 
 
 def test_postgres_engine_kwargs_keep_pool_controls(monkeypatch) -> None:
-    monkeypatch.delenv("CODEX_LB_TEST_DATABASE_URL", raising=False)
+    monkeypatch.delenv("CLAUDE_LB_TEST_DATABASE_URL", raising=False)
     monkeypatch.setattr(
         session_module,
         "_settings",
@@ -336,7 +336,7 @@ def test_postgres_connect_args_pin_session_timezone_to_utc(monkeypatch) -> None:
     values in local time and shift every stored timestamp, which silently breaks
     ring-membership staleness, leader election and bridge-session lease expiry.
     """
-    monkeypatch.delenv("CODEX_LB_TEST_DATABASE_URL", raising=False)
+    monkeypatch.delenv("CLAUDE_LB_TEST_DATABASE_URL", raising=False)
 
     connect_args = session_module._postgres_async_connect_args("postgresql+asyncpg://u:p@h/db")
 
@@ -347,7 +347,7 @@ def test_postgres_connect_args_pin_session_timezone_to_utc(monkeypatch) -> None:
 
 
 def test_postgres_connect_args_pin_utc_and_keep_test_db_url_tuning(monkeypatch) -> None:
-    monkeypatch.setenv("CODEX_LB_TEST_DATABASE_URL", "1")
+    monkeypatch.setenv("CLAUDE_LB_TEST_DATABASE_URL", "1")
 
     connect_args = session_module._postgres_async_connect_args("postgresql+asyncpg://u:p@h/db")
 
@@ -363,7 +363,7 @@ def test_postgres_connect_args_none_for_non_postgres_url() -> None:
 
 
 def test_postgres_engine_kwargs_forward_utc_connect_args(monkeypatch) -> None:
-    monkeypatch.delenv("CODEX_LB_TEST_DATABASE_URL", raising=False)
+    monkeypatch.delenv("CLAUDE_LB_TEST_DATABASE_URL", raising=False)
     monkeypatch.setattr(
         session_module,
         "_settings",
@@ -804,7 +804,7 @@ async def test_init_background_db_derives_postgres_pool_size_from_main_pool() ->
     assert session_module._background_session_factory is not None
 
     pool = session_module._background_engine.pool
-    if os.environ.get("CODEX_LB_TEST_DATABASE_URL"):
+    if os.environ.get("CLAUDE_LB_TEST_DATABASE_URL"):
         assert isinstance(pool, NullPool)
     else:
         assert cast(Any, pool).size() == 25
@@ -2582,7 +2582,7 @@ def test_mark_sqlite_shutdown_clean_is_inert_for_non_sqlite_backends(monkeypatch
     monkeypatch.setattr(
         session_module,
         "_settings",
-        _FakeSettings(database_url="postgresql+asyncpg://user@localhost/codexlb"),
+        _FakeSettings(database_url="postgresql+asyncpg://user@localhost/claudelb"),
     )
 
     session_module.mark_sqlite_shutdown_clean()

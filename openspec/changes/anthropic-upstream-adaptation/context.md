@@ -2,7 +2,7 @@
 
 ## Decisions
 
-- **Fork, not extend**: claude-lb is a separate product from codex-lb. Extending codex-lb
+- **Fork, not extend**: claude-lb is a separate product from claude-lb. Extending claude-lb
   with a second provider would drag Anthropic semantics through Codex-specific routing,
   protocol, and spec layers. The fork keeps the generic machinery (DB, balancer,
   eligibility, dashboard, settings tiers, migrations) and replaces the ecosystem layer.
@@ -11,15 +11,15 @@
   (usage windows vs. header-reported limits) and credential lifecycle (refresh tokens vs.
   static keys) — the account model must make that distinction explicit, not bolt it on.
 - **Anthropic-only downstream**: clients speak `/v1/messages`. No OpenAI-compat
-  translation layer in v1; codex-lb's compat layer exists because Codex upstream is not
+  translation layer in v1; claude-lb's compat layer exists because Codex upstream is not
   OpenAI-shaped, but Anthropic upstream already is Anthropic-shaped.
-- **No silent renames of operator-facing contracts**: `CODEX_LB_*` env prefix, DB URLs,
+- **No silent renames of operator-facing contracts**: `CLAUDE_LB_*` env prefix, DB URLs,
   and existing dashboard routes stay until each is explicitly re-decided. Renames are
   compatibility changes and get their own spec deltas.
 
-## Constraints inherited from codex-lb review practice
+## Constraints inherited from claude-lb review practice
 
-These apply to every increment (see codex-lb AGENTS.md "PR Readiness / Review Trapdoors"):
+These apply to every increment (see claude-lb AGENTS.md "PR Readiness / Review Trapdoors"):
 
 - File-pinned requests must not cross accounts; API-key/resource reservations must settle
   before error-health writes; excluded accounts must actually leave the selection loop.
@@ -61,5 +61,5 @@ These apply to every increment (see codex-lb AGENTS.md "PR Readiness / Review Tr
   have no Anthropic equivalent — replace, do not translate.
 - Streaming: SSE passthrough must preserve event ordering and terminations; buffered
   re-emission is a compatibility break for Claude Code clients.
-- Dashboard assumptions about "5-hour prompt windows" from codex-lb are coincidence, not
+- Dashboard assumptions about "5-hour prompt windows" from claude-lb are coincidence, not
   parity — re-derive every window calculation from Anthropic semantics.

@@ -606,11 +606,11 @@ async def test_the_enabled_row_is_active_everywhere_except_where_authentication_
 ) -> None:
     await _setup_admin(async_client)
     await _store_config_directly(enabled=True)
-    monkeypatch.setenv("CODEX_LB_DASHBOARD_AUTH_MODE", mode.value)
+    monkeypatch.setenv("CLAUDE_LB_DASHBOARD_AUTH_MODE", mode.value)
     if mode == DashboardAuthMode.TRUSTED_HEADER:
-        monkeypatch.setenv("CODEX_LB_FIREWALL_TRUST_PROXY_HEADERS", "true")
-        monkeypatch.setenv("CODEX_LB_FIREWALL_TRUSTED_PROXY_CIDRS", "127.0.0.1/32")
-        monkeypatch.setenv("CODEX_LB_DASHBOARD_AUTH_PROXY_HEADER", "Remote-User")
+        monkeypatch.setenv("CLAUDE_LB_FIREWALL_TRUST_PROXY_HEADERS", "true")
+        monkeypatch.setenv("CLAUDE_LB_FIREWALL_TRUSTED_PROXY_CIDRS", "127.0.0.1/32")
+        monkeypatch.setenv("CLAUDE_LB_DASHBOARD_AUTH_PROXY_HEADER", "Remote-User")
     get_settings.cache_clear()
 
     async with SessionLocal() as session:
@@ -845,11 +845,11 @@ async def _sec_officer(async_client: AsyncClient, monkeypatch: pytest.MonkeyPatc
     who may administer sign-in without being an administrator.
     """
 
-    monkeypatch.setenv("CODEX_LB_DASHBOARD_AUTH_MODE", DashboardAuthMode.TRUSTED_HEADER.value)
-    monkeypatch.setenv("CODEX_LB_FIREWALL_TRUST_PROXY_HEADERS", "true")
-    monkeypatch.setenv("CODEX_LB_FIREWALL_TRUSTED_PROXY_CIDRS", "127.0.0.1/32")
-    monkeypatch.setenv("CODEX_LB_DASHBOARD_AUTH_PROXY_HEADER", "Remote-User")
-    monkeypatch.setenv("CODEX_LB_DASHBOARD_AUTH_PROXY_GROUPS_HEADER", "Remote-Groups")
+    monkeypatch.setenv("CLAUDE_LB_DASHBOARD_AUTH_MODE", DashboardAuthMode.TRUSTED_HEADER.value)
+    monkeypatch.setenv("CLAUDE_LB_FIREWALL_TRUST_PROXY_HEADERS", "true")
+    monkeypatch.setenv("CLAUDE_LB_FIREWALL_TRUSTED_PROXY_CIDRS", "127.0.0.1/32")
+    monkeypatch.setenv("CLAUDE_LB_DASHBOARD_AUTH_PROXY_HEADER", "Remote-User")
+    monkeypatch.setenv("CLAUDE_LB_DASHBOARD_AUTH_PROXY_GROUPS_HEADER", "Remote-Groups")
     get_settings.cache_clear()
 
     role_id = str(uuid.uuid4())

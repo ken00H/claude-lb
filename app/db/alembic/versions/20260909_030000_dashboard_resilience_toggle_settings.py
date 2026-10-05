@@ -3,7 +3,7 @@
 Three nullable ``dashboard_settings`` BOOLEAN columns named after the
 ``Settings`` fields they take over: ``soft_drain_enabled``,
 ``deterministic_failover_enabled`` and ``circuit_breaker_enabled``. NULL means
-"inherit": the deprecated ``CODEX_LB_*`` environment alias, then the code
+"inherit": the deprecated ``CLAUDE_LB_*`` environment alias, then the code
 default, keep applying until an operator sets a value in the dashboard
 (configuration-tiers; slop-removal campaign 0908, C2-3).
 

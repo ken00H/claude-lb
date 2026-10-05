@@ -2,7 +2,7 @@
 
 ## Purpose
 
-codex-lb ships first-class multi-replica machinery — the HTTP bridge instance ring with owner
+claude-lb ships first-class multi-replica machinery — the HTTP bridge instance ring with owner
 forwarding, DB-backed leader election, the cache-invalidation bus, DB-backed sticky sessions and
 rate limiting — but the prerequisites for actually running more than one replica were scattered
 across code comments and the Helm README. The adjacent [specification](spec.md) is the normative
@@ -13,19 +13,19 @@ guarded at startup, and which cross-replica behaviors are best-effort.
 
 A supported multi-replica deployment looks like:
 
-- **Shared PostgreSQL** (`CODEX_LB_DATABASE_URL=postgresql+asyncpg://...`) — every cross-replica
+- **Shared PostgreSQL** (`CLAUDE_LB_DATABASE_URL=postgresql+asyncpg://...`) — every cross-replica
   coordination primitive lives in this database: `scheduler_leader` (leader lease),
   `bridge_ring_members` (ring membership + advertise endpoints), `http_bridge_sessions`
   (bridge session ownership), `cache_invalidation` (settings/selection cache bus),
   `sticky_sessions`, `rate_limit_attempts`, and `runtime_sentinels` (startup consistency
   sentinels such as the encryption-key fingerprint).
-- **Leader election at its default** — `CODEX_LB_LEADER_ELECTION_ENABLED` defaults to `true`, so
+- **Leader election at its default** — `CLAUDE_LB_LEADER_ELECTION_ENABLED` defaults to `true`, so
   shared-database replicas arbitrate one leader without extra configuration. Explicitly setting it
   to `false` is a single-instance escape hatch: every replica self-elects and singleton schedulers
   (usage refresh, automations, retention, quota planner, api-key reset, sticky-session cleanup,
   auth guardian) can run N-fold. The auth guardian self-disables in that configuration and logs a
   startup WARNING.
-- **Bridge ring identity** — a unique `CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_INSTANCE_ID` per
+- **Bridge ring identity** — a unique `CLAUDE_LB_HTTP_RESPONSES_SESSION_BRIDGE_INSTANCE_ID` per
   replica and a reachable replica-specific advertise URL so hard-continuity requests landing on
   the wrong replica can be forwarded to the owner (see `sticky-session-operations` and
   `responses-api-compat` for the forwarding mechanics). Live membership and advertise endpoints
@@ -62,7 +62,7 @@ concurrent first boot, and SQLite's single-writer lock makes insert-or-noop atom
 3. Delete the stale sentinel: `DELETE FROM runtime_sentinels WHERE name = 'encryption_key_fingerprint';`
 4. Start the replicas; the first one stamps the new fingerprint.
 
-Escape hatches: `CODEX_LB_ENCRYPTION_KEY_FINGERPRINT_MODE=warn` (log ERROR, continue) or `off`.
+Escape hatches: `CLAUDE_LB_ENCRYPTION_KEY_FINGERPRINT_MODE=warn` (log ERROR, continue) or `off`.
 Leave it at `enforce` in production — a warn-mode mismatch means some fraction of logins and
 bridge forwards are already failing.
 

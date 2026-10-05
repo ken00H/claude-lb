@@ -28,7 +28,7 @@ def test_stable_guard_rejects_release_please_pr_missing_uv_lock_update(tmp_path:
 
     update_project_versions(repo, "1.20.0")
     (repo / "uv.lock").write_text(
-        '[[package]]\nname = "codex-lb"\nversion = "1.20.0-beta.3"\nsource = { editable = "." }\n',
+        '[[package]]\nname = "claude-lb"\nversion = "1.20.0-beta.3"\nsource = { editable = "." }\n',
         encoding="utf-8",
     )
     git(repo, "add", ".")
@@ -138,7 +138,7 @@ def test_stable_guard_allows_non_promotion_metadata_repair_branch(tmp_path: Path
     init_repo_with_beta_commit(repo, version="1.20.0-beta.3")
     update_project_versions(repo, "1.20.0")
     (repo / "uv.lock").write_text(
-        '[[package]]\nname = "codex-lb"\nversion = "1.20.0-beta.3"\nsource = { editable = "." }\n',
+        '[[package]]\nname = "claude-lb"\nversion = "1.20.0-beta.3"\nsource = { editable = "." }\n',
         encoding="utf-8",
     )
     git(repo, "add", ".")
@@ -146,7 +146,7 @@ def test_stable_guard_allows_non_promotion_metadata_repair_branch(tmp_path: Path
     base = git(repo, "rev-parse", "HEAD")
 
     (repo / "uv.lock").write_text(
-        '[[package]]\nname = "codex-lb"\nversion = "1.20.0"\nsource = { editable = "." }\n',
+        '[[package]]\nname = "claude-lb"\nversion = "1.20.0"\nsource = { editable = "." }\n',
         encoding="utf-8",
     )
     git(repo, "add", "uv.lock")

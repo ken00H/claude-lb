@@ -9,10 +9,10 @@ Use a source checkout with `uv sync --frozen`. Provision an empty PostgreSQL dat
 Set both database variables to the same dedicated disposable target before importing application code or running tests. Use an explicit `postgresql+asyncpg://` URL without query options. `--db-url-env NAME` reads the URL from that explicitly selected environment variable and pins both routes inside the command and its migration subprocesses. The variable must be nonempty. Provision it through a secret manager or protected shell input; do not put credentials in command arguments or shell history.
 
 ```bash
-export CODEX_LB_DATABASE_URL="$disposable_database_url"
-export CODEX_LB_TEST_DATABASE_URL="$CODEX_LB_DATABASE_URL"
+export CLAUDE_LB_DATABASE_URL="$disposable_database_url"
+export CLAUDE_LB_TEST_DATABASE_URL="$CLAUDE_LB_DATABASE_URL"
 uv run python -m scripts.benchmark_migrations \
-  --db-url-env CODEX_LB_DATABASE_URL --disposable \
+  --db-url-env CLAUDE_LB_DATABASE_URL --disposable \
   --base 20260720_000000_add_request_log_conversation_id \
   --target 20260910_000000_request_logs_missing_cost_index \
   --rows 100000 --accounts 100 --seed 7 \

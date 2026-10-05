@@ -2,7 +2,7 @@
 
 ``http_responses_session_bridge_operation_spool_retention_seconds`` is a
 nullable ``dashboard_settings`` column that inherits the deprecated
-``CODEX_LB_*`` environment alias and then the code default (7 days), resolved
+``CLAUDE_LB_*`` environment alias and then the code default (7 days), resolved
 through :func:`resolve_inheritable`. Its home is the dashboard's data retention
 card because the spool holds raw request payloads: a shorter window deletes
 prompt material sooner.

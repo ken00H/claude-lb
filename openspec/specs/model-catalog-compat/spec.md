@@ -1,7 +1,7 @@
 # model-catalog-compat Specification
 
 ## Purpose
-Governs the model catalogs codex-lb serves to Codex-native and OpenAI-compatible clients, and how those catalogs feed routing. Fresh instances need a usable bootstrap catalog before the first upstream refresh, refreshed upstream data must then stay authoritative and replica-coherent, and catalog metadata (context windows, speed tiers, reasoning efforts, model-source identity) must be preserved exactly so clients can parse it. It also fixes how per-account catalog knowledge constrains or degrades pooled routing without falsely excluding accounts.
+Governs the model catalogs claude-lb serves to Codex-native and OpenAI-compatible clients, and how those catalogs feed routing. Fresh instances need a usable bootstrap catalog before the first upstream refresh, refreshed upstream data must then stay authoritative and replica-coherent, and catalog metadata (context windows, speed tiers, reasoning efforts, model-source identity) must be preserved exactly so clients can parse it. It also fixes how per-account catalog knowledge constrains or degrades pooled routing without falsely excluding accounts.
 ## Requirements
 ### Requirement: Bootstrap model catalog is available before refresh
 
@@ -102,7 +102,7 @@ when the requested slug matches a bootstrap entry.
 
 ### Requirement: OpenAI-compatible model metadata uses backend context windows
 
-When serving `GET /v1/models`, the system SHALL expose `metadata.context_window` as the upstream backend `context_window` budget by default. The system MUST NOT promote raw `max_context_window` values or hard-coded full-context guesses into `metadata.context_window`. Explicit operator context-window overrides — a `model_context_window_overrides` dashboard row for the slug, else the `CODEX_LB_MODEL_CONTEXT_WINDOW_OVERRIDES` entry for the slug (see "Per-model context window overrides are dashboard settings") — remain the highest-priority reported-context value, clamped to the upstream-declared `max_context_window` when upstream declares one above the backend `context_window`.
+When serving `GET /v1/models`, the system SHALL expose `metadata.context_window` as the upstream backend `context_window` budget by default. The system MUST NOT promote raw `max_context_window` values or hard-coded full-context guesses into `metadata.context_window`. Explicit operator context-window overrides — a `model_context_window_overrides` dashboard row for the slug, else the `CLAUDE_LB_MODEL_CONTEXT_WINDOW_OVERRIDES` entry for the slug (see "Per-model context window overrides are dashboard settings") — remain the highest-priority reported-context value, clamped to the upstream-declared `max_context_window` when upstream declares one above the backend `context_window`.
 
 #### Scenario: GPT-5 Codex models are reported with the backend context window on /v1/models
 
@@ -206,7 +206,7 @@ When serving `GET /v1/models`, the system SHALL preserve upstream speed-tier met
 The GPT-5.6 bootstrap catalog entries (`gpt-5.6-sol`, `gpt-5.6-terra`,
 `gpt-5.6-luna`) MUST mirror the upstream bundled catalog
 (`codex-rs/models-manager/models.json` at Codex release `rust-v0.145.0`)
-field-for-field for every metadata field codex-lb serves, with one tracked
+field-for-field for every metadata field claude-lb serves, with one tracked
 exception: `max_context_window`, which upstream raised from `272000` to
 `872000` in openai/codex commit
 `2eee483e49f88b868f67364134a658b3298e6c14` (openai/codex#39102) and which no
@@ -243,7 +243,7 @@ sanctioned divergence from the upstream GPT-5.6 entries beyond the
 
 - **GIVEN** the model registry has no refreshed upstream snapshot
 - **AND** no persisted snapshot is loaded
-- **AND** no context-window override (dashboard row or `CODEX_LB_MODEL_CONTEXT_WINDOW_OVERRIDES` entry) applies to these slugs
+- **AND** no context-window override (dashboard row or `CLAUDE_LB_MODEL_CONTEXT_WINDOW_OVERRIDES` entry) applies to these slugs
 - **WHEN** a client calls `GET /backend-api/codex/models`
 - **THEN** `gpt-5.6-sol`, `gpt-5.6-terra`, and `gpt-5.6-luna` report
   `context_window=272000`
@@ -252,7 +252,7 @@ sanctioned divergence from the upstream GPT-5.6 entries beyond the
 
 - **GIVEN** the model registry has no refreshed upstream snapshot
 - **AND** no persisted snapshot is loaded
-- **AND** no context-window override (dashboard row or `CODEX_LB_MODEL_CONTEXT_WINDOW_OVERRIDES` entry) applies to these slugs
+- **AND** no context-window override (dashboard row or `CLAUDE_LB_MODEL_CONTEXT_WINDOW_OVERRIDES` entry) applies to these slugs
 - **WHEN** a client calls `GET /backend-api/codex/models`
 - **THEN** `gpt-5.6-sol`, `gpt-5.6-terra`, and `gpt-5.6-luna` report
   `context_window=272000`
@@ -262,7 +262,7 @@ sanctioned divergence from the upstream GPT-5.6 entries beyond the
 
 - **GIVEN** the model registry has no refreshed upstream snapshot
 - **AND** no persisted snapshot is loaded
-- **AND** no context-window override (dashboard row or `CODEX_LB_MODEL_CONTEXT_WINDOW_OVERRIDES` entry) applies to these slugs
+- **AND** no context-window override (dashboard row or `CLAUDE_LB_MODEL_CONTEXT_WINDOW_OVERRIDES` entry) applies to these slugs
 - **WHEN** a client calls `GET /v1/models`
 - **THEN** each GPT-5.6 entry reports `context_window=272000` and
   `input_context_window=272000`
@@ -779,7 +779,7 @@ Chat Completions-only sources that cannot satisfy Codex-native Responses
 requests. Disabled sources and disabled source models MUST NOT be listed.
 Subscription-backed Codex catalog entries MUST continue to be listed through the
 existing registry path. If a source model entry emits `model_provider`, it MUST
-emit `codex-lb` and MUST NOT advertise the external upstream provider name.
+emit `claude-lb` and MUST NOT advertise the external upstream provider name.
 
 #### Scenario: Responses-capable source is advertised to Codex-native clients
 
@@ -787,7 +787,7 @@ emit `codex-lb` and MUST NOT advertise the external upstream provider name.
 - **AND** the source declares Responses-compatible support
 - **WHEN** a client calls `GET /backend-api/codex/models`
 - **THEN** the response includes `deepseek-v4-flash`
-- **AND** the model entry does not change the Codex provider away from `codex-lb`
+- **AND** the model entry does not change the Codex provider away from `claude-lb`
 
 #### Scenario: Chat-only source is not advertised to Codex-native clients
 
@@ -973,7 +973,7 @@ when the field is absent.
 #### Scenario: Hidden bootstrap metadata cannot invalidate the live catalog
 
 - **GIVEN** a successful live refresh omits an older bundled model
-- **AND** codex-lb retains that model as hidden metadata whose raw payload lacks
+- **AND** claude-lb retains that model as hidden metadata whose raw payload lacks
   required Codex wire fields
 - **WHEN** a Codex client requests the native model catalog
 - **THEN** the hidden entry includes a valid `truncation_policy`
@@ -985,14 +985,14 @@ when the field is absent.
 
 - **GIVEN** a live catalog or model source provides `truncation_policy` or
   `experimental_supported_tools`
-- **WHEN** codex-lb renders the Codex-native catalog entry
+- **WHEN** claude-lb renders the Codex-native catalog entry
 - **THEN** it preserves those explicit values unchanged
 
 #### Scenario: Invalid source tool members cannot fail the catalog
 
 - **GIVEN** a model source provides `experimental_supported_tools` with both
   string and non-string members
-- **WHEN** codex-lb renders the Codex-native catalog entry
+- **WHEN** claude-lb renders the Codex-native catalog entry
 - **THEN** it retains the string tool names
 - **AND** it omits non-string members instead of returning a server error
 
@@ -1000,7 +1000,7 @@ when the field is absent.
 
 - **GIVEN** a model source provides a non-list value for
   `experimental_supported_tools`
-- **WHEN** codex-lb renders the Codex-native catalog entry
+- **WHEN** claude-lb renders the Codex-native catalog entry
 - **THEN** it emits an empty list instead of returning a server error
 
 #### Scenario: Malformed source truncation policy cannot fail the catalog
@@ -1008,7 +1008,7 @@ when the field is absent.
 - **GIVEN** a model source provides an invalid `truncation_policy`, such as a
   null, non-object, incomplete object, unknown mode, non-integer limit, or
   out-of-range limit
-- **WHEN** codex-lb renders the Codex-native catalog entry
+- **WHEN** claude-lb renders the Codex-native catalog entry
 - **THEN** it emits the conservative model-compatible truncation policy
 - **AND** it does not return a server error
 
@@ -1338,7 +1338,7 @@ present in the snapshot yet source-routed.
 
 ### Requirement: Daybreak profile can initialize from the local model catalog
 
-`GET /backend-api/codex/models` MUST validate the proxy API key whenever `X-Codex-LB-Required-Capability` is present, even when deployment-wide API-key authentication is disabled. With a valid key it MUST return the existing local Codex catalog without applying the unsupported-transport denial, selecting an account, or dispatching an upstream request. Headerless model-catalog requests MUST retain their existing behavior.
+`GET /backend-api/codex/models` MUST validate the proxy API key whenever `X-Claude-LB-Required-Capability` is present, even when deployment-wide API-key authentication is disabled. With a valid key it MUST return the existing local Codex catalog without applying the unsupported-transport denial, selecting an account, or dispatching an upstream request. Headerless model-catalog requests MUST retain their existing behavior.
 
 #### Scenario: Authenticated Daybreak catalog request remains available
 
@@ -1359,11 +1359,11 @@ present in the snapshot yet source-routed.
 
 ### Requirement: Per-model context window overrides are dashboard settings
 
-The per-model reported context window override (`model_context_window_overrides`, `slug -> window`) MUST be managed from the dashboard as one row per slug in the `model_context_window_overrides` table (`slug`, `context_window`), resolved per slug as environment entry < dashboard row: a slug with a row reports the row's window, a slug without a row inherits the `CODEX_LB_MODEL_CONTEXT_WINDOW_OVERRIDES` entry for that slug, and a slug with neither has no override (the catalog reports the upstream window). The migration and the first boot MUST NOT copy the environment dict into rows. The settings API MUST expose the overrides under `GET /api/settings/model-context-window-overrides` as the merged per-slug list, each entry carrying `slug`, the effective `context_window`, a `source` of `"dashboard"` or `"env"`, and `env_value` (the environment entry for the slug, `null` when none); `PUT /api/settings/model-context-window-overrides/{slug}` with `{"context_window": n}` MUST create or replace the row for `slug` in a single upsert, so concurrent creates of the same absent slug both succeed, and `DELETE /api/settings/model-context-window-overrides/{slug}` MUST remove it (404 when no row exists, including for a slug that only the environment knows). A write MUST reject a `context_window` that is not an integer between 1 and 2147483647 (the width of the stored column) — a float, a numeric string and a boolean are rejected, not coerced — and a slug that is empty, longer than 256 characters, or contains whitespace or non-printable characters; a slug MUST NOT be trimmed into validity, and the slug segment MUST accept `/`. The catalog endpoints (`GET /v1/models`, `GET /backend-api/codex/models`) MUST resolve the merged overrides once per catalog build from a cached snapshot of the rows that the settings API invalidates durably through the cross-replica `settings` cache namespace on every write — an invalidation MUST NOT be overwritten by a load that was already in flight when it happened —, MUST NOT read the database per model entry, and MUST apply the existing `max_context_window` clamp to a dashboard value exactly as to an environment value. Each store and delete MUST be recorded as a `settings_changed` audit event naming `model_context_window_overrides` and the slug. A stored or deleted row takes effect on the next catalog request on every replica without a restart; when the database is unreachable past the snapshot's TTL the catalog MUST keep serving the last known rows rather than failing the request. The environment variable remains as a deprecated per-slug fallback for one release and is removed in the next minor.
+The per-model reported context window override (`model_context_window_overrides`, `slug -> window`) MUST be managed from the dashboard as one row per slug in the `model_context_window_overrides` table (`slug`, `context_window`), resolved per slug as environment entry < dashboard row: a slug with a row reports the row's window, a slug without a row inherits the `CLAUDE_LB_MODEL_CONTEXT_WINDOW_OVERRIDES` entry for that slug, and a slug with neither has no override (the catalog reports the upstream window). The migration and the first boot MUST NOT copy the environment dict into rows. The settings API MUST expose the overrides under `GET /api/settings/model-context-window-overrides` as the merged per-slug list, each entry carrying `slug`, the effective `context_window`, a `source` of `"dashboard"` or `"env"`, and `env_value` (the environment entry for the slug, `null` when none); `PUT /api/settings/model-context-window-overrides/{slug}` with `{"context_window": n}` MUST create or replace the row for `slug` in a single upsert, so concurrent creates of the same absent slug both succeed, and `DELETE /api/settings/model-context-window-overrides/{slug}` MUST remove it (404 when no row exists, including for a slug that only the environment knows). A write MUST reject a `context_window` that is not an integer between 1 and 2147483647 (the width of the stored column) — a float, a numeric string and a boolean are rejected, not coerced — and a slug that is empty, longer than 256 characters, or contains whitespace or non-printable characters; a slug MUST NOT be trimmed into validity, and the slug segment MUST accept `/`. The catalog endpoints (`GET /v1/models`, `GET /backend-api/codex/models`) MUST resolve the merged overrides once per catalog build from a cached snapshot of the rows that the settings API invalidates durably through the cross-replica `settings` cache namespace on every write — an invalidation MUST NOT be overwritten by a load that was already in flight when it happened —, MUST NOT read the database per model entry, and MUST apply the existing `max_context_window` clamp to a dashboard value exactly as to an environment value. Each store and delete MUST be recorded as a `settings_changed` audit event naming `model_context_window_overrides` and the slug. A stored or deleted row takes effect on the next catalog request on every replica without a restart; when the database is unreachable past the snapshot's TTL the catalog MUST keep serving the last known rows rather than failing the request. The environment variable remains as a deprecated per-slug fallback for one release and is removed in the next minor.
 
 #### Scenario: Dashboard row overrides the environment entry for its slug
 
-- **GIVEN** the process environment sets `CODEX_LB_MODEL_CONTEXT_WINDOW_OVERRIDES={"gpt-5.4": 300000}` and the upstream catalog reports `gpt-5.4` with `context_window=272000`
+- **GIVEN** the process environment sets `CLAUDE_LB_MODEL_CONTEXT_WINDOW_OVERRIDES={"gpt-5.4": 300000}` and the upstream catalog reports `gpt-5.4` with `context_window=272000`
 - **WHEN** `PUT /api/settings/model-context-window-overrides/gpt-5.4` stores `{"context_window": 515000}`
 - **THEN** the next `GET /backend-api/codex/models` reports `gpt-5.4` with `context_window=515000` without a restart
 - **AND** `GET /api/settings/model-context-window-overrides` lists `gpt-5.4` with `context_window=515000`, `source="dashboard"` and `env_value=300000`

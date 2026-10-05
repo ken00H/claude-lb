@@ -29,7 +29,7 @@ None.
 
 ## Impact
 
-Only `deploy/helm/codex-lb/values.yaml` production behavior changes, plus
+Only `deploy/helm/claude-lb/values.yaml` production behavior changes, plus
 OpenSpec artifacts and the Helm-render regression. Runtime Python, global
 middleware, README, CHANGELOG, settings docs, and other chart values stay
 unchanged. Existing Helm releases that already override the value keep that

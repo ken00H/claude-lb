@@ -5,17 +5,17 @@ See `openspec/specs/runtime-portability/spec.md` for normative requirements.
 ## Codex Session Retagging
 
 `codex resume` filters sessions by `model_provider`. Sessions created before
-switching to codex-lb may still be tagged as `openai`, so they will not appear
+switching to claude-lb may still be tagged as `openai`, so they will not appear
 until the stored provider tag is updated.
 
 Use the built-in command instead of editing Codex files by hand:
 
 ```bash
 # Preview what will change first.
-codex-lb codex-sessions retag --from openai --to codex-lb --dry-run
+claude-lb codex-sessions retag --from openai --to claude-lb --dry-run
 
 # Then close Codex/Codex CLI and apply the retag.
-codex-lb codex-sessions retag --from openai --to codex-lb --yes
+claude-lb codex-sessions retag --from openai --to claude-lb --yes
 ```
 
 The command updates both Codex storage formats when they exist: JSONL session
@@ -32,8 +32,8 @@ another Windows profile explicitly.
 To switch back, reverse the providers:
 
 ```bash
-codex-lb codex-sessions retag --from codex-lb --to openai --dry-run
-codex-lb codex-sessions retag --from codex-lb --to openai --yes
+claude-lb codex-sessions retag --from claude-lb --to openai --dry-run
+claude-lb codex-sessions retag --from claude-lb --to openai --yes
 ```
 
 For Docker, mount your Codex data directory only for this one-off command:
@@ -41,13 +41,13 @@ For Docker, mount your Codex data directory only for this one-off command:
 ```bash
 docker run --rm \
   -v ~/.codex:/codex-home \
-  ghcr.io/soju06/codex-lb:latest \
-  codex-lb codex-sessions retag --from openai --to codex-lb \
+  ghcr.io/ken00H/claude-lb:latest \
+  claude-lb codex-sessions retag --from openai --to claude-lb \
     --codex-home /codex-home --dry-run
 
 docker run --rm \
   -v ~/.codex:/codex-home \
-  ghcr.io/soju06/codex-lb:latest \
-  codex-lb codex-sessions retag --from openai --to codex-lb \
+  ghcr.io/ken00H/claude-lb:latest \
+  claude-lb codex-sessions retag --from openai --to claude-lb \
     --codex-home /codex-home --yes
 ```

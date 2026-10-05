@@ -7,7 +7,7 @@ Dashboard requests reach FastAPI through a stack of pure-ASGI middlewares regist
 **Goals**
 
 - Every non-safe `/api/` request that a browser marks as cross-site is refused before any handler or dependency runs, with the dashboard error envelope.
-- No configuration: the expected origin is derived from the request. No new `CODEX_LB_*` setting, no origin allowlist.
+- No configuration: the expected origin is derived from the request. No new `CLAUDE_LB_*` setting, no origin allowlist.
 - Non-browser clients and the existing test suites (which send neither `Origin` nor `Sec-Fetch-Site`) keep working.
 - The client never renders admin controls, or a read-only frame for an admin, before the session response arrives.
 

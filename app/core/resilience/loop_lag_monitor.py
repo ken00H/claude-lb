@@ -7,8 +7,8 @@ quiet: nothing says "the loop itself is busy". The 2026-08-20 incident — an
 ``asyncio.shield`` callback storm pinning one core for hours — surfaced only
 as mysterious global slowness and health-check flapping. This monitor turns
 that state into an explicit, rate-limited warning log plus Prometheus
-signals (``codex_lb_event_loop_lag_seconds`` gauge and
-``codex_lb_event_loop_lag_warnings_total`` counter) so operators and alerts
+signals (``claude_lb_event_loop_lag_seconds`` gauge and
+``claude_lb_event_loop_lag_warnings_total`` counter) so operators and alerts
 can distinguish "loop starved" from "upstream slow".
 """
 

@@ -81,7 +81,7 @@ async def test_dashboard_off_survives_a_cache_invalidation_with_the_env_alias_on
     serving only long-lived WebSocket traffic may not load a fresh snapshot for
     a long time. The gate therefore reads the last loaded row rather than
     forgetting it, or an operator who turned the archive off on a host that
-    still sets ``CODEX_LB_CONVERSATION_ARCHIVE_ENABLED=true`` would silently
+    still sets ``CLAUDE_LB_CONVERSATION_ARCHIVE_ENABLED=true`` would silently
     start recording again.
     """
     cache = get_settings_cache()

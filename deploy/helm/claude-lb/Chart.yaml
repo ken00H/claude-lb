@@ -1,0 +1,25 @@
+apiVersion: v2
+name: claude-lb
+description: >-
+  Production-grade Helm chart for claude-lb — OpenAI API load balancer with usage
+  tracking, account pooling, and observability
+type: application
+version: 1.25.0-beta.9
+appVersion: 1.25.0-beta.9
+kubeVersion: '>=1.32.0-0'
+home: https://github.com/ken00H/claude-lb
+sources:
+  - https://github.com/ken00H/claude-lb
+keywords:
+  - load-balancer
+  - openai
+  - proxy
+  - codex
+maintainers:
+  - name: Soju06
+    email: qlskssk@gmail.com
+dependencies:
+  - name: postgresql
+    version: 18.6.7
+    repository: oci://registry-1.docker.io/bitnamicharts
+    condition: postgresql.enabled

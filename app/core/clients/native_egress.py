@@ -22,7 +22,7 @@ from app.core.utils.shared_future import _await_cleanup_deferring_cancellation
 
 logger = logging.getLogger(__name__)
 
-_NATIVE_EGRESS_EXECUTABLE = "codex-lb-native-egress"
+_NATIVE_EGRESS_EXECUTABLE = "claude-lb-native-egress"
 _NATIVE_PROTOCOL_VERSION = 1
 _NATIVE_PROTOCOL_HANDSHAKE_TIMEOUT_SECONDS = 2.0
 _REQUIRED_NATIVE_CAPABILITIES = frozenset(
@@ -732,7 +732,7 @@ class SubprocessNativeEgressClient:
     """Persistent multiplexed adapter for the pinned Rust Codex helper.
 
     The helper is deliberately discovered by an explicit executable path. Merely
-    importing codex-lb never builds, installs, or requires a Rust component.
+    importing claude-lb never builds, installs, or requires a Rust component.
     """
 
     def __init__(self, executable: str | os.PathLike[str]) -> None:

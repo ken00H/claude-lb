@@ -89,7 +89,7 @@ def test_long_instance_id_truncates_base_and_preserves_process_and_owner_room(
 
     process_suffix = _current_process_suffix()
 
-    monkeypatch.setenv("CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_INSTANCE_ID", "i" * 200)
+    monkeypatch.setenv("CLAUDE_LB_HTTP_RESPONSES_SESSION_BRIDGE_INSTANCE_ID", "i" * 200)
     get_settings.cache_clear()
     try:
         claimant_id = default_refresh_claimant_id()

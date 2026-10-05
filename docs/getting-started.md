@@ -1,19 +1,19 @@
 # Getting Started
 
-codex-lb runs with zero configuration — every setting has a working default, and Docker vs. host paths are auto-detected.
+claude-lb runs with zero configuration — every setting has a working default, and Docker vs. host paths are auto-detected.
 
 ## Quick Start
 
 ```bash
 # Docker (recommended)
-docker volume create codex-lb-data
-docker run -d --name codex-lb \
+docker volume create claude-lb-data
+docker run -d --name claude-lb \
   -p 2455:2455 -p 1455:1455 \
-  -v codex-lb-data:/var/lib/codex-lb \
-  ghcr.io/soju06/codex-lb:latest
+  -v claude-lb-data:/var/lib/claude-lb \
+  ghcr.io/ken00H/claude-lb:latest
 
 # or uvx
-uvx codex-lb
+uvx claude-lb
 
 # or Nix
 nix run github:Soju06/codex-lb
@@ -29,7 +29,7 @@ Open [localhost:2455](http://localhost:2455) → **Add account**:
 - **Anthropic API key** — import a `sk-ant-…` key with
   `POST /api/accounts/import-api-key` (a dashboard import path is planned).
 
-> **Fork status:** claude-lb is a work-in-progress fork of codex-lb. Account
+> **Fork status:** claude-lb is a work-in-progress fork of claude-lb. Account
 > pooling (OAuth seats + API keys) is implemented; the `/v1/messages` proxy
 > surface lands with roadmap increment 3
 > (`openspec/changes/anthropic-upstream-adaptation/`). Until then the bundled
@@ -44,7 +44,7 @@ When accessing the dashboard remotely for the first time, a bootstrap token is r
 **Auto-generated (default):** On first startup (no password configured), the server generates a one-time token and prints it to logs:
 
 ```bash
-docker logs codex-lb
+docker logs claude-lb
 # ============================================
 #   Dashboard bootstrap token (first-run):
 #   <token>
@@ -56,16 +56,16 @@ Open the dashboard → enter the token + new password → done. The token is sha
 **Manual token:** To use a fixed token instead, set the env var before starting:
 
 ```bash
-docker run -d --name codex-lb \
-  -e CODEX_LB_DASHBOARD_BOOTSTRAP_TOKEN=your-secret-token \
+docker run -d --name claude-lb \
+  -e CLAUDE_LB_DASHBOARD_BOOTSTRAP_TOKEN=your-secret-token \
   -p 2455:2455 -p 1455:1455 \
-  -v codex-lb-data:/var/lib/codex-lb \
-  ghcr.io/soju06/codex-lb:latest
+  -v claude-lb-data:/var/lib/claude-lb \
+  ghcr.io/ken00H/claude-lb:latest
 ```
 
 **Local access** (localhost) bypasses bootstrap entirely — no token needed.
 
-Running behind a reverse proxy or exposing codex-lb to other machines? See [Remote Access](deployment/remote.md) and [Authentication](authentication.md).
+Running behind a reverse proxy or exposing claude-lb to other machines? See [Remote Access](deployment/remote.md) and [Authentication](authentication.md).
 
 ---
 

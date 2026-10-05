@@ -985,7 +985,7 @@ def _durable_pending_tool_call_manifest(
 _SECURITY_WORK_AUTHORIZATION_REQUIRED_CODE = "security_work_authorization_required"
 _SECURITY_WORK_RETRY_MESSAGE = (
     "Upstream flagged this request as possible cybersecurity work. "
-    "codex-lb is retrying on an account marked as authorized for security work."
+    "claude-lb is retrying on an account marked as authorized for security work."
 )
 
 
@@ -1645,7 +1645,7 @@ def _denied_proxy_injected_anchor_id(
 ) -> str | None:
     """Choose the anchor a denial may retire, if any.
 
-    Only an anchor shared exclusively by requests that codex-lb injected onto
+    Only an anchor shared exclusively by requests that claude-lb injected onto
     full-resend-shaped payloads can be retired. A client-supplied or delta-only
     sibling has no other way to convey prior context once its anchor is gone,
     which is the same rule the expired-anchor path applies before clearing
@@ -2161,7 +2161,7 @@ class _HTTPBridgeUpstreamEventsMixin:
                                 pending_count = len(session.pending_requests)
                                 # A delta-only request has no other way to
                                 # convey prior context once its anchor is
-                                # cleared, so only clear anchors codex-lb
+                                # cleared, so only clear anchors claude-lb
                                 # injected onto a full-resend-shaped payload.
                                 expired_proxy_injected_anchor = any(
                                     request_state.proxy_injected_previous_response_id
@@ -4223,7 +4223,7 @@ class _HTTPBridgeUpstreamEventsMixin:
                                     _SECURITY_WORK_RETRY_MESSAGE
                                     if can_retry_security_work
                                     else "Upstream flagged this request as possible cybersecurity work. "
-                                    "codex-lb cannot safely switch accounts after this response has already started, "
+                                    "claude-lb cannot safely switch accounts after this response has already started, "
                                     "so the original upstream error is being forwarded."
                                 ),
                                 request_id=terminal_request_state.request_log_id or terminal_request_state.request_id,

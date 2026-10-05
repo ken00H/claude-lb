@@ -41,7 +41,7 @@ closes without any terminal the client could complete on, is an ``error``
 releases: the client received a failure, so nothing is charged. Estimates are
 never written to the request-log row
 as usage -- they are visible through the WARN line and the
-``codex_lb_model_source_usage_estimated_total`` counter.
+``claude_lb_model_source_usage_estimated_total`` counter.
 """
 
 from __future__ import annotations

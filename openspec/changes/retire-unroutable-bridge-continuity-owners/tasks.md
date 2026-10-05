@@ -4,7 +4,7 @@
   `continuity_abandoned_at` (timestamptz, nullable) and `continuity_abandonment_scope`
   (`String(32)`, nullable) to `http_bridge_sessions`, guarded by a column inspect and applied
   through `batch_alter_table` for SQLite, with a mirrored downgrade. Single head.
-- [x] 1.2 Same-PR `app/db/models.py` update so `codex-lb-db check` reports no drift.
+- [x] 1.2 Same-PR `app/db/models.py` update so `claude-lb-db check` reports no drift.
 - [x] 1.3 `tests/integration/test_migrations.py::test_bridge_continuity_abandonment_migration_upgrade_and_downgrade`,
   reading the parent from the graph rather than a literal, plus a `POSTGRES_PYTEST_TARGETS` entry.
 

@@ -38,7 +38,7 @@ See `openspec/specs/realtime-api-compat/spec.md` for normative requirements and 
 
 1. Registered key `key_a` sends a call-creation request to `POST /backend-api/codex/realtime/calls`.
 2. The final upstream account returns a successful response and `Location: /v1/realtime/calls/rtc_example`.
-3. codex-lb stores only a key-scoped ownership digest for `rtc_example` and returns the valid response.
+3. claude-lb stores only a key-scoped ownership digest for `rtc_example` and returns the valid response.
 4. The app opens `WS /backend-api/codex/rtc_example`.
 5. The shared sideband service reloads and leases the bound owner, then connects upstream to `/v1/live/rtc_example` with current persisted identity.
 6. A credential-safe `realtime_live` WebSocket request remains visible in Recent Requests while the internal ownership row remains absent from sticky-session operator views.

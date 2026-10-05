@@ -13,7 +13,7 @@ Background usage refresh MUST apply a cooldown to accounts that repeatedly fail 
 - **GIVEN** a free-plan account whose persisted status is `rate_limited`
 - **AND** its latest primary usage row is a zero-capacity non-5h window (for example a monthly upstream snapshot)
 - **AND** its normalized quota state reports available monthly quota
-- **WHEN** codex-lb derives account status for account summaries or proxy runtime state
+- **WHEN** claude-lb derives account status for account summaries or proxy runtime state
 - **THEN** the non-5h primary row is ignored for rate-limit recovery
 - **AND** the account is treated as `active`
 - **AND** downstream account views keep the monthly-only quota presentation
@@ -371,7 +371,7 @@ Background usage refresh MUST treat a latest usage row as stale when that row's 
 - **AND** no strictly newer main-window row exists for the account
 - **WHEN** background usage refresh evaluates the account
 - **THEN** the row is treated as stale
-- **AND** codex-lb attempts a fresh upstream usage fetch
+- **AND** claude-lb attempts a fresh upstream usage fetch
 
 #### Scenario: Newer sibling row supersedes an elapsed primary row
 
@@ -379,7 +379,7 @@ Background usage refresh MUST treat a latest usage row as stale when that row's 
 - **AND** a later refresh recorded a secondary-window row within the normal refresh interval
 - **WHEN** background usage refresh evaluates the account
 - **THEN** the account is treated as fresh
-- **AND** codex-lb does not fetch upstream usage again until the newest row ages out or its own reset elapses
+- **AND** claude-lb does not fetch upstream usage again until the newest row ages out or its own reset elapses
 
 #### Scenario: Secondary-only accounts are fresh by their newest row
 
@@ -398,14 +398,14 @@ When an account is `RATE_LIMITED` or `QUOTA_EXCEEDED` and its persisted `reset_a
 - **AND** the account's persisted `reset_at` timestamp has elapsed
 - **AND** the latest primary usage row is still within the normal refresh interval
 - **WHEN** background usage refresh evaluates the account
-- **THEN** codex-lb performs an upstream usage fetch instead of waiting for the primary row to age out
+- **THEN** claude-lb performs an upstream usage fetch instead of waiting for the primary row to age out
 
 #### Scenario: Rate-limited account reaches reset deadline
 
 - **GIVEN** an account is marked `RATE_LIMITED`
 - **AND** the account's persisted `reset_at` timestamp has elapsed
 - **WHEN** background usage refresh evaluates the account
-- **THEN** codex-lb performs an upstream usage fetch instead of waiting for the normal refresh interval
+- **THEN** claude-lb performs an upstream usage fetch instead of waiting for the normal refresh interval
 
 ### Requirement: Credit-backed secondary quota remains usable
 
@@ -637,7 +637,7 @@ The system SHALL NOT infer weekly secondary semantics solely because a primary-s
 
 ### Requirement: Background usage refresh is staggered across accounts
 
-Background usage refresh MUST distribute account refresh attempts across the fixed 60-second usage refresh interval (`USAGE_REFRESH_INTERVAL_SECONDS` in `app/core/usage/refresh_policy.py`, which also derives the 180-second usage freshness horizon) instead of refreshing every eligible account in one burst. Background usage refresh MUST always run; the request-path refreshes (account import, post-`usage_limit_reached` request refresh) MUST NOT be gated by an operator switch, and `CODEX_LB_USAGE_REFRESH_ENABLED` / `CODEX_LB_USAGE_REFRESH_INTERVAL_SECONDS` are removed settings that startup reports and ignores. Each scheduler slice MUST attempt at most one eligible account. Over a full cycle, all eligible accounts SHOULD be considered once.
+Background usage refresh MUST distribute account refresh attempts across the fixed 60-second usage refresh interval (`USAGE_REFRESH_INTERVAL_SECONDS` in `app/core/usage/refresh_policy.py`, which also derives the 180-second usage freshness horizon) instead of refreshing every eligible account in one burst. Background usage refresh MUST always run; the request-path refreshes (account import, post-`usage_limit_reached` request refresh) MUST NOT be gated by an operator switch, and `CLAUDE_LB_USAGE_REFRESH_ENABLED` / `CLAUDE_LB_USAGE_REFRESH_INTERVAL_SECONDS` are removed settings that startup reports and ignores. Each scheduler slice MUST attempt at most one eligible account. Over a full cycle, all eligible accounts SHOULD be considered once.
 
 Each slice MUST select its account before reading usage history and MUST scope its latest-usage lookups, updater input, warm-up candidate evaluation, and recoverable-status evaluation to that selected account. The scheduler MAY retain the full eligible account roster only to choose the deterministic rotation and calculate staggered warm-up phases; that roster MUST NOT cause usage-history reads, upstream refresh attempts, warm-up sends, or status mutations for an unrelated account in the slice. A selected-account refresh failure MUST NOT trigger same-slice fallback to another account. Database sessions used to load scheduler state MUST close before upstream network I/O begins, and concurrent follow-up work MUST NOT share an `AsyncSession`.
 
@@ -746,7 +746,7 @@ to be rejected as a slot mismatch.
 
 ### Requirement: Codex usage exposes reset-credit availability
 
-codex-lb SHALL include upstream reset-credit availability on Codex usage
+claude-lb SHALL include upstream reset-credit availability on Codex usage
 responses when ChatGPT usage identity validation returns earned usage limit
 reset credits, without altering aggregate usage-window semantics.
 
@@ -755,12 +755,12 @@ reset credits, without altering aggregate usage-window semantics.
 - **GIVEN** a registered active `chatgpt-account-id`
 - **AND** upstream `/wham/usage` returns `rate_limit_reset_credits.available_count`
 - **WHEN** the caller requests `/api/codex/usage` with a ChatGPT bearer token
-- **THEN** codex-lb returns a successful Codex usage payload
+- **THEN** claude-lb returns a successful Codex usage payload
 - **AND** the top-level `rate_limit_reset_credits.available_count` equals the upstream value
 
 ### Requirement: Codex usage can consume upstream reset credits
 
-codex-lb SHALL expose a Codex-compatible endpoint for consuming one upstream
+claude-lb SHALL expose a Codex-compatible endpoint for consuming one upstream
 usage limit reset credit. The endpoint SHALL require ChatGPT caller identity,
 forward the caller's bearer token and `chatgpt-account-id`, preserve the
 caller-provided `redeem_request_id`, and return the upstream consume outcome.
@@ -770,25 +770,25 @@ caller-provided `redeem_request_id`, and return the upstream consume outcome.
 - **GIVEN** a registered active `chatgpt-account-id`
 - **AND** upstream reset-credit consume returns `code: reset`
 - **WHEN** the caller posts to `/api/codex/rate-limit-reset-credits/consume` with `redeem_request_id`
-- **THEN** codex-lb returns `code: reset`
-- **AND** codex-lb force-refreshes the matching account usage snapshot
+- **THEN** claude-lb returns `code: reset`
+- **AND** claude-lb force-refreshes the matching account usage snapshot
 - **AND** the force-refresh runs even when background usage refresh scheduling is disabled
 
 #### Scenario: API-key caller cannot consume ChatGPT reset credits
 
-- **GIVEN** a codex-lb API key caller without ChatGPT caller identity
+- **GIVEN** a claude-lb API key caller without ChatGPT caller identity
 - **WHEN** the caller posts to `/api/codex/rate-limit-reset-credits/consume`
-- **THEN** codex-lb rejects the request as unauthenticated for ChatGPT reset credits
+- **THEN** claude-lb rejects the request as unauthenticated for ChatGPT reset credits
 
 #### Scenario: Empty redemption id is rejected
 
 - **GIVEN** a registered active `chatgpt-account-id`
 - **WHEN** the caller posts to `/api/codex/rate-limit-reset-credits/consume` with an empty `redeem_request_id`
-- **THEN** codex-lb rejects the request without forwarding it upstream
+- **THEN** claude-lb rejects the request without forwarding it upstream
 
 ### Requirement: Account details expose reset-credit availability
 
-codex-lb SHALL expose upstream usage limit reset-credit availability for a
+claude-lb SHALL expose upstream usage limit reset-credit availability for a
 selected dashboard account without creating local reset-credit accounting.
 
 #### Scenario: Dashboard account detail shows reset credits
@@ -796,12 +796,12 @@ selected dashboard account without creating local reset-credit accounting.
 - **GIVEN** a registered active account with a `chatgpt-account-id`
 - **AND** upstream `/wham/usage` returns `rate_limit_reset_credits.available_count`
 - **WHEN** the dashboard requests the account's reset-credit summary
-- **THEN** codex-lb returns the selected account id
+- **THEN** claude-lb returns the selected account id
 - **AND** `rate_limit_reset_credits.available_count` equals the upstream value
 
 ### Requirement: Dashboard account details can consume reset credits
 
-codex-lb SHALL expose a dashboard write-authorized endpoint for consuming one
+claude-lb SHALL expose a dashboard write-authorized endpoint for consuming one
 upstream usage limit reset credit for a selected account. The endpoint SHALL use
 the selected account's stored ChatGPT access token and `chatgpt-account-id`,
 generate a non-empty `redeem_request_id`, return the upstream consume outcome,
@@ -813,16 +813,16 @@ idempotently successful consume.
 - **GIVEN** a registered active dashboard account with a `chatgpt-account-id`
 - **AND** upstream reset-credit consume returns `code: reset`
 - **WHEN** the dashboard posts to the selected account reset-credit consume endpoint
-- **THEN** codex-lb forwards a non-empty `redeem_request_id` upstream
-- **AND** codex-lb returns `code: reset`
-- **AND** codex-lb force-refreshes the matching account usage snapshot
+- **THEN** claude-lb forwards a non-empty `redeem_request_id` upstream
+- **AND** claude-lb returns `code: reset`
+- **AND** claude-lb force-refreshes the matching account usage snapshot
 - **AND** the force-refresh runs even when background usage refresh scheduling is disabled
 
 #### Scenario: Read-only dashboard cannot consume reset credits
 
 - **GIVEN** a read-only dashboard session
 - **WHEN** the dashboard posts to the selected account reset-credit consume endpoint
-- **THEN** codex-lb rejects the request without consuming a reset credit
+- **THEN** claude-lb rejects the request without consuming a reset credit
 
 ### Requirement: Usage refresh is account-slot scoped
 
@@ -844,21 +844,21 @@ Usage refresh MUST write usage and change account status only for the credential
 
 ### Requirement: Proactive active account credential refresh
 
-Codex-LB SHALL periodically refresh account credentials in the background when an account's last refresh is older than a configured maximum age. Accounts with status `active` or `paused` SHALL be eligible for proactive credential refresh; accounts with status `reauth_required` or `deactivated` SHALL NOT be selected. Proactive credential refresh MUST NOT change a paused account's routing eligibility: a paused account remains excluded from request routing regardless of refresh outcome, except that a permanent refresh failure transitions the account to its documented permanent-failure status the same way it does for active accounts. The proactive refresh scheduler SHALL be enabled by default with zero required configuration. Whether a refresh pass runs SHALL be decided by the dashboard setting `auth_guardian_enabled` (a nullable `dashboard_settings` column; NULL inherits the deprecated `CODEX_LB_AUTH_GUARDIAN_ENABLED` environment variable, then the default `true`), exposed with provenance on `GET`/`PUT /api/settings`. The scheduler loop SHALL always start; each refresh pass SHALL read the effective value from the dashboard-settings snapshot at the start of the pass and SHALL skip the pass while it is `false`, so a change made in the dashboard applies on the next pass on every replica without a restart. The multi-replica leader guard remains a precondition for any refresh work.
+Claude-LB SHALL periodically refresh account credentials in the background when an account's last refresh is older than a configured maximum age. Accounts with status `active` or `paused` SHALL be eligible for proactive credential refresh; accounts with status `reauth_required` or `deactivated` SHALL NOT be selected. Proactive credential refresh MUST NOT change a paused account's routing eligibility: a paused account remains excluded from request routing regardless of refresh outcome, except that a permanent refresh failure transitions the account to its documented permanent-failure status the same way it does for active accounts. The proactive refresh scheduler SHALL be enabled by default with zero required configuration. Whether a refresh pass runs SHALL be decided by the dashboard setting `auth_guardian_enabled` (a nullable `dashboard_settings` column; NULL inherits the deprecated `CLAUDE_LB_AUTH_GUARDIAN_ENABLED` environment variable, then the default `true`), exposed with provenance on `GET`/`PUT /api/settings`. The scheduler loop SHALL always start; each refresh pass SHALL read the effective value from the dashboard-settings snapshot at the start of the pass and SHALL skip the pass while it is `false`, so a change made in the dashboard applies on the next pass on every replica without a restart. The multi-replica leader guard remains a precondition for any refresh work.
 
 #### Scenario: Idle active account becomes stale
 
 - **GIVEN** an account has status `active`
 - **AND** its `last_refresh` is older than the configured Auth Guardian max age
 - **WHEN** Auth Guardian runs on the elected leader
-- **THEN** Codex-LB force-refreshes that account without requiring request traffic to select it first
+- **THEN** Claude-LB force-refreshes that account without requiring request traffic to select it first
 
 #### Scenario: Idle paused account keeps its refresh token alive
 
 - **GIVEN** an account has status `paused`
 - **AND** its `last_refresh` is older than the configured Auth Guardian max age
 - **WHEN** Auth Guardian runs on the elected leader
-- **THEN** Codex-LB force-refreshes that account's credentials
+- **THEN** Claude-LB force-refreshes that account's credentials
 - **AND** the account's status remains `paused`
 - **AND** the account remains excluded from request routing
 
@@ -871,7 +871,7 @@ Codex-LB SHALL periodically refresh account credentials in the background when a
 
 #### Scenario: Guardian runs on a default install
 
-- **GIVEN** a single-replica deployment with no `CODEX_LB_AUTH_GUARDIAN_*` configuration and no dashboard value for `auth_guardian_enabled`
+- **GIVEN** a single-replica deployment with no `CLAUDE_LB_AUTH_GUARDIAN_*` configuration and no dashboard value for `auth_guardian_enabled`
 - **WHEN** the Auth Guardian scheduler is built
 - **THEN** the scheduler is enabled and its passes run
 
@@ -885,7 +885,7 @@ Codex-LB SHALL periodically refresh account credentials in the background when a
 
 #### Scenario: Environment alias applies only while the dashboard value is unset
 
-- **GIVEN** `CODEX_LB_AUTH_GUARDIAN_ENABLED=false` and no dashboard value
+- **GIVEN** `CLAUDE_LB_AUTH_GUARDIAN_ENABLED=false` and no dashboard value
 - **WHEN** an operator sets `auth_guardian_enabled` to `true` in the dashboard
 - **THEN** refresh passes run and `provenance.auth_guardian_enabled.source` is `dashboard`
 - **AND** clearing the dashboard value returns to the environment value (`source` `env`)
@@ -951,7 +951,7 @@ Aggregated downstream rate-limit surfaces — the pooled `x-codex-{window}-*` re
 
 ### Requirement: Cross-replica token refresh serialization
 
-Before any upstream OAuth token exchange for an account, the system MUST acquire that account's row in `account_refresh_claims` via a conditional upsert that succeeds only when no unexpired claim by another claimant exists; the upsert MUST be atomic on both PostgreSQL (ON CONFLICT row lock) and SQLite (single-writer lock). After acquiring, the system MUST re-read the account's refresh-token material fresh from the database (bypassing session identity caches) and MUST skip the upstream exchange when the material has rotated since the refresh was requested, adopting the stored tokens instead. Claims MUST carry an expiry covering all work performed under the claim (TTL at least the refresh-admission wait timeout plus twice the refresh HTTP timeout, because the claim is held across the admission wait and the OAuth exchange) so a crashed claimant cannot block refresh indefinitely while a healthy claimant cannot lose its claim mid-work, MUST be released after the refreshed tokens are persisted, and MUST NOT be held as an open database transaction or lock across upstream network I/O. The claim expiry — BOTH the stored `claim_expires_at` AND the takeover predicate that treats an existing claim as expired — MUST be evaluated on the DATABASE server clock (`clock_timestamp()`/`now()` on PostgreSQL; in-statement `strftime(..., 'now')` on SQLite), never against a replica-local Python wall-clock instant captured before the statement executes, so inter-replica clock skew can never let one replica treat another replica's still-live claim as expired and steal it (which would let two replicas exchange the same single-use refresh token concurrently). This mirrors the clock-domain guarantee of the scheduler leader election. The claim TTL is not operator-configurable: it is the fixed helper `max(30 s, admission wait + 2 x refresh HTTP timeout)` in `app/modules/accounts/auth_manager.py` (30 s with the fixed 10 s admission wait and 8 s refresh timeout), so it always satisfies the floor by construction, and `CODEX_LB_TOKEN_REFRESH_CLAIM_TTL_SECONDS` is a removed setting that startup reports and ignores. The claimant identity MUST remain unique per OS process even when the configured instance id exceeds the stored column width (truncate the instance-id portion, never the per-process suffix). The per-process suffix MUST be derived per OS process and resolved at claim-build time (for example incorporating `os.getpid()`), never frozen at module import: in pre-fork/multi-worker deployments a module imported before the fork boundary MUST NOT hand every forked child an identical suffix, so two sibling workers sharing one instance id build DISTINCT claimant identities (and thus distinct `claimed_by` values) rather than both satisfying the re-entrant claim upsert and refreshing the single-use token concurrently. The suffix MUST also remain stable across repeated calls within a single process so genuine same-process re-entrant claims still match. The same fork-safety MUST hold for the coordinator that composes claims: a process-default/auto-derived claimant identity MUST NOT be frozen when the coordinator is constructed (the process-default coordinator is commonly built during preload/startup, before a pre-fork server forks its workers, and a frozen identity would be inherited identically by every child). It MUST instead be resolved per OS process at use time so two forked children build DISTINCT claimant identities; a claimant identity that a caller explicitly injects MUST remain stable and unchanged (including across a fork), and repeated reads within one process MUST stay stable.
+Before any upstream OAuth token exchange for an account, the system MUST acquire that account's row in `account_refresh_claims` via a conditional upsert that succeeds only when no unexpired claim by another claimant exists; the upsert MUST be atomic on both PostgreSQL (ON CONFLICT row lock) and SQLite (single-writer lock). After acquiring, the system MUST re-read the account's refresh-token material fresh from the database (bypassing session identity caches) and MUST skip the upstream exchange when the material has rotated since the refresh was requested, adopting the stored tokens instead. Claims MUST carry an expiry covering all work performed under the claim (TTL at least the refresh-admission wait timeout plus twice the refresh HTTP timeout, because the claim is held across the admission wait and the OAuth exchange) so a crashed claimant cannot block refresh indefinitely while a healthy claimant cannot lose its claim mid-work, MUST be released after the refreshed tokens are persisted, and MUST NOT be held as an open database transaction or lock across upstream network I/O. The claim expiry — BOTH the stored `claim_expires_at` AND the takeover predicate that treats an existing claim as expired — MUST be evaluated on the DATABASE server clock (`clock_timestamp()`/`now()` on PostgreSQL; in-statement `strftime(..., 'now')` on SQLite), never against a replica-local Python wall-clock instant captured before the statement executes, so inter-replica clock skew can never let one replica treat another replica's still-live claim as expired and steal it (which would let two replicas exchange the same single-use refresh token concurrently). This mirrors the clock-domain guarantee of the scheduler leader election. The claim TTL is not operator-configurable: it is the fixed helper `max(30 s, admission wait + 2 x refresh HTTP timeout)` in `app/modules/accounts/auth_manager.py` (30 s with the fixed 10 s admission wait and 8 s refresh timeout), so it always satisfies the floor by construction, and `CLAUDE_LB_TOKEN_REFRESH_CLAIM_TTL_SECONDS` is a removed setting that startup reports and ignores. The claimant identity MUST remain unique per OS process even when the configured instance id exceeds the stored column width (truncate the instance-id portion, never the per-process suffix). The per-process suffix MUST be derived per OS process and resolved at claim-build time (for example incorporating `os.getpid()`), never frozen at module import: in pre-fork/multi-worker deployments a module imported before the fork boundary MUST NOT hand every forked child an identical suffix, so two sibling workers sharing one instance id build DISTINCT claimant identities (and thus distinct `claimed_by` values) rather than both satisfying the re-entrant claim upsert and refreshing the single-use token concurrently. The suffix MUST also remain stable across repeated calls within a single process so genuine same-process re-entrant claims still match. The same fork-safety MUST hold for the coordinator that composes claims: a process-default/auto-derived claimant identity MUST NOT be frozen when the coordinator is constructed (the process-default coordinator is commonly built during preload/startup, before a pre-fork server forks its workers, and a frozen identity would be inherited identically by every child). It MUST instead be resolved per OS process at use time so two forked children build DISTINCT claimant identities; a claimant identity that a caller explicitly injects MUST remain stable and unchanged (including across a fork), and repeated reads within one process MUST stay stable.
 
 After acquiring the claim and re-reading the account fresh, and BEFORE starting a new upstream exchange, the system MUST honor a TERMINAL account status committed by a prior claim holder. When the fresh row's refresh-token fingerprint is UNCHANGED from the material the refresh was requested with (so no peer rotation repaired it) AND the fresh row's status is terminal (`REAUTH_REQUIRED` or `DEACTIVATED`) — for example a prior holder that hit a permanent `invalid_grant`, or the safe-terminal persist-conflict path that flags `REAUTH_REQUIRED` while leaving the consumed token stored — the system MUST NOT re-exchange that unchanged consumed/dead token; it MUST instead surface the terminal state as a PERMANENT refresh failure (fail closed), so a waiter that wins the released claim cannot blindly retry the consumed token and generate another permanent failure for an account a peer already removed from rotation. This decision MUST use the FRESH re-read status and fingerprint, never the stale selection snapshot, and MUST compose with the adopt-vs-exchange logic so that a CHANGED fingerprint (a peer genuinely re-authenticated/rotated and repaired the account) still causes the system to ADOPT the rotated stored tokens and proceed rather than treating a repaired account as terminal.
 
@@ -984,7 +984,7 @@ Removing the unconditional write resolves — structurally, not by picking a sid
 
 #### Scenario: Timeout-only config predating the claim TTL setting still boots
 
-- **GIVEN** a deployment whose environment still sets `CODEX_LB_TOKEN_REFRESH_CLAIM_TTL_SECONDS`, `CODEX_LB_TOKEN_REFRESH_TIMEOUT_SECONDS` or `CODEX_LB_PROXY_ADMISSION_WAIT_TIMEOUT_SECONDS` to any value
+- **GIVEN** a deployment whose environment still sets `CLAUDE_LB_TOKEN_REFRESH_CLAIM_TTL_SECONDS`, `CLAUDE_LB_TOKEN_REFRESH_TIMEOUT_SECONDS` or `CLAUDE_LB_PROXY_ADMISSION_WAIT_TIMEOUT_SECONDS` to any value
 - **WHEN** settings are constructed and a replica later acquires a refresh claim
 - **THEN** construction succeeds (the values are ignored and startup logs the removed-setting warning once; nothing is rejected)
 - **AND** the claim TTL is the fixed 30 s (`max(30 s, 10 s admission wait + 2 x 8 s refresh timeout)`), which covers the admission wait plus twice the refresh timeout

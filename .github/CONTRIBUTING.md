@@ -1,6 +1,6 @@
-# Contributing to codex-lb
+# Contributing to claude-lb
 
-Thanks for thinking about contributing to codex-lb! This document covers
+Thanks for thinking about contributing to claude-lb! This document covers
 everything you need to get from "clone" to "merged PR" without re-discovering
 the conventions yourself.
 
@@ -51,12 +51,12 @@ if you're looking for a starter task.
 
 ## Development setup
 
-codex-lb is a Python project managed with [`uv`](https://docs.astral.sh/uv/).
+claude-lb is a Python project managed with [`uv`](https://docs.astral.sh/uv/).
 
 ```bash
 # 1. Fork & clone
-git clone https://github.com/<your-user>/codex-lb.git
-cd codex-lb
+git clone https://github.com/<your-user>/claude-lb.git
+cd claude-lb
 
 # 2. Install Python + deps via uv
 uv sync --all-extras --dev
@@ -68,7 +68,7 @@ source .venv/bin/activate
 uv run pre-commit install
 
 # 5. Run the proxy locally
-uv run codex-lb --help
+uv run claude-lb --help
 ```
 
 Frontend (dashboard) lives under `frontend/`. Use the project's standard
@@ -80,7 +80,7 @@ package manager (see `frontend/package.json`).
 .
 ├── app/                  # Python application (proxy, accounts, dashboard backend)
 ├── frontend/             # Dashboard SPA
-├── deploy/helm/codex-lb/ # Helm chart
+├── deploy/helm/claude-lb/ # Helm chart
 ├── tests/
 │   ├── unit/             # Fast, isolated tests
 │   └── integration/      # End-to-end / network-touching tests
@@ -92,7 +92,7 @@ package manager (see `frontend/package.json`).
 
 ## Workflow: OpenSpec-first
 
-codex-lb uses **OpenSpec as the source of truth** for change-driven development.
+claude-lb uses **OpenSpec as the source of truth** for change-driven development.
 You don't have to author OpenSpec entries for trivial fixes, but for anything
 that changes observable behavior, requirements, contracts, or schema, an
 OpenSpec change is expected.
@@ -142,7 +142,7 @@ make package
 
 ## Commit & PR conventions
 
-codex-lb uses **[Conventional Commits](https://www.conventionalcommits.org/)**
+claude-lb uses **[Conventional Commits](https://www.conventionalcommits.org/)**
 because release-please derives the next version + changelog from them.
 
 Format:
@@ -254,7 +254,7 @@ every PR (budget checks are enforced by CI via
    setup step (env var, migration action, external account, manual
    file edit) on the base install path without maintainer approval via
    the `simplicity-budget-approved` label.
-2. **Every new `CODEX_LB_*` setting justifies not being a default.**
+2. **Every new `CLAUDE_LB_*` setting justifies not being a default.**
    The PR body answers "why can't this be a hardcoded default?" for
    each new setting; internals-only knobs stay out of `.env.example`.
 3. **README, `.env.example`, and dashboard nav are budgeted.** The

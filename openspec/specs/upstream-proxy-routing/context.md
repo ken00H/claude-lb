@@ -11,7 +11,7 @@ configuration are outside its scope.
 ## WebSocket context ownership
 
 aiohttp exposes WebSocket setup as an awaitable asynchronous context manager.
-The caller owns its exit path only after entry succeeds. codex-lb therefore
+The caller owns its exit path only after entry succeeds. claude-lb therefore
 tracks successful entry for each route endpoint independently and never exits a
 manager whose connection coroutine or `__aenter__` failed.
 
@@ -32,9 +32,9 @@ so the connection remains open after the routed client returns it.
 
 ## Example
 
-Suppose an HTTP proxy restarts while codex-lb opens an upstream WebSocket.
+Suppose an HTTP proxy restarts while claude-lb opens an upstream WebSocket.
 aiohttp raises `ClientProxyConnectionError` before assigning a response to its
-request context. codex-lb classifies that original error and can try the next
+request context. claude-lb classifies that original error and can try the next
 endpoint in the resolved route. It does not call the unentered context's exit
 method, which would otherwise replace the useful failure with an internal
 attribute error.

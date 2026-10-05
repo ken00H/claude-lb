@@ -48,7 +48,7 @@ from tests.simulation.virtual_time import VirtualClock, VirtualScheduler
 
 @pytest.fixture(autouse=True)
 def _temp_bridge_key(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Iterator[None]:
-    monkeypatch.setenv("CODEX_LB_ENCRYPTION_KEY_FILE", str(tmp_path / "bridge.key"))
+    monkeypatch.setenv("CLAUDE_LB_ENCRYPTION_KEY_FILE", str(tmp_path / "bridge.key"))
     get_settings.cache_clear()
     yield
     get_settings.cache_clear()
@@ -1104,8 +1104,8 @@ async def test_owner_forward_uses_direct_session_without_env_proxy(monkeypatch: 
             return FakeResponse()
 
     monkeypatch.setattr("app.modules.proxy.http_bridge_forwarding.aiohttp.ClientSession", FakeSession)
-    monkeypatch.setenv("CODEX_LB_UPSTREAM_CONNECT_TIMEOUT_SECONDS", "7")
-    monkeypatch.setenv("CODEX_LB_STREAM_IDLE_TIMEOUT_SECONDS", "11")
+    monkeypatch.setenv("CLAUDE_LB_UPSTREAM_CONNECT_TIMEOUT_SECONDS", "7")
+    monkeypatch.setenv("CLAUDE_LB_STREAM_IDLE_TIMEOUT_SECONDS", "11")
     get_settings.cache_clear()
 
     client = HTTPBridgeOwnerClient()

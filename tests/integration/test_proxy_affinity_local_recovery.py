@@ -14,8 +14,8 @@ pytestmark = pytest.mark.integration
 
 
 def test_local_previous_response_recovery_keeps_resolved_affinity(app_instance, monkeypatch):
-    monkeypatch.setenv("CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_ENABLED", "true")
-    monkeypatch.setenv("CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_CODEX_PREWARM_ENABLED", "false")
+    monkeypatch.setenv("CLAUDE_LB_HTTP_RESPONSES_SESSION_BRIDGE_ENABLED", "true")
+    monkeypatch.setenv("CLAUDE_LB_HTTP_RESPONSES_SESSION_BRIDGE_CODEX_PREWARM_ENABLED", "false")
     get_settings.cache_clear()
     connections = []
     rejected_anchors = []

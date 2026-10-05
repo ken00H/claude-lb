@@ -34,8 +34,8 @@ from app.modules.accounts.auth_manager import AuthManager
 from app.modules.accounts.repository import AccountsRepository
 from app.modules.cache_isolation_probe.prefix import PROBE_INSTRUCTIONS, PROBE_QUESTION
 
-CACHE_PROBE_HEADER = "x-codex-lb-cache-isolation-probe"
-CACHE_PROBE_USER_AGENT = "codex-lb-cache-isolation-probe"
+CACHE_PROBE_HEADER = "x-claude-lb-cache-isolation-probe"
+CACHE_PROBE_USER_AGENT = "claude-lb-cache-isolation-probe"
 #: The probe measures input caching; every output token is pure waste.
 CACHE_PROBE_MAX_OUTPUT_TOKENS = 16
 
@@ -156,7 +156,7 @@ class CacheProbeSender:
                 route=route,
                 route_trace=UpstreamProxyRouteTrace(),
                 allow_direct_egress=route is None,
-                codex_lb_account_id=account.id,
+                claude_lb_account_id=account.id,
             )
             # ``stream_responses`` is an async generator function; its
             # annotation widens to ``AsyncIterator``, which does not

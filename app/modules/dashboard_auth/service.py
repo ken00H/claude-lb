@@ -69,12 +69,12 @@ from app.modules.dashboard_users.repository import (
     normalize_username,
 )
 
-DASHBOARD_SESSION_COOKIE = "codex_lb_dashboard_session"
+DASHBOARD_SESSION_COOKIE = "claude_lb_dashboard_session"
 #: Cookie payload format. Version 1 carried ``pw``/``tv``/``role``/``gv`` and no
 #: user id; it is rejected outright so a stale cookie can never resolve to a
 #: user it was not issued for.
 SESSION_PAYLOAD_VERSION = 2
-_TOTP_ISSUER = "codex-lb"
+_TOTP_ISSUER = "claude-lb"
 AUTH_METHOD_PASSWORD = "password"
 
 
@@ -377,7 +377,7 @@ def is_local_password_session(state: DashboardSessionState) -> bool:
 
 
 class StepUpCookieStore:
-    """The ``codex_lb_step_up`` cookie: a step-up for principals without a session cookie.
+    """The ``claude_lb_step_up`` cookie: a step-up for principals without a session cookie.
 
     Trusted-header accounts prove who they are on every request through the
     proxy header and carry no session cookie, so their re-verification rides

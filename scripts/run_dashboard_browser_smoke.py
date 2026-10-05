@@ -24,7 +24,7 @@ SHUTDOWN_TIMEOUT_SECONDS = 30.0
 # Background loops the app lifespan builds through ``app.main`` seams. The smoke
 # backend replaces every builder with a no-op in-process (mirroring the autouse
 # ``_disable_background_loop_schedulers`` fixture in tests/conftest.py, which
-# pins this tuple) instead of exporting ``CODEX_LB_*_ENABLED=false``: the
+# pins this tuple) instead of exporting ``CLAUDE_LB_*_ENABLED=false``: the
 # dashboard under test never needs them, several would leave the process
 # (public GitHub/npm catalog lookups, upstream usage polls), and an env override
 # silently stops working the day the toggle behind it is constantized.
@@ -78,7 +78,7 @@ def _run_backend(listener_fd: int) -> None:
     # repository-local .env or .env.local database/auth configuration.
     from app.core.config import settings as settings_module
 
-    empty_env_file = Path(os.environ["CODEX_LB_DATA_DIR"]) / ".dashboard-browser-smoke.env"
+    empty_env_file = Path(os.environ["CLAUDE_LB_DATA_DIR"]) / ".dashboard-browser-smoke.env"
     settings_module.ENV_FILES = (empty_env_file, empty_env_file)
     settings_module.Settings.model_config["env_file"] = None
 
@@ -92,24 +92,24 @@ def _run_backend(listener_fd: int) -> None:
 
 
 def _smoke_environment(data_dir: Path) -> dict[str, str]:
-    environment = {key: value for key, value in os.environ.items() if not key.startswith("CODEX_LB_")}
+    environment = {key: value for key, value in os.environ.items() if not key.startswith("CLAUDE_LB_")}
     environment.update(
         {
-            "CODEX_LB_DATA_DIR": str(data_dir),
-            "CODEX_LB_UPSTREAM_BASE_URL": "http://127.0.0.1:9/backend-api",
-            "CODEX_LB_UPSTREAM_WEBSOCKET_TRUST_ENV": "false",
+            "CLAUDE_LB_DATA_DIR": str(data_dir),
+            "CLAUDE_LB_UPSTREAM_BASE_URL": "http://127.0.0.1:9/backend-api",
+            "CLAUDE_LB_UPSTREAM_WEBSOCKET_TRUST_ENV": "false",
             # The session bridge is a request-path feature with a T4 env kill
             # switch; the smoke never proxies, so keep it on the raw path.
-            "CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_ENABLED": "false",
-            "CODEX_LB_METRICS_ENABLED": "false",
-            "CODEX_LB_OTEL_ENABLED": "false",
+            "CLAUDE_LB_HTTP_RESPONSES_SESSION_BRIDGE_ENABLED": "false",
+            "CLAUDE_LB_METRICS_ENABLED": "false",
+            "CLAUDE_LB_OTEL_ENABLED": "false",
             # Background loops are disabled in-process by ``_run_backend`` (see
             # ``_disable_background_loops``), not through env overrides. The
             # always-on database maintenance loops remain harmless because the
             # isolated database starts empty.
             # Suppress first-run token logging while keeping standard localhost
             # authentication active. The generated value never leaves this process tree.
-            "CODEX_LB_DASHBOARD_BOOTSTRAP_TOKEN": secrets.token_urlsafe(32),
+            "CLAUDE_LB_DASHBOARD_BOOTSTRAP_TOKEN": secrets.token_urlsafe(32),
         }
     )
     return environment
@@ -155,7 +155,7 @@ def _stop_server(server: subprocess.Popen[bytes]) -> None:
 
 
 def run() -> int:
-    with tempfile.TemporaryDirectory(prefix="codex-lb-dashboard-browser-smoke-") as temporary_dir:
+    with tempfile.TemporaryDirectory(prefix="claude-lb-dashboard-browser-smoke-") as temporary_dir:
         data_dir = Path(temporary_dir)
         listener = _reserve_loopback_socket()
         port = listener.getsockname()[1]
@@ -179,10 +179,10 @@ def run() -> int:
         try:
             _wait_until_ready(server, base_url)
             playwright_environment = environment | {
-                "CODEX_LB_BROWSER_SMOKE_BASE_URL": base_url,
-                "CODEX_LB_BROWSER_SMOKE_OUTPUT_DIR": str(data_dir / "playwright-output"),
+                "CLAUDE_LB_BROWSER_SMOKE_BASE_URL": base_url,
+                "CLAUDE_LB_BROWSER_SMOKE_OUTPUT_DIR": str(data_dir / "playwright-output"),
             }
-            playwright_environment.pop("CODEX_LB_DASHBOARD_BOOTSTRAP_TOKEN")
+            playwright_environment.pop("CLAUDE_LB_DASHBOARD_BOOTSTRAP_TOKEN")
             completed = subprocess.run(
                 ["bun", "run", "test:browser-smoke"],
                 cwd=FRONTEND_ROOT,

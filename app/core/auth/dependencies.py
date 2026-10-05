@@ -34,7 +34,7 @@ from app.core.auth.step_up import (
     account_step_up_methods,
     is_step_up_fresh,
 )
-from app.core.clients.proxy import CODEX_LB_REQUIRED_CAPABILITY_HEADER
+from app.core.clients.proxy import CLAUDE_LB_REQUIRED_CAPABILITY_HEADER
 from app.core.clients.usage import UsageFetchError, fetch_usage
 from app.core.config.settings import get_settings
 from app.core.config.settings_cache import get_settings_cache
@@ -127,7 +127,7 @@ async def validate_proxy_api_key(
     """A required-capability header authenticates even when global proxy API-key auth is disabled."""
 
     authorization = None if credentials is None else f"Bearer {credentials.credentials}"
-    if request.headers.getlist(CODEX_LB_REQUIRED_CAPABILITY_HEADER):
+    if request.headers.getlist(CLAUDE_LB_REQUIRED_CAPABILITY_HEADER):
         return await validate_required_proxy_api_key_authorization(authorization)
     return await validate_proxy_api_key_authorization(authorization, request=request)
 
@@ -702,7 +702,7 @@ async def validate_codex_usage_identity(request: Request) -> ApiKeyData | None:
 async def validate_codex_provider_usage_identity(request: Request) -> ApiKeyData | None:
     """Bind provider capability intent to a proxy API-key principal before usage I/O."""
 
-    if request.headers.getlist(CODEX_LB_REQUIRED_CAPABILITY_HEADER):
+    if request.headers.getlist(CLAUDE_LB_REQUIRED_CAPABILITY_HEADER):
         return await validate_required_proxy_api_key_authorization(request.headers.get("authorization"))
     return await validate_codex_usage_identity(request)
 

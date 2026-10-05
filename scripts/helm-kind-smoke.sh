@@ -4,10 +4,10 @@ set -euo pipefail
 MODE="${1:?usage: scripts/helm-kind-smoke.sh <bundled|external-db>}"
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-CHART_DIR="${ROOT_DIR}/deploy/helm/codex-lb"
-KUBE_CONTEXT="${KUBE_CONTEXT:-kind-codex-lb-smoke}"
+CHART_DIR="${ROOT_DIR}/deploy/helm/claude-lb"
+KUBE_CONTEXT="${KUBE_CONTEXT:-kind-claude-lb-smoke}"
 IMAGE_REGISTRY="${IMAGE_REGISTRY:-ghcr.io}"
-IMAGE_REPOSITORY="${IMAGE_REPOSITORY:-soju06/codex-lb}"
+IMAGE_REPOSITORY="${IMAGE_REPOSITORY:-ken00H/claude-lb}"
 IMAGE_TAG="${IMAGE_TAG:-ci}"
 DB_PASSWORD="${DB_PASSWORD:-smoke-password}"
 HELM_TEST_TIMEOUT="${HELM_TEST_TIMEOUT:-60s}"
@@ -43,7 +43,7 @@ assert_bridge_ring() {
 
   log_step "asserting bridge ring size ${expected_replicas} via /health/ready on ${workload}-0"
   local probe_output
-  probe_output=$(kubectl --context "${KUBE_CONTEXT}" -n "${namespace}" exec -i "${workload}-0" -c codex-lb -- \
+  probe_output=$(kubectl --context "${KUBE_CONTEXT}" -n "${namespace}" exec -i "${workload}-0" -c claude-lb -- \
     python - "${expected_replicas}" <<'PY'
 import json
 import sys
@@ -83,8 +83,8 @@ dump_namespace_debug() {
 }
 
 install_bundled() {
-  local namespace="codex-lb-smoke-bundled"
-  local release="codex-lb-bundled"
+  local namespace="claude-lb-smoke-bundled"
+  local release="claude-lb-bundled"
 
   trap 'dump_namespace_debug "${namespace}"' ERR
 
@@ -107,7 +107,7 @@ install_bundled() {
     --set ingress.enabled=true \
     --set ingress.ingressClassName=nginx \
     --set ingress.nginx.enabled=true \
-    --set-string 'ingress.hosts[0].host=codex-lb.localtest.me' \
+    --set-string 'ingress.hosts[0].host=claude-lb.localtest.me' \
     --set-string 'ingress.hosts[0].paths[0].path=/' \
     --set-string 'ingress.hosts[0].paths[0].pathType=Prefix' \
     --wait \
@@ -118,10 +118,10 @@ install_bundled() {
 }
 
 install_external_db() {
-  local namespace="codex-lb-smoke-external"
-  local release="codex-lb-external"
-  local db_release="codex-lb-smoke-db"
-  local app_secret="codex-lb-external-secrets"
+  local namespace="claude-lb-smoke-external"
+  local release="claude-lb-external"
+  local db_release="claude-lb-smoke-db"
+  local app_secret="claude-lb-external-secrets"
   local encryption_key
 
   trap 'dump_namespace_debug "${namespace}"' ERR
@@ -139,9 +139,9 @@ PY
     --kube-context "${KUBE_CONTEXT}" \
     --namespace "${namespace}" \
     --create-namespace \
-    --set auth.username=codexlb \
+    --set auth.username=claudelb \
     --set auth.password="${DB_PASSWORD}" \
-    --set auth.database=codexlb \
+    --set auth.database=claudelb \
     --set primary.persistence.enabled=false \
     --wait \
     --timeout 10m
@@ -149,7 +149,7 @@ PY
   log_step "creating external DB application secret ${app_secret}"
   kubectl --context "${KUBE_CONTEXT}" -n "${namespace}" delete secret "${app_secret}" --ignore-not-found
   kubectl --context "${KUBE_CONTEXT}" -n "${namespace}" create secret generic "${app_secret}" \
-    --from-literal=database-url="postgresql+asyncpg://codexlb:${DB_PASSWORD}@${db_release}-postgresql:5432/codexlb" \
+    --from-literal=database-url="postgresql+asyncpg://claudelb:${DB_PASSWORD}@${db_release}-postgresql:5432/claudelb" \
     --from-literal=encryption-key="${encryption_key}"
 
   log_step "installing external DB release ${release}"

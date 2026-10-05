@@ -659,7 +659,7 @@ async def test_invalidate_clears_all_keyed_entries() -> None:
 def test_firewall_cache_singleton_reflects_configured_ttl(monkeypatch: pytest.MonkeyPatch) -> None:
     from app.core.config.settings import get_settings
 
-    monkeypatch.setenv("CODEX_LB_FIREWALL_IP_CACHE_TTL_SECONDS", "61")
+    monkeypatch.setenv("CLAUDE_LB_FIREWALL_IP_CACHE_TTL_SECONDS", "61")
     get_settings.cache_clear()
     reset_firewall_ip_cache_for_testing()
     try:

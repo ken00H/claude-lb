@@ -24,7 +24,7 @@ None.
 
 ## Impact
 
-- Docs: `deploy/helm/codex-lb/README.md`, `deploy/helm/codex-lb/values.yaml` comments.
+- Docs: `deploy/helm/claude-lb/README.md`, `deploy/helm/claude-lb/values.yaml` comments.
 - Operators: releases first installed on 1.13.0 or later are unaffected. Releases still on a pre-1.13 chart must upgrade to any 1.13.0 - 1.26.x chart before the shim is removed.
 
 Part of the slop-removal campaign 0908 (follow-up to #2211).

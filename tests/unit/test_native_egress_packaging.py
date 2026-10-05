@@ -12,7 +12,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 
 def test_python_adapter_matches_shared_native_handshake_fixture() -> None:
     fixture = json.loads(
-        (_REPO_ROOT / "crates/codex-lb-protocol/tests/fixtures/handshake-v1.json").read_text(encoding="utf-8")
+        (_REPO_ROOT / "crates/claude-lb-protocol/tests/fixtures/handshake-v1.json").read_text(encoding="utf-8")
     )
 
     assert fixture["client_hello"] == {
@@ -31,9 +31,11 @@ def test_linux_container_builds_and_installs_locked_native_egress(dockerfile_nam
     assert "FROM rust:1.96.0-slim-bookworm AS native-egress-build" in dockerfile
     assert "COPY Cargo.toml Cargo.lock ./" in dockerfile
     assert "COPY crates ./crates" in dockerfile
-    assert "cargo build --release --locked --package codex-lb-egress-worker --bin codex-lb-native-egress" in dockerfile
     assert (
-        "COPY --from=native-egress-build /tmp/codex-lb-native-egress /usr/local/bin/codex-lb-native-egress"
+        "cargo build --release --locked --package claude-lb-egress-worker --bin claude-lb-native-egress" in dockerfile
+    )
+    assert (
+        "COPY --from=native-egress-build /tmp/claude-lb-native-egress /usr/local/bin/claude-lb-native-egress"
     ) in dockerfile
 
     runtime = dockerfile.rsplit(" AS runtime", maxsplit=1)[1]
@@ -57,11 +59,11 @@ def test_native_egress_lockfile_pins_codex_release_family() -> None:
 
 
 def test_native_helper_source_supports_persistent_multiplexed_protocol() -> None:
-    protocol = (_REPO_ROOT / "crates/codex-lb-protocol/src/lib.rs").read_text(encoding="utf-8")
-    http = (_REPO_ROOT / "crates/codex-lb-egress/src/http.rs").read_text(encoding="utf-8")
-    runtime = (_REPO_ROOT / "crates/codex-lb-egress/src/runtime.rs").read_text(encoding="utf-8")
-    websocket = (_REPO_ROOT / "crates/codex-lb-egress/src/websocket.rs").read_text(encoding="utf-8")
-    worker = (_REPO_ROOT / "crates/codex-lb-egress-worker/src/main.rs").read_text(encoding="utf-8")
+    protocol = (_REPO_ROOT / "crates/claude-lb-protocol/src/lib.rs").read_text(encoding="utf-8")
+    http = (_REPO_ROOT / "crates/claude-lb-egress/src/http.rs").read_text(encoding="utf-8")
+    runtime = (_REPO_ROOT / "crates/claude-lb-egress/src/runtime.rs").read_text(encoding="utf-8")
+    websocket = (_REPO_ROOT / "crates/claude-lb-egress/src/websocket.rs").read_text(encoding="utf-8")
+    worker = (_REPO_ROOT / "crates/claude-lb-egress-worker/src/main.rs").read_text(encoding="utf-8")
 
     assert "enum NativeCommand" in protocol
     assert "ClientHello" in protocol
@@ -74,7 +76,7 @@ def test_native_helper_source_supports_persistent_multiplexed_protocol() -> None
     assert "is_tls_verification_failure" in websocket
     assert "rustls::Error::InvalidCertificate" in websocket
     assert "tasks.spawn" in runtime
-    assert "codex_lb_egress::run_stdio()" in worker
+    assert "claude_lb_egress::run_stdio()" in worker
 
 
 def test_native_egress_pins_codex_websocket_forks() -> None:

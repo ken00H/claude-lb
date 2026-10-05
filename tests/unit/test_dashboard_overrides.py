@@ -166,7 +166,7 @@ def test_warn_environment_shadowed_by_dashboard_only_when_env_is_set_and_column_
         shadowed = warn_environment_shadowed_by_dashboard(row, settings)
 
     assert shadowed == ["proxy_request_budget_seconds"]
-    assert "CODEX_LB_PROXY_REQUEST_BUDGET_SECONDS" in caplog.text
+    assert "CLAUDE_LB_PROXY_REQUEST_BUDGET_SECONDS" in caplog.text
     assert "SSE_KEEPALIVE" not in caplog.text
 
     caplog.clear()

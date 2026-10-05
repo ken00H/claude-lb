@@ -14,7 +14,7 @@ pytestmark = pytest.mark.unit
 async def test_first_boot_seed_leaves_account_capacity_overrides_null(db_setup, monkeypatch) -> None:
     """A fresh settings row must inherit env caps, not freeze them as overrides."""
     del db_setup
-    monkeypatch.setenv("CODEX_LB_PROXY_ACCOUNT_STREAM_LIMIT", "13")
+    monkeypatch.setenv("CLAUDE_LB_PROXY_ACCOUNT_STREAM_LIMIT", "13")
     get_settings.cache_clear()
     try:
         async with SessionLocal() as session:
@@ -29,7 +29,7 @@ async def test_first_boot_seed_leaves_account_capacity_overrides_null(db_setup, 
             assert effective.proxy_account_stream_limit_override is None
 
         # A later environment change is honoured without touching the row.
-        monkeypatch.setenv("CODEX_LB_PROXY_ACCOUNT_STREAM_LIMIT", "21")
+        monkeypatch.setenv("CLAUDE_LB_PROXY_ACCOUNT_STREAM_LIMIT", "21")
         get_settings.cache_clear()
         async with SessionLocal() as session:
             effective = await SettingsService(SettingsRepository(session)).get_settings()

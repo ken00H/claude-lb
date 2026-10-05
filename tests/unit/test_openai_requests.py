@@ -1449,7 +1449,7 @@ def test_compact_trims_oversized_input_by_estimated_tokens_with_head_tail_and_ma
     assert "estimated tokens" in marker_text
     assert "Required compact state anchors and retained input items remain in their original order" in marker_text
     assert "most recent context" not in marker_text
-    assert "codex-lb" not in marker_text
+    assert "claude-lb" not in marker_text
 
 
 def test_compact_trimming_preserves_oversized_responses_lite_prefix():

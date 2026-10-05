@@ -15,7 +15,7 @@ QueueWindowClosedClock == 1
 
 (***************************************************************************)
 (* Named timeout budgets, expressed in model ticks.  These mirror the live  *)
-(* codex-lb settings pinned by the 2026-08-06 misclassification audit:      *)
+(* claude-lb settings pinned by the 2026-08-06 misclassification audit:      *)
 (*                                                                         *)
 (*   sse_keepalive_interval_seconds               -> KeepaliveInterval      *)
 (*   _STREAM_KEEPALIVE_MAX_COUNT                  -> MaxKeepaliveCount      *)

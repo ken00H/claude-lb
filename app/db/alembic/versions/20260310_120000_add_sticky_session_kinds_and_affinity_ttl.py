@@ -39,7 +39,7 @@ def _indexes(connection: Connection, table_name: str) -> set[str]:
 
 def _prompt_cache_ttl_default() -> int:
     # Historical default at this revision. This backfill used to read
-    # CODEX_LB_OPENAI_CACHE_AFFINITY_MAX_AGE_SECONDS; that env field was removed
+    # CLAUDE_LB_OPENAI_CACHE_AFFINITY_MAX_AGE_SECONDS; that env field was removed
     # (remove-dead-env-settings) and the dashboard column is the only owner, so
     # a fresh database bootstrap must not let a removed variable seed the row.
     # 20260319_100937 raises 300 -> 1800 for rows still at this default.

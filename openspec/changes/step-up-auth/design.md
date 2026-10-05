@@ -27,7 +27,7 @@ Every dashboard mutation is authorised by the account's grants and nothing else.
 
 ### Where the verification rides
 
-Password sessions already carry a sealed cookie; `su` joins `pv`/`tp`/`am` there and is copied unchanged when the cookie is re-issued (password change). The sign-in itself counts when it presented every factor the account holds — a password login for an account without a secret, or the `/totp/verify` step — so a fresh sign-in is not followed by an immediate second prompt. Trusted-header accounts have no cookie to extend, so the endpoint sets a separate `codex_lb_step_up` cookie whose payload names the account; a cookie for another `uid` is ignored, and its `exp` is the same five minutes. The dependency also honours a fallback password session of the same account riding along with a header request.
+Password sessions already carry a sealed cookie; `su` joins `pv`/`tp`/`am` there and is copied unchanged when the cookie is re-issued (password change). The sign-in itself counts when it presented every factor the account holds — a password login for an account without a secret, or the `/totp/verify` step — so a fresh sign-in is not followed by an immediate second prompt. Trusted-header accounts have no cookie to extend, so the endpoint sets a separate `claude_lb_step_up` cookie whose payload names the account; a cookie for another `uid` is ignored, and its `exp` is the same five minutes. The dependency also honours a fallback password session of the same account riding along with a header request.
 
 ### One clock
 

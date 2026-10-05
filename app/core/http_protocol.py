@@ -46,7 +46,7 @@ from uvicorn.protocols.http.h11_impl import H11Protocol
 # ``scope["state"]`` key stamped by ``stamp_disconnect_into_scope``. The value
 # is ``"eof"`` for a clean peer close or the exception type name reported to
 # ``connection_lost`` (e.g. ``"ConnectionResetError"``).
-HTTP_DISCONNECTED_STATE = "codex_lb.http_disconnected"
+HTTP_DISCONNECTED_STATE = "claude_lb.http_disconnected"
 
 # Hop-by-hop headers that only exist to carry the declined protocol switch.
 # ``HTTP2-Settings`` is defined exclusively for the h2c upgrade (RFC 9113

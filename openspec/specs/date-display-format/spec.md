@@ -5,7 +5,7 @@ Operator-selectable dashboard date/time rendering (localStorage preference, ISO 
 ## Requirements
 ### Requirement: Date format preference is stored in localStorage
 
-The system SHALL persist a date display format preference in localStorage under the key `codex-lb-date-display-format`. The valid values SHALL be `"default"` and `"iso8601"`. The default value SHALL be `"default"`. The preference SHALL apply only to read-only date/time presentation text.
+The system SHALL persist a date display format preference in localStorage under the key `claude-lb-date-display-format`. The valid values SHALL be `"default"` and `"iso8601"`. The default value SHALL be `"default"`. The preference SHALL apply only to read-only date/time presentation text.
 
 #### Scenario: No stored preference
 
@@ -15,7 +15,7 @@ The system SHALL persist a date display format preference in localStorage under 
 #### Scenario: User selects ISO 8601
 
 - **WHEN** the user selects "ISO 8601" as the date format
-- **THEN** the system SHALL persist `"iso8601"` to localStorage under `codex-lb-date-display-format`
+- **THEN** the system SHALL persist `"iso8601"` to localStorage under `claude-lb-date-display-format`
 - **AND** all applicable read-only date/time presentation text SHALL use ISO 8601 formatting
 
 #### Scenario: User switches back to Default

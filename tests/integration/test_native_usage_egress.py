@@ -23,9 +23,9 @@ _USAGE = b'{"plan_type":"plus","rate_limit":{"primary_window":{"used_percent":12
 
 @pytest.fixture
 async def helper(monkeypatch: pytest.MonkeyPatch) -> AsyncIterator[SubprocessNativeEgressClient]:
-    binary = os.environ.get("CODEX_LB_NATIVE_EGRESS_TEST_BINARY")
+    binary = os.environ.get("CLAUDE_LB_NATIVE_EGRESS_TEST_BINARY")
     if not binary:
-        pytest.skip("set CODEX_LB_NATIVE_EGRESS_TEST_BINARY to run native usage wire probes")
+        pytest.skip("set CLAUDE_LB_NATIVE_EGRESS_TEST_BINARY to run native usage wire probes")
     assert Path(binary).is_file() and os.access(binary, os.X_OK), "native test binary must be executable"
     client = SubprocessNativeEgressClient(Path(binary))
     monkeypatch.setattr(usage, "discover_native_egress_client", lambda: client)

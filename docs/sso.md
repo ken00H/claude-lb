@@ -32,11 +32,11 @@ An administrator who signs in through the proxy and holds neither a password nor
 
 ## Edge SSO deployment
 
-Any IdP that an authenticating proxy can front (Authelia, oauth2-proxy, and through them SAML-only providers) works today through trusted-header mode: the proxy authenticates, codex-lb reads the header. The deployment side is documented where the rest of the proxy configuration lives — [Remote Access → Reverse proxy](deployment/remote.md#reverse-proxy) for trusted CIDRs, forwarded headers and the `Host` rule, and [Docker → Auth mode examples](deployment/docker.md#auth-mode-examples) for a runnable container. Group headers map to roles from Settings → Organisation settings.
+Any IdP that an authenticating proxy can front (Authelia, oauth2-proxy, and through them SAML-only providers) works today through trusted-header mode: the proxy authenticates, claude-lb reads the header. The deployment side is documented where the rest of the proxy configuration lives — [Remote Access → Reverse proxy](deployment/remote.md#reverse-proxy) for trusted CIDRs, forwarded headers and the `Host` rule, and [Docker → Auth mode examples](deployment/docker.md#auth-mode-examples) for a runnable container. Group headers map to roles from Settings → Organisation settings.
 
 ## Host recovery commands
 
-Four commands under the `codex-lb` entry point are the last resort. They act on the configured database directly: no environment variable of their own, no network call, no web application, and — deliberately — none of the gates above, because they exist for the lockout those gates are meant to prevent. Each writes one `break_glass_cli_used` audit row at critical severity with `auth_method=cli`, naming the command and its target; nobody authenticated to run them, so that row is the whole accountability.
+Four commands under the `claude-lb` entry point are the last resort. They act on the configured database directly: no environment variable of their own, no network call, no web application, and — deliberately — none of the gates above, because they exist for the lockout those gates are meant to prevent. Each writes one `break_glass_cli_used` audit row at critical severity with `auth_method=cli`, naming the command and its target; nobody authenticated to run them, so that row is the whole accountability.
 
 | Command | What it does |
 | --- | --- |
@@ -45,29 +45,29 @@ Four commands under the `codex-lb` entry point are the last resort. They act on 
 | `admin disable-provider <id>` | Turns one company sign-in provider off. Run it with an unknown id to list the providers in the database. |
 | `admin reset-login-policy` | Re-opens local sign-in *and* disables every company provider, keeping the password provider. Asks for confirmation, or takes `--yes`. |
 
-Run them on the host that holds the database. Three forms of the same command, one per way of running codex-lb — substitute the arguments from the table above:
+Run them on the host that holds the database. Three forms of the same command, one per way of running claude-lb — substitute the arguments from the table above:
 
 ```bash
-# --- Standard image (the image ships a codex-lb shim) ---
-docker exec -it codex-lb codex-lb admin reset-password <username>
-docker exec -it codex-lb codex-lb admin local-login enable
-docker exec -it codex-lb codex-lb admin disable-provider <provider-id>
-docker exec -it codex-lb codex-lb admin reset-login-policy --yes
+# --- Standard image (the image ships a claude-lb shim) ---
+docker exec -it claude-lb claude-lb admin reset-password <username>
+docker exec -it claude-lb claude-lb admin local-login enable
+docker exec -it claude-lb claude-lb admin disable-provider <provider-id>
+docker exec -it claude-lb claude-lb admin reset-login-policy --yes
 
 # --- Distroless image (no shell, no shim) ---
-docker exec -it codex-lb python -m app.cli admin reset-password <username>
-docker exec -it codex-lb python -m app.cli admin local-login enable
-docker exec -it codex-lb python -m app.cli admin disable-provider <provider-id>
-docker exec -it codex-lb python -m app.cli admin reset-login-policy --yes
+docker exec -it claude-lb python -m app.cli admin reset-password <username>
+docker exec -it claude-lb python -m app.cli admin local-login enable
+docker exec -it claude-lb python -m app.cli admin disable-provider <provider-id>
+docker exec -it claude-lb python -m app.cli admin reset-login-policy --yes
 
 # --- Kubernetes / Helm ---
-kubectl exec -it deploy/codex-lb -- python -m app.cli admin reset-password <username>
-kubectl exec -it deploy/codex-lb -- python -m app.cli admin local-login enable
-kubectl exec -it deploy/codex-lb -- python -m app.cli admin disable-provider <provider-id>
-kubectl exec -it deploy/codex-lb -- python -m app.cli admin reset-login-policy --yes
+kubectl exec -it deploy/claude-lb -- python -m app.cli admin reset-password <username>
+kubectl exec -it deploy/claude-lb -- python -m app.cli admin local-login enable
+kubectl exec -it deploy/claude-lb -- python -m app.cli admin disable-provider <provider-id>
+kubectl exec -it deploy/claude-lb -- python -m app.cli admin reset-login-policy --yes
 
 # --- From a source checkout ---
-uv run codex-lb admin local-login enable
+uv run claude-lb admin local-login enable
 ```
 
 `<provider-id>` is the only argument you will not know by heart: run `disable-provider` with any placeholder and the command prints every provider id in this database, with its kind and whether it is on, then exits without writing. `reset-login-policy` prints its warning and asks `Continue? [y/N]` without `--yes`; a non-interactive shell needs the flag.
@@ -77,24 +77,24 @@ Notes that matter in the middle of an incident:
 - `reset-password` prompts twice on the terminal, so it needs an interactive session (`docker exec -it`, `kubectl exec -it`). A password passed on a command line would survive in the shell history, in `ps` and in the host's logs, so there is no flag for it.
 - A running server picks these changes up within about five seconds; there is nothing to restart.
 - A password is a way in only for an *active* account: sign-in refuses every other status before it looks at a hash. `reset-password` still does what you asked and says so in its report ("this account cannot sign in until an administrator re-enables it"); re-enabling is a decision for an administrator, from Settings → Access → People, or by re-running the setup screen when the account is the one the install bootstrapped.
-- On a database that was never migrated the commands say so and stop, instead of a traceback. Run `codex-lb-db upgrade` (or start the server once) first.
+- On a database that was never migrated the commands say so and stop, instead of a traceback. Run `claude-lb-db upgrade` (or start the server once) first.
 - Every command is safe to repeat.
 
 ### The identity provider is unreachable
 
 1. Sign in as the emergency account at `/login?local=1` with its password and authenticator code. If that works, you are in — nothing below is needed.
-2. Otherwise re-open local sign-in on the host: `codex-lb admin local-login enable`. Any active account that holds a password may sign in again.
-3. If sign-ins still land on the provider's screen or come back refused, the provider itself is answering: `codex-lb admin reset-login-policy` re-opens local sign-in and disables every company provider at once (`admin disable-provider <id>` does it one at a time).
+2. Otherwise re-open local sign-in on the host: `claude-lb admin local-login enable`. Any active account that holds a password may sign in again.
+3. If sign-ins still land on the provider's screen or come back refused, the provider itself is answering: `claude-lb admin reset-login-policy` re-opens local sign-in and disables every company provider at once (`admin disable-provider <id>` does it one at a time).
 4. When the provider is healthy again, turn it back on and re-tighten the policy from Settings → Organisation settings. The dashboard refuses to tighten it until a qualifying emergency account exists, which is the check that keeps step 1 working next time.
 
 ### The second-factor secret is lost
 
 1. **Someone else can still sign in.** An administrator resets the lost factor from Settings → Access → People → Reset two-factor. Note that while the policy is not `enabled`, resetting the *last* qualifying emergency account answers `409 last_break_glass_protected` — designate and enrol a second admin first, or re-open local sign-in (step 2) and do it from there.
-2. **Nobody can sign in.** On the host: `codex-lb admin local-login enable`, then `codex-lb admin reset-password <username>` for an administrator that has no second factor, and continue from the dashboard.
+2. **Nobody can sign in.** On the host: `claude-lb admin local-login enable`, then `claude-lb admin reset-password <username>` for an administrator that has no second factor, and continue from the dashboard.
 3. **The locked-out account is the only administrator.** A designated account that holds a secret must always present it, so a new password alone will not let it in. Clear the secret with the password in one step:
 
    ```bash
-   docker exec -it codex-lb codex-lb admin reset-password <username> --clear-two-factor
+   docker exec -it claude-lb claude-lb admin reset-password <username> --clear-two-factor
    ```
 
    Clearing the secret is also what stops the account *qualifying*, and under `break_glass_only` a designation that no longer qualifies is not admitted — the new password would meet a form that refuses it. So the command asks one question after the write: can anybody still use the local password form? When the answer is no it re-opens local sign-in in the same transaction and says so:

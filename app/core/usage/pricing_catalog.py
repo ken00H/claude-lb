@@ -206,7 +206,7 @@ async def fetch_catalogs() -> dict[str, ModelPrice]:
     async with aiohttp.ClientSession(
         timeout=aiohttp.ClientTimeout(total=20),
         trust_env=True,
-        headers={"User-Agent": "codex-lb", "Accept": "application/json"},
+        headers={"User-Agent": "claude-lb", "Accept": "application/json"},
     ) as session:
         for url, parser in ((MODELS_DEV_URL, parse_models_dev), (LITELLM_URL, parse_litellm)):
             try:

@@ -6,16 +6,16 @@ This runbook describes the fastest repeatable way to answer three questions for 
 
 1. Does the upstream websocket path complete successfully for this account?
 2. What `response.service_tier` does the upstream actually return for this account?
-3. Does `codex-lb` preserve the same result when `Codex CLI` uses websocket transport through the proxy?
+3. Does `claude-lb` preserve the same result when `Codex CLI` uses websocket transport through the proxy?
 
 Use this runbook when investigating `fast` tier behavior for `Codex CLI`.
 
 ## Preconditions
 
-- Repo path: `/home/egor/services/codex-lb-defin85`
+- Repo path: `/home/egor/services/claude-lb-defin85`
 - Python env: `.venv`
 - DB connection is configured in `.env.local`
-- The target account is already imported into `codex-lb`
+- The target account is already imported into `claude-lb`
 - `codex` CLI is installed on the host
 
 ## Important Constraints
@@ -34,7 +34,7 @@ Use this runbook when investigating `fast` tier behavior for `Codex CLI`.
 Check that the account exists and note its plan:
 
 ```bash
-PGPASSWORD='p-123456' psql -h 127.0.0.1 -U root -d codex_lb -c "select email,plan_type,status,chatgpt_account_id from accounts where email='TARGET_EMAIL';"
+PGPASSWORD='p-123456' psql -h 127.0.0.1 -U root -d claude_lb -c "select email,plan_type,status,chatgpt_account_id from accounts where email='TARGET_EMAIL';"
 ```
 
 Interpretation:
@@ -44,12 +44,12 @@ Interpretation:
 
 ## Step 2: Direct Upstream Websocket Probe
 
-This probe bypasses `codex-lb` selection and measures what the upstream returns for one imported account.
+This probe bypasses `claude-lb` selection and measures what the upstream returns for one imported account.
 
 Run:
 
 ```bash
-set -a && source /home/egor/services/codex-lb-defin85/.env.local && set +a && cd /home/egor/services/codex-lb-defin85 && .venv/bin/python - <<'PY'
+set -a && source /home/egor/services/claude-lb-defin85/.env.local && set +a && cd /home/egor/services/claude-lb-defin85 && .venv/bin/python - <<'PY'
 import asyncio, json
 from sqlalchemy import select
 
@@ -137,9 +137,9 @@ Interpretation:
 - `result = "error"` with `Unsupported service_tier: fast`:
   the probe is wrong; remove raw `service_tier` from the JSON payload.
 
-## Step 3: Verify `Codex CLI` Through Local `codex-lb`
+## Step 3: Verify `Codex CLI` Through Local `claude-lb`
 
-Start a local proxy instance on a spare port (from a `codex-lb` checkout; the
+Start a local proxy instance on a spare port (from a `claude-lb` checkout; the
 background usage/model-registry loops may run and do not affect the probe):
 
 ```bash
@@ -155,10 +155,10 @@ cp "$HOME/.codex/auth.json" "$tmp_home/.codex/auth.json"
 cat > "$tmp_home/.codex/config.toml" <<'EOF'
 model = "gpt-5.4"
 model_reasoning_effort = "xhigh"
-model_provider = "codex-lb-ws"
+model_provider = "claude-lb-ws"
 service_tier = "fast"
 
-[model_providers.codex-lb-ws]
+[model_providers.claude-lb-ws]
 name = "OpenAI"
 base_url = "http://127.0.0.1:2460/backend-api/codex"
 wire_api = "responses"
@@ -169,7 +169,7 @@ EOF
 Run the CLI:
 
 ```bash
-HOME="$tmp_home" RUST_LOG=debug codex exec --skip-git-repo-check --dangerously-bypass-approvals-and-sandbox -C /home/egor/services/codex-lb-defin85 "Reply with OK only." > /tmp/codex-ws-run.out 2> /tmp/codex-ws-run.err
+HOME="$tmp_home" RUST_LOG=debug codex exec --skip-git-repo-check --dangerously-bypass-approvals-and-sandbox -C /home/egor/services/claude-lb-defin85 "Reply with OK only." > /tmp/codex-ws-run.out 2> /tmp/codex-ws-run.err
 ```
 
 Confirm that websocket transport was used:
@@ -188,10 +188,10 @@ Useful signals:
 sed -n '1,40p' /tmp/codex-ws-run.out
 ```
 
-Check the latest request log written by `codex-lb`:
+Check the latest request log written by `claude-lb`:
 
 ```bash
-PGPASSWORD='p-123456' psql -h 127.0.0.1 -U root -d codex_lb -c "select requested_at,account_id,request_id,model,service_tier,status,error_code,error_message from request_logs order by requested_at desc limit 5;"
+PGPASSWORD='p-123456' psql -h 127.0.0.1 -U root -d claude_lb -c "select requested_at,account_id,request_id,model,service_tier,status,error_code,error_message from request_logs order by requested_at desc limit 5;"
 ```
 
 Dashboard shortcut:
@@ -206,17 +206,17 @@ Dashboard shortcut:
 - If native Codex websocket reconnects are flaky, verify the client is replaying that same `x-codex-turn-state` header.
 - `403` / `404` websocket handshake failures should now stay visible as websocket errors; they should no longer disappear behind automatic HTTP fallback.
 - In HTTP bridge logs, idle eviction should prefer prompt-cache sessions before Codex-session bridges when both are idle.
-- On Codex-affinity HTTP bridges, an internal `generate=false` prewarm only appears when the dedicated Codex bridge prewarm switch is on — the dashboard setting `http_responses_session_bridge_codex_prewarm_enabled` (`GET /api/settings` reports its `provenance`), or its deprecated `CODEX_LB_*` alias while the dashboard value is unset. Flipping it in the dashboard applies to the next new Codex session on every replica without a restart.
+- On Codex-affinity HTTP bridges, an internal `generate=false` prewarm only appears when the dedicated Codex bridge prewarm switch is on — the dashboard setting `http_responses_session_bridge_codex_prewarm_enabled` (`GET /api/settings` reports its `provenance`), or its deprecated `CLAUDE_LB_*` alias while the dashboard value is unset. Flipping it in the dashboard applies to the next new Codex session on every replica without a restart.
 - For HTTP `/v1/responses` and `/backend-api/codex/responses`, capture response headers and verify clients that need stronger continuity replay the returned `x-codex-turn-state` on later calls.
 - Compare backend Codex HTTP vs websocket cache ratios after bridge rollout; if backend HTTP still lags materially while websocket remains healthy, investigate prompt-prefix instability or missing client continuity signals before revisiting transport continuity.
 
 ## Result Matrix
 
-- Direct upstream probe = `default`, `codex-lb` run = `default`:
+- Direct upstream probe = `default`, `claude-lb` run = `default`:
   proxy is behaving correctly; the account/upstream path is not yielding `fast`.
-- Direct upstream probe = `fast`, `codex-lb` run = `default`:
+- Direct upstream probe = `fast`, `claude-lb` run = `default`:
   this is a real proxy regression; inspect websocket proxying and account selection.
-- Direct upstream probe = `fast`, `codex-lb` run = `fast`:
+- Direct upstream probe = `fast`, `claude-lb` run = `fast`:
   end-to-end support is confirmed.
 - CLI run falls back to HTTP/SSE:
   websocket transport regression in the proxy path.
@@ -228,7 +228,7 @@ Use this only when the direct probe and the proxy disagree.
 Goal:
 
 - confirm the exact headers and first `response.create` frame emitted by native `Codex CLI`
-- compare them with the local probe or `codex-lb`
+- compare them with the local probe or `claude-lb`
 
 What to inspect from the capture:
 
@@ -253,7 +253,7 @@ As of 2026-03-10, the following findings were reproduced from this repo workspac
 - Native `Codex CLI` websocket captures did not show raw `service_tier` in the first `response.create` frame.
 - Manually forcing `"service_tier":"fast"` in the websocket JSON payload can produce `Unsupported service_tier: fast`.
 - Several imported `plus` and `team` accounts completed successfully but returned `response.service_tier = "default"`.
-- `codex-lb` now preserves websocket `response.create.client_metadata` when bridging backend Codex websocket traffic and treats real first-party originators like `codex_exec` as native Codex signals, so future parity investigations can focus on deeper upstream session-envelope differences instead of those already-fixed gaps.
+- `claude-lb` now preserves websocket `response.create.client_metadata` when bridging backend Codex websocket traffic and treats real first-party originators like `codex_exec` as native Codex signals, so future parity investigations can focus on deeper upstream session-envelope differences instead of those already-fixed gaps.
 
 ## HTTP `/v1/responses` Session Bridge Operations
 
@@ -275,7 +275,7 @@ By default, normal lifecycle events such as `create` / `reuse` / `evict_idle` ar
 
 ### Multi-instance deployment requirement
 
-For stable HTTP bridge continuity across repeated calls, the same logical bridge key must reach the same `codex-lb` instance.
+For stable HTTP bridge continuity across repeated calls, the same logical bridge key must reach the same `claude-lb` instance.
 
 If you deploy multiple replicas behind a load balancer, configure front-door affinity using one of:
 
@@ -304,6 +304,6 @@ Codex clients send each Responses turn as one websocket text message. After a re
 
 - The downstream websocket ingress budget defaults to 128 MiB (the same `MAX_DECOMPRESSED_RESPONSES_BODY_BYTES` constant in `app/core/ingress_limits.py` that bounds the Responses HTTP body, so the two cannot drift) and is configurable via `--ws-max-size` / `UVICORN_WS_MAX_SIZE`. The budget applies to the decompressed message size; `permessage-deflate` stays negotiated on the client-facing socket (the client always offers it and compresses outbound frames when accepted).
 - Requests that exceed the upstream websocket budget after historical slimming fail locally with status `400` and `error.code = "payload_too_large"`. The official client surfaces `400` immediately as a non-retryable invalid request and stays on websocket transport; `413` would instead trigger 5 full-payload resends followed by a sticky session-wide websocket→HTTP downgrade.
-- Front proxies must size the HTTP path for the client's websocket→HTTP fallback and for remote-compaction POSTs, which carry full history. For nginx: `client_max_body_size 128m;` (matching codex-lb's own cap), plus websocket upgrade passthrough (`proxy_http_version 1.1;`, `proxy_set_header Upgrade $http_upgrade;`, `proxy_set_header Connection "upgrade";`) and a `proxy_read_timeout` comfortably above idle turn gaps (websocket connections live up to 60 minutes).
+- Front proxies must size the HTTP path for the client's websocket→HTTP fallback and for remote-compaction POSTs, which carry full history. For nginx: `client_max_body_size 128m;` (matching claude-lb's own cap), plus websocket upgrade passthrough (`proxy_http_version 1.1;`, `proxy_set_header Upgrade $http_upgrade;`, `proxy_set_header Connection "upgrade";`) and a `proxy_read_timeout` comfortably above idle turn gaps (websocket connections live up to 60 minutes).
 
 Diagnostic signature of an undersized websocket ingress budget: uvicorn logs show `WebSocket ... [accepted]` → `connection open` → `connection closed` within seconds, repeated at backoff intervals, with **no** application-level proxy log lines and no `request_logs` row in between — followed by the client's HTTP fallback (visible as `POST /backend-api/codex/responses` hitting the front proxy, often as `413` there).

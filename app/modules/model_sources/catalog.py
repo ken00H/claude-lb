@@ -55,7 +55,7 @@ def _to_upstream_model(source: ModelSource, source_model: ModelSourceModel) -> U
     # source_kind/source_id stay on the UpstreamModel fields only: raw is
     # copied into client-visible payloads (codex models "extra"), and internal
     # source identifiers must not leak to proxy clients.
-    raw["model_provider"] = "codex-lb"
+    raw["model_provider"] = "claude-lb"
 
     input_modalities = ("text", "image") if source_model.supports_vision else ("text",)
     display_name = source_model.display_name or source_model.model

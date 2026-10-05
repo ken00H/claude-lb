@@ -8,7 +8,7 @@ rationale and operational notes for the docs site and entry-point documents.
 Restore the founding "1-click setup" promise of the entry-point documents. The
 README had grown to 653 lines and `.env.example` to 115 lines / ~45 active
 values; both buried the quickstart. Detailed material now has a real home (the
-published mkdocs-material site at https://soju06.github.io/codex-lb/) so the
+published mkdocs-material site at https://soju06.github.io/claude-lb/) so the
 README and sample env stay slim without losing content.
 
 ## Decisions
@@ -17,7 +17,7 @@ README and sample env stay slim without losing content.
   existing `docs/screenshots/` images ship into the site unchanged and README
   image paths keep working on GitHub. Pages live directly under `docs/` (not
   `docs/content/`) so the site homepage is
-  `https://soju06.github.io/codex-lb/` itself.
+  `https://soju06.github.io/claude-lb/` itself.
 - **Strict build as the docs gate.** The `validation:` block in `mkdocs.yml`
   plus `--strict` turns broken internal links, missing anchors, and
   nav-orphaned pages into CI failures. Corollary: any stray `.md` dropped into
@@ -36,7 +36,7 @@ README and sample env stay slim without losing content.
   generated table is bot-managed and is not hand-written complexity.
 - **`.env.example` drift values were deleted, not corrected.** The sample is
   all-commented so it can never drift into behavior changes again. The
-  commented `# CODEX_LB_LEADER_ELECTION_ENABLED=false` escape hatch is pinned
+  commented `# CLAUDE_LB_LEADER_ELECTION_ENABLED=false` escape hatch is pinned
   by `tests/unit/test_helm_replica_artifacts.py`.
 - **OpenSpec stays normative.** Docs pages carry footer links to their
   governing capability; they render behavior, they do not define it.
@@ -44,17 +44,17 @@ README and sample env stay slim without losing content.
   existing API can be maintained in independent repositories and linked from
   the docs once they are public and tested. A listing keeps the tool
   discoverable without adding its runtime, CI, release process, or support
-  surface to codex-lb. The first listings cover the independently published
-  [Codex LB Status Bar](https://github.com/sm1ee/codex-lb-statusbar) and the
+  surface to claude-lb. The first listings cover the independently published
+  [Claude LB Status Bar](https://github.com/sm1ee/claude-lb-statusbar) and the
   read-only
-  [codex-lb SwiftBar](https://github.com/joschi655/codex-lb-swiftbar),
+  [claude-lb SwiftBar](https://github.com/joschi655/claude-lb-swiftbar),
   following the maintainer direction in
   [PR #1233](https://github.com/Soju06/codex-lb/pull/1233#issuecomment-4988227303).
   Listings also carry least-privilege guidance: guest access for monitoring
   where the companion supports it, and admin access only for control features;
   each companion remains responsible for documenting its current auth modes.
-  [Codex LB for Omarchy](https://github.com/janaki-sasidhar/omarchy-codex-lb) extends this pattern to Linux with a native Omarchy Quattro plugin using the same dashboard API. Its monitoring-only scope includes guest access, account quota and usage summaries, reset timing, and optional desktop notifications.
-  [Codex-LB Rates](https://github.com/uniskela/codex-lb-rates) extends this pattern to Home Assistant with pool and per-account remaining-% sensors via the same dashboard API, supporting guest and admin login for monitoring.
+  [Claude LB for Omarchy](https://github.com/janaki-sasidhar/omarchy-claude-lb) extends this pattern to Linux with a native Omarchy Quattro plugin using the same dashboard API. Its monitoring-only scope includes guest access, account quota and usage summaries, reset timing, and optional desktop notifications.
+  [Claude-LB Rates](https://github.com/uniskela/claude-lb-rates) extends this pattern to Home Assistant with pool and per-account remaining-% sensors via the same dashboard API, supporting guest and admin login for monitoring.
   Placement: the listing renders as an appendix-level section at the end of
   `docs/index.md` (below core usage and screenshots) and is kept
   self-contained so it can move to a dedicated page once the list grows; a
@@ -80,6 +80,6 @@ README and sample env stay slim without losing content.
 
 A user asks "how do I upgrade the compose Postgres volume?" — the README
 Configuration section links the docs Database page;
-`https://soju06.github.io/codex-lb/database/` carries the verbatim 16→18
+`https://soju06.github.io/claude-lb/database/` carries the verbatim 16→18
 runbook and links the `database-backends` / `database-migrations` specs for the
 normative behavior.

@@ -334,7 +334,7 @@ async def test_sticky_sessions_api_hides_and_protects_reserved_live_bindings(asy
     # An LF-prefixed key outside the Live-call namespace (the pre-existing
     # selection-affinity shape) is NOT reserved: it stays operator-visible
     # and operator-deletable.
-    affinity_key = "\ncodex-lb-affinity-v1:regression"
+    affinity_key = "\nclaude-lb-affinity-v1:regression"
     await _insert_sticky_session(
         key=affinity_key,
         account_id=accounts[1].id,
@@ -881,7 +881,7 @@ async def test_durable_bridge_closed_session_purge_drains_multiple_batches(db_se
 
 @pytest.mark.asyncio
 async def test_sticky_sessions_api_deletes_filtered_chunks_large_match_set(async_client):
-    """Regression test for the codex-lb #787 (D) bug: POST
+    """Regression test for the claude-lb #787 (D) bug: POST
     /api/sticky-sessions/delete-filtered used to issue a single
     DELETE...OR (key=:k AND kind=:t)... statement whose bind-parameter
     count grew with the match-set size, and trip SQLite's

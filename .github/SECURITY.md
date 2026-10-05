@@ -18,14 +18,14 @@ If for some reason you cannot use the private advisory flow, contact the
 maintainer ([@Soju06](https://github.com/Soju06)) directly to arrange a private
 channel — for example by opening a
 [Discussion](https://github.com/Soju06/codex-lb/discussions) titled
-`[codex-lb security] request for private contact` that contains **no**
+`[claude-lb security] request for private contact` that contains **no**
 vulnerability details.
 
 ## What to include
 
 A good report makes triage much faster:
 
-- **Affected version(s)**: e.g. `codex-lb 1.16.0`, ghcr image digest, or commit SHA.
+- **Affected version(s)**: e.g. `claude-lb 1.16.0`, ghcr image digest, or commit SHA.
 - **Deployment**: uvx / pip / Docker / Helm / from source.
 - **Impact**: what can an attacker do? (data disclosure, account takeover,
   RCE, DoS, auth bypass, log injection, etc.)
@@ -37,17 +37,17 @@ A good report makes triage much faster:
 
 In scope:
 
-- The codex-lb proxy (`app/`) — auth, routing, account management, the
+- The claude-lb proxy (`app/`) — auth, routing, account management, the
   dashboard backend, the `/v1/*` and `/backend-api/*` surfaces.
 - The dashboard frontend (`frontend/`).
 - The published Docker image (`ghcr.io/Soju06/codex-lb`) and Helm chart
-  (`oci://ghcr.io/soju06/charts/codex-lb`).
-- Released PyPI artifacts (`codex-lb` on PyPI).
+  (`oci://ghcr.io/soju06/charts/claude-lb`).
+- Released PyPI artifacts (`claude-lb` on PyPI).
 
 Out of scope (please don't file these as security advisories):
 
 - Issues in upstream services (ChatGPT, OpenAI Codex, model providers).
-- Vulnerabilities in third-party dependencies that don't reach codex-lb's
+- Vulnerabilities in third-party dependencies that don't reach claude-lb's
   attack surface — file those upstream.
 - Self-inflicted misconfiguration (exposing the dashboard publicly without
   auth, leaking your own API keys via committed `.env`, etc.).

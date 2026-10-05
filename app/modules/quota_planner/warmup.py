@@ -598,7 +598,7 @@ class QuotaWarmupService:
                 "generate": False,
             }
         )
-        headers = {"x-request-id": request_id, "user-agent": "codex-lb-quota-planner"}
+        headers = {"x-request-id": request_id, "user-agent": "claude-lb-quota-planner"}
         access_token = self._encryptor.decrypt(account.access_token_encrypted)
         upstream_account_id = account.chatgpt_account_id
         usage = WarmupUsage(input_tokens=0, output_tokens=0, cached_input_tokens=0, reasoning_tokens=None)

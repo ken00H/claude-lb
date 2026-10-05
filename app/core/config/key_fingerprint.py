@@ -107,7 +107,7 @@ async def verify_encryption_key_fingerprint(
         f"{_fingerprint_prefix(stored)}... stamped in the shared database. Every replica must "
         "mount the same encryption.key file. If you rotated the key intentionally, delete the "
         f"'{ENCRYPTION_KEY_FINGERPRINT_SENTINEL}' row from runtime_sentinels, or set "
-        "CODEX_LB_ENCRYPTION_KEY_FINGERPRINT_MODE=warn to bypass this check."
+        "CLAUDE_LB_ENCRYPTION_KEY_FINGERPRINT_MODE=warn to bypass this check."
     )
     if effective_mode == "warn":
         logger.error(message)

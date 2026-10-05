@@ -27,13 +27,13 @@ OAuth API write-up), all to be re-verified against live traffic during implement
   candidate path — edge-level blocking, not an OAuth verdict. Path discrimination
   requires a real login (task 1.1).
 - `claude.ai` is region-blocked from the dev machine. The OAuth flow (authorize visit
-  and token exchange) must run through the proxy-pool machinery (codex-lb already routes
+  and token exchange) must run through the proxy-pool machinery (claude-lb already routes
   token exchanges through `ResolvedUpstreamRoute`); the operator's browser session may
   also need egress from a supported region.
 
 ## Decisions
 
-1. **Reuse the codex-lb OAuth orchestration wholesale.** `OauthService`'s durable flow
+1. **Reuse the claude-lb OAuth orchestration wholesale.** `OauthService`'s durable flow
    store, reconciliation, device-slot claiming, manual-callback route, and callback
    server are provider-agnostic; only the low-level client constants and claim mapping
    change. Manual-callback becomes the *primary* flow (Anthropic's copy/paste callback
@@ -61,7 +61,7 @@ OAuth API write-up), all to be re-verified against live traffic during implement
 
 Pooling consumer OAuth seats through a non-Claude-Code client violates Anthropic's
 February 2026 terms, with server-side enforcement reported since January 2026. The
-mitigation is the same one codex-lb uses against OpenAI's equivalent constraint:
+mitigation is the same one claude-lb uses against OpenAI's equivalent constraint:
 present upstream traffic as the official client. Consequences to accept: token
 revocation or account bans are possible at any time; the API-key pool is the compliant
 fallback and must remain fully functional on its own.

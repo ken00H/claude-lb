@@ -9,7 +9,7 @@ are seeded with "do nothing on conflict" so a re-run never overwrites an
 operator's settings. The trusted-header row defaults unknown identities to the
 admin preset (D10): an upgraded reverse-proxy install keeps admitting every
 identity the proxy vouches for, now as its own account. ``enabled`` is not a
-copy of ``CODEX_LB_DASHBOARD_AUTH_MODE``; the mode is read at request time.
+copy of ``CLAUDE_LB_DASHBOARD_AUTH_MODE``; the mode is read at request time.
 
 ``dashboard_user_invites`` gains the nullable ``expected_*`` triple a
 pre-created account waits for. Existing invites keep NULL (nothing to link).

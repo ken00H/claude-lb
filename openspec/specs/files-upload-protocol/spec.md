@@ -108,7 +108,7 @@ The system MUST apply the same `validate_proxy_api_key` and dashboard `apiKeyAut
 
 ### Requirement: Daybreak capability intent fails closed before file routing
 
-`POST /backend-api/files` and `POST /backend-api/files/{file_id}/uploaded` MUST require a valid proxy API key whenever `X-Codex-LB-Required-Capability` is present, even when deployment-wide API-key authentication is disabled. After authentication they MUST return HTTP 400 with `error.code = "required_capability_transport_unsupported"` before usage reservation, account selection, upload registration, status polling, or upstream dispatch. Headerless file requests MUST retain their existing behavior.
+`POST /backend-api/files` and `POST /backend-api/files/{file_id}/uploaded` MUST require a valid proxy API key whenever `X-Claude-LB-Required-Capability` is present, even when deployment-wide API-key authentication is disabled. After authentication they MUST return HTTP 400 with `error.code = "required_capability_transport_unsupported"` before usage reservation, account selection, upload registration, status polling, or upstream dispatch. Headerless file requests MUST retain their existing behavior.
 
 #### Scenario: Authenticated carrier is denied before file account selection
 

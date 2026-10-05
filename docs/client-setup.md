@@ -1,6 +1,6 @@
 # Client Setup
 
-Point any OpenAI-compatible client at codex-lb. If [API key auth](api-keys.md) is enabled, pass a key from the dashboard as a Bearer token.
+Point any OpenAI-compatible client at claude-lb. If [API key auth](api-keys.md) is enabled, pass a key from the dashboard as a Bearer token.
 
 Model availability is discovered from the upstream Codex model catalog and can vary by account plan, workspace, rollout, and upstream deprecation state. Prefer the live `GET /v1/models` or `GET /backend-api/codex/models` response over a copied static table when configuring clients or API-key model allowlists.
 
@@ -21,9 +21,9 @@ The examples below use the current frontier lineup: **`gpt-5.6-sol`** (strongest
 ```toml
 model = "gpt-5.6-sol"
 model_reasoning_effort = "xhigh"
-model_provider = "codex-lb"
+model_provider = "claude-lb"
 
-[model_providers.codex-lb]
+[model_providers.claude-lb]
 name = "openai"  # required — enables remote /responses/compact. Lowercase since Codex 2026-05-23; older "OpenAI" stops resolving gpt-5.5
 base_url = "http://127.0.0.1:2455/backend-api/codex"
 wire_api = "responses"
@@ -34,7 +34,7 @@ requires_openai_auth = true # required for codex app
 ### Opting into the 872k context window
 
 GPT-5.6 ships a 272,000-token default input budget with an 872,000-token
-maximum. codex-lb advertises both — `context_window` and `max_context_window`
+maximum. claude-lb advertises both — `context_window` and `max_context_window`
 on `GET /backend-api/codex/models` — and the Codex CLI stays on the default
 until you raise it in `~/.codex/config.toml` (top level, before any
 `[section]` header):
@@ -59,35 +59,35 @@ ceiling.
 ### Daybreak Blue profile (Trusted Access)
 
 Use a separate provider for authorized defensive cybersecurity work. The
-ordinary `codex-lb` provider above must remain free of the capability header;
+ordinary `claude-lb` provider above must remain free of the capability header;
 adding it there would classify every request as requiring the restricted pool.
 
 First add this opt-in provider to the same machine-local
 `~/.codex/config.toml`:
 
 ```toml
-[model_providers.codex-lb-daybreak-blue]
+[model_providers.claude-lb-daybreak-blue]
 name = "openai"
 base_url = "http://127.0.0.1:2455/backend-api/codex"
 wire_api = "responses"
-env_key = "CODEX_LB_API_KEY"
+env_key = "CLAUDE_LB_API_KEY"
 supports_websockets = true
 requires_openai_auth = true
-http_headers = { "X-Codex-LB-Required-Capability" = "trusted_cyber" }
+http_headers = { "X-Claude-LB-Required-Capability" = "trusted_cyber" }
 ```
 
 Then create `~/.codex/daybreak-blue.config.toml`:
 
 ```toml
 model = "gpt-5.6-sol"
-model_provider = "codex-lb-daybreak-blue"
+model_provider = "claude-lb-daybreak-blue"
 ```
 
 Activate it explicitly for the task or orchestration root that needs the
 restricted route:
 
 ```bash
-export CODEX_LB_API_KEY="sk-clb-..." # key from the dashboard
+export CLAUDE_LB_API_KEY="sk-clb-..." # key from the dashboard
 codex --profile daybreak-blue
 codex exec --profile daybreak-blue "<authorized defensive task>"
 ```
@@ -101,13 +101,13 @@ selected. Provider and profile keys are machine-local, so a project
 The static header is an authenticated routing requirement, not a grant. Use
 this profile only when the selected identity and ChatGPT workspace or API
 organization/project are already approved for the intended Codex product
-surface. The dedicated provider always supplies a Codex LB API key because
+surface. The dedicated provider always supplies a Claude LB API key because
 unauthenticated capability carriers are rejected even on a local deployment.
-When the capability header is present, Codex LB validates that key for the
+When the capability header is present, Claude LB validates that key for the
 request even if global API-key auth is disabled; ordinary requests without the
 header keep the deployment's normal auth behavior. Current Codex clients may
 fall back from WebSocket to HTTP even when `supports_websockets = true`, and
-static provider headers also accompany control and Images requests. Codex LB
+static provider headers also accompany control and Images requests. Claude LB
 authenticates capability-bearing HTTP and non-Responses WebSocket requests and
 then rejects them with `required_capability_transport_unsupported` before
 account selection or upstream dispatch. This includes Responses/compact HTTP
@@ -117,7 +117,7 @@ is guarded defensively if a provider client reaches that equivalent routing
 sink. Authenticated `/models` initialization and local API-key usage or
 reset-credit listings remain available because they do not route an upstream
 account. Restore direct Responses WebSocket availability
-instead of removing the carrier or retrying through ordinary HTTP. Codex LB
+instead of removing the carrier or retrying through ordinary HTTP. Claude LB
 narrows a direct WebSocket turn's first and later account selections to eligible accounts already marked
 `security_work_authorized`; if none are available, it fails closed without
 ordinary fallback. Selecting `gpt-5.6-sol` by itself does not activate this
@@ -129,7 +129,7 @@ Complete inert examples are available as
 [`config.toml`](examples/codex/config.toml) and
 [`daybreak-blue.config.toml`](examples/codex/daybreak-blue.config.toml). To
 roll back, stop using `--profile daybreak-blue`, remove the profile file, and
-optionally remove only the `codex-lb-daybreak-blue` provider block. No server or
+optionally remove only the `claude-lb-daybreak-blue` provider block. No server or
 database change is required.
 
 This documented `requires_openai_auth = true` setup makes the provider eligible
@@ -143,7 +143,7 @@ different eligibility path; see the [Images compatibility context](https://githu
 
 ### WebSocket transport
 
-Optional: pin native upstream WebSockets for Codex streaming while keeping `codex-lb` pooling.
+Optional: pin native upstream WebSockets for Codex streaming while keeping `claude-lb` pooling.
 The upstream stream transport is a dashboard setting: Settings → Routing → Upstream stream
 transport (`auto`, `http`, or `websocket`). It applies without a restart and is the only place
 this value is configured; there is no environment variable for it.
@@ -159,7 +159,7 @@ fail-closed transport control.
 Upstream websocket handshakes automatically honor standard proxy environment variables when they are
 present. `wss://` handshakes check `wss_proxy`, `socks_proxy`, `https_proxy`, and `all_proxy`;
 plain `ws://` handshakes also check `ws_proxy` and `http_proxy`. Set
-`CODEX_LB_UPSTREAM_WEBSOCKET_TRUST_ENV=false` only when websocket handshakes must bypass those
+`CLAUDE_LB_UPSTREAM_WEBSOCKET_TRUST_ENV=false` only when websocket handshakes must bypass those
 environment proxies and connect directly.
 
 ### With API key auth
@@ -167,17 +167,17 @@ environment proxies and connect directly.
 When [API key auth](api-keys.md) is enabled:
 
 ```toml
-[model_providers.codex-lb]
+[model_providers.claude-lb]
 name = "openai"
 base_url = "http://127.0.0.1:2455/backend-api/codex"
 wire_api = "responses"
-env_key = "CODEX_LB_API_KEY"
+env_key = "CLAUDE_LB_API_KEY"
 supports_websockets = true
 requires_openai_auth = true # required for codex app
 ```
 
 ```bash
-export CODEX_LB_API_KEY="sk-clb-..."   # key from dashboard
+export CLAUDE_LB_API_KEY="sk-clb-..."   # key from dashboard
 codex
 ```
 
@@ -192,10 +192,10 @@ RUST_LOG=debug codex exec "Reply with OK only."
 Healthy websocket signals:
 
 - CLI logs contain `connecting to websocket` and `successfully connected to websocket`
-- `codex-lb` logs show `WebSocket /backend-api/codex/responses`
-- `codex-lb` logs do **not** show fallback `POST /backend-api/codex/responses` for the same run
+- `claude-lb` logs show `WebSocket /backend-api/codex/responses`
+- `claude-lb` logs do **not** show fallback `POST /backend-api/codex/responses` for the same run
 
-If you run `codex-lb` behind a reverse proxy, make sure it forwards WebSocket upgrades — see [Remote Access](deployment/remote.md).
+If you run `claude-lb` behind a reverse proxy, make sure it forwards WebSocket upgrades — see [Remote Access](deployment/remote.md).
 
 ### Migrating from direct OpenAI (session retagging)
 
@@ -203,10 +203,10 @@ If you run `codex-lb` behind a reverse proxy, make sure it forwards WebSocket up
 
 ```bash
 # Preview what will change first.
-codex-lb codex-sessions retag --from openai --to codex-lb --dry-run
+claude-lb codex-sessions retag --from openai --to claude-lb --dry-run
 
 # Then close Codex/Codex CLI and apply the retag.
-codex-lb codex-sessions retag --from openai --to codex-lb --yes
+claude-lb codex-sessions retag --from openai --to claude-lb --yes
 ```
 
 | Dry run (Docker) | Apply (Docker) |
@@ -238,7 +238,7 @@ jq 'del(.openai)' ~/.local/share/opencode/auth.json > auth.json.tmp && mv auth.j
     "openai": {
       "options": {
         "baseURL": "http://127.0.0.1:2455/v1",
-        "apiKey": "{env:CODEX_LB_API_KEY}"
+        "apiKey": "{env:CLAUDE_LB_API_KEY}"
       },
       "models": {
         "gpt-5.6-sol": {
@@ -272,10 +272,10 @@ jq 'del(.openai)' ~/.local/share/opencode/auth.json > auth.json.tmp && mv auth.j
 }
 ```
 
-This overrides the built-in `openai` provider's endpoint to point at codex-lb while keeping the Responses API code path that handles reasoning properly.
+This overrides the built-in `openai` provider's endpoint to point at claude-lb while keeping the Responses API code path that handles reasoning properly.
 
 ```bash
-export CODEX_LB_API_KEY="sk-clb-..."   # key from dashboard
+export CLAUDE_LB_API_KEY="sk-clb-..."   # key from dashboard
 opencode
 ```
 
@@ -287,25 +287,25 @@ opencode
 {
   "agents": {
     "defaults": {
-      "model": { "primary": "codex-lb/gpt-5.6-sol" },
+      "model": { "primary": "claude-lb/gpt-5.6-sol" },
       "models": {
-        "codex-lb/gpt-5.6-sol": { "params": { "cacheRetention": "short" } },
-        "codex-lb/gpt-5.6-terra": { "params": { "cacheRetention": "short" } },
-        "codex-lb/gpt-5.6-luna": { "params": { "cacheRetention": "short" } }
+        "claude-lb/gpt-5.6-sol": { "params": { "cacheRetention": "short" } },
+        "claude-lb/gpt-5.6-terra": { "params": { "cacheRetention": "short" } },
+        "claude-lb/gpt-5.6-luna": { "params": { "cacheRetention": "short" } }
       }
     }
   },
   "models": {
     "mode": "merge",
     "providers": {
-      "codex-lb": {
+      "claude-lb": {
         "baseUrl": "http://127.0.0.1:2455/v1",
-        "apiKey": "${CODEX_LB_API_KEY}",   // or "dummy" if API key auth is disabled
+        "apiKey": "${CLAUDE_LB_API_KEY}",   // or "dummy" if API key auth is disabled
         "api": "openai-responses",
         "models": [
           {
             "id": "gpt-5.6-sol",
-            "name": "gpt-5.6-sol (codex-lb)",
+            "name": "gpt-5.6-sol (claude-lb)",
             "contextWindow": 272000,
             "contextTokens": 272000,
             "maxTokens": 4096,
@@ -314,7 +314,7 @@ opencode
           },
           {
             "id": "gpt-5.6-terra",
-            "name": "gpt-5.6-terra (codex-lb)",
+            "name": "gpt-5.6-terra (claude-lb)",
             "contextWindow": 272000,
             "contextTokens": 272000,
             "maxTokens": 4096,
@@ -323,7 +323,7 @@ opencode
           },
           {
             "id": "gpt-5.6-luna",
-            "name": "gpt-5.6-luna (codex-lb)",
+            "name": "gpt-5.6-luna (claude-lb)",
             "contextWindow": 272000,
             "contextTokens": 272000,
             "maxTokens": 4096,
@@ -337,33 +337,33 @@ opencode
 }
 ```
 
-Set the env var or replace `${CODEX_LB_API_KEY}` with a key from the dashboard. If API key auth is disabled,
+Set the env var or replace `${CLAUDE_LB_API_KEY}` with a key from the dashboard. If API key auth is disabled,
 local requests can omit the key, but non-local requests are still rejected until proxy authentication is configured.
 
 The `/v1` route is the simplest OpenAI-compatible setup. If your OpenClaw build uses a Codex-native provider path such as `openai-codex-responses` and needs Codex-style usage/accounting behavior, point that provider at `http://127.0.0.1:2455/backend-api/codex` instead. For third-party Codex-compatible backends, the client must allow opaque bearer-token passthrough and should only send `chatgpt-account-id` when it actually decoded one from an official ChatGPT/Codex token.
 
 ## Hermes Agent
 
-[Hermes Agent](https://github.com/NousResearch/hermes-agent) works with any model provider; point a named custom provider at codex-lb with the `codex_responses` API mode so multi-turn reasoning state is preserved over the Responses API (the plain `chat_completions` mode drops reasoning content, same caveat as OpenCode).
+[Hermes Agent](https://github.com/NousResearch/hermes-agent) works with any model provider; point a named custom provider at claude-lb with the `codex_responses` API mode so multi-turn reasoning state is preserved over the Responses API (the plain `chat_completions` mode drops reasoning content, same caveat as OpenCode).
 
 `~/.hermes/config.yaml`:
 
 ```yaml
 custom_providers:
-  - name: codex-lb
+  - name: claude-lb
     base_url: http://127.0.0.1:2455/v1
-    key_env: CODEX_LB_API_KEY   # omit for local runs without API key auth
+    key_env: CLAUDE_LB_API_KEY   # omit for local runs without API key auth
     api_mode: codex_responses
 ```
 
 Then select the model interactively with `hermes model`, or in a session:
 
 ```text
-/model custom:codex-lb:gpt-5.6-sol
+/model custom:claude-lb:gpt-5.6-sol
 ```
 
 ```bash
-export CODEX_LB_API_KEY="sk-clb-..."   # key from dashboard
+export CLAUDE_LB_API_KEY="sk-clb-..."   # key from dashboard
 hermes
 ```
 

@@ -100,7 +100,7 @@ async def get_fleet_observability(
 async def refresh_fleet_usage(
     api_key: ApiKeyData = Security(validate_usage_api_key),
 ) -> FleetRefreshResponse:
-    """Request a bounded usage refresh using codex-lb's normal refresh rules."""
+    """Request a bounded usage refresh using claude-lb's normal refresh rules."""
 
     if not is_control_plane_task_admission_open():
         raise DashboardServiceUnavailableError("Server is draining")

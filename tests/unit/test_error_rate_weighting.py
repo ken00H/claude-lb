@@ -155,7 +155,7 @@ def test_bad_multipliers_are_clamped() -> None:
 async def test_balancer_records_outcomes_and_steers_fresh_selection_away_from_a_flaky_account(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setenv("CODEX_LB_PROXY_ACCOUNT_ERROR_RATE_WEIGHTING_ENABLED", "true")
+    monkeypatch.setenv("CLAUDE_LB_PROXY_ACCOUNT_ERROR_RATE_WEIGHTING_ENABLED", "true")
     get_settings.cache_clear()
     try:
         clock = VirtualClock(epoch_value=2_000_000_000.0)
@@ -194,7 +194,7 @@ async def test_balancer_records_outcomes_and_steers_fresh_selection_away_from_a_
 
 @pytest.mark.asyncio
 async def test_weighting_disabled_keeps_selection_neutral(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("CODEX_LB_PROXY_ACCOUNT_ERROR_RATE_WEIGHTING_ENABLED", "false")
+    monkeypatch.setenv("CLAUDE_LB_PROXY_ACCOUNT_ERROR_RATE_WEIGHTING_ENABLED", "false")
     get_settings.cache_clear()
     try:
         clock = VirtualClock(epoch_value=2_000_000_000.0)

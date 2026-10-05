@@ -1,6 +1,6 @@
 """Per-model context window overrides: dashboard rows over the environment dict.
 
-``CODEX_LB_MODEL_CONTEXT_WINDOW_OVERRIDES`` (``slug -> window``) is a T3
+``CLAUDE_LB_MODEL_CONTEXT_WINDOW_OVERRIDES`` (``slug -> window``) is a T3
 setting whose dashboard home is the ``model_context_window_overrides`` table
 (one row per slug) rather than a ``dashboard_settings`` column, because the
 value is a mapping, not a scalar. The precedence of ``configuration-tiers``

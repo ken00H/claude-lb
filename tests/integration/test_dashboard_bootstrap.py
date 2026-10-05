@@ -20,14 +20,14 @@ _ROTATED_BOOTSTRAP_TOKEN = "rotated-bootstrap-token"
 @pytest_asyncio.fixture(autouse=True)
 async def _reset_bootstrap_runtime(_reset_db_state, monkeypatch: pytest.MonkeyPatch):
     del _reset_db_state
-    monkeypatch.delenv("CODEX_LB_DASHBOARD_BOOTSTRAP_TOKEN", raising=False)
+    monkeypatch.delenv("CLAUDE_LB_DASHBOARD_BOOTSTRAP_TOKEN", raising=False)
     tokens = iter([_AUTO_BOOTSTRAP_TOKEN, _ROTATED_BOOTSTRAP_TOKEN])
     monkeypatch.setattr(bootstrap_module.secrets, "token_urlsafe", lambda _size: next(tokens))
     get_settings.cache_clear()
     await get_settings_cache().invalidate()
     await bootstrap_module.clear_auto_generated_token()
     yield
-    monkeypatch.delenv("CODEX_LB_DASHBOARD_BOOTSTRAP_TOKEN", raising=False)
+    monkeypatch.delenv("CLAUDE_LB_DASHBOARD_BOOTSTRAP_TOKEN", raising=False)
     get_settings.cache_clear()
     await get_settings_cache().invalidate()
     await bootstrap_module.clear_auto_generated_token()
@@ -81,7 +81,7 @@ async def test_remote_bootstrap_with_auto_generated_token(async_client, monkeypa
 @pytest.mark.asyncio
 async def test_remote_bootstrap_with_manual_env_token(async_client, monkeypatch):
     _force_remote(monkeypatch)
-    monkeypatch.setenv("CODEX_LB_DASHBOARD_BOOTSTRAP_TOKEN", "manual-env-token")
+    monkeypatch.setenv("CLAUDE_LB_DASHBOARD_BOOTSTRAP_TOKEN", "manual-env-token")
     get_settings.cache_clear()
     await get_settings_cache().invalidate()
 
@@ -97,7 +97,7 @@ async def test_remote_bootstrap_with_manual_env_token(async_client, monkeypatch)
 @pytest.mark.asyncio
 async def test_remote_bootstrap_with_non_ascii_manual_env_token(async_client, monkeypatch):
     _force_remote(monkeypatch)
-    monkeypatch.setenv("CODEX_LB_DASHBOARD_BOOTSTRAP_TOKEN", "부트스트랩-토큰")
+    monkeypatch.setenv("CLAUDE_LB_DASHBOARD_BOOTSTRAP_TOKEN", "부트스트랩-토큰")
     get_settings.cache_clear()
     await get_settings_cache().invalidate()
 

@@ -23,14 +23,14 @@ from app.modules.proxy import service as proxy_service
 from app.modules.proxy._service.http_bridge import upstream_events as bridge
 from app.modules.proxy._service.websocket import mixin
 
-FIXTURES = Path(__file__).resolve().parents[2] / "crates/codex-lb-responses/tests/fixtures/websocket-v1.json"
+FIXTURES = Path(__file__).resolve().parents[2] / "crates/claude-lb-responses/tests/fixtures/websocket-v1.json"
 
 
 @pytest.mark.asyncio
 async def test_native_websocket_oversized_integers_preserve_peer_exchanges() -> None:
-    binary = os.environ.get("CODEX_LB_NATIVE_EGRESS_TEST_BINARY")
+    binary = os.environ.get("CLAUDE_LB_NATIVE_EGRESS_TEST_BINARY")
     if not binary:
-        pytest.skip("set CODEX_LB_NATIVE_EGRESS_TEST_BINARY to run the native wire probe")
+        pytest.skip("set CLAUDE_LB_NATIVE_EGRESS_TEST_BINARY to run the native wire probe")
 
     async def echo(websocket: Any) -> None:
         async for text in websocket:
@@ -97,9 +97,9 @@ async def test_native_websocket_oversized_integers_preserve_peer_exchanges() -> 
 
 @pytest.mark.asyncio
 async def test_native_websocket_values_and_policy_match_python(monkeypatch: pytest.MonkeyPatch) -> None:
-    binary = os.environ.get("CODEX_LB_NATIVE_EGRESS_TEST_BINARY")
+    binary = os.environ.get("CLAUDE_LB_NATIVE_EGRESS_TEST_BINARY")
     if not binary:
-        pytest.skip("set CODEX_LB_NATIVE_EGRESS_TEST_BINARY to run the native wire probe")
+        pytest.skip("set CLAUDE_LB_NATIVE_EGRESS_TEST_BINARY to run the native wire probe")
     cases = json.loads(FIXTURES.read_text())
     cases += json.loads(FIXTURES.with_name("websocket-routing-v1.json").read_text())
     prefix = '{"type":"response.output_text.delta","delta":"'
@@ -212,9 +212,9 @@ async def test_native_websocket_values_and_policy_match_python(monkeypatch: pyte
 async def test_native_websocket_routing_preserves_delivery_watermarks(
     monkeypatch: pytest.MonkeyPatch, interpret: bool, send_failure: bool
 ) -> None:
-    binary = os.environ.get("CODEX_LB_NATIVE_EGRESS_TEST_BINARY")
+    binary = os.environ.get("CLAUDE_LB_NATIVE_EGRESS_TEST_BINARY")
     if not binary:
-        pytest.skip("set CODEX_LB_NATIVE_EGRESS_TEST_BINARY to run the native wire probe")
+        pytest.skip("set CLAUDE_LB_NATIVE_EGRESS_TEST_BINARY to run the native wire probe")
 
     async def echo(websocket: Any) -> None:
         async for text in websocket:

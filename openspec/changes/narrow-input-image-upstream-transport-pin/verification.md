@@ -123,6 +123,6 @@ live upstream traffic was sent, and the production error-rate claim in #2363 is
 not verifiable from this repository: `request_logs` carries no image marker, so
 the image/non-image split is not derivable from LB telemetry. After deploy the
 change shows up as a ratio shift on
-`codex_lb_upstream_transport_decisions_total` (`policy="explicit"` falling,
+`claude_lb_upstream_transport_decisions_total` (`policy="explicit"` falling,
 `upstream_transport="auto"` rising) with
-`codex_lb_http_bridge_routing_total{reason="image"}` flat.
+`claude_lb_http_bridge_routing_total{reason="image"}` flat.

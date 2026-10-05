@@ -1,0 +1,803 @@
+# claude-lb Helm Chart
+
+Production-ready Helm chart for [claude-lb](https://github.com/ken00H/claude-lb), an OpenAI API load balancer with account pooling, usage tracking, and dashboard.
+
+## Design Goal
+
+This chart is organized around **install modes**, not cloud vendors.
+
+The same chart should work on Docker Desktop, kind, EKS, GKE, OKE, and other Kubernetes distributions. Cluster-specific concerns such as storage classes, ingress classes, load balancer annotations, and secret backends are expressed through values, while the application install contract stays the same.
+
+## Prerequisites
+
+- Helm 3.7+
+- Kubernetes 1.32+
+- Optional:
+  - Prometheus Operator for `ServiceMonitor` and `PrometheusRule`
+  - cert-manager for automated ingress TLS
+  - Gateway API CRDs for `HTTPRoute`
+  - External Secrets Operator for `externalSecrets.enabled=true`
+
+## Version Policy
+
+- Minimum supported Kubernetes version: `1.32`
+- Validation baseline in CI and smoke installs: `1.35`
+
+This is a project support policy. Cloud providers may keep older versions available for some time, but the chart and CI no longer optimize for pre-`1.32` clusters.
+
+## Install Modes
+
+### 1. Bundled
+
+Use the bundled Bitnami PostgreSQL sub-chart. This is the easiest self-contained install mode for demos, development clusters, and disposable environments.
+
+Key properties:
+
+- `postgresql.enabled=true`
+- `values-bundled.yaml` enables `databaseMigrateOnStartup=true`
+- the migration Job is reserved for upgrades (`pre-upgrade`)
+- fresh installs stay self-contained and single-replica friendly
+
+Example:
+
+```bash
+helm install claude-lb oci://ghcr.io/soju06/charts/claude-lb \
+  --set postgresql.auth.password=change-me \
+  --set config.databaseMigrateOnStartup=true \
+  --set migration.schemaGate.enabled=false
+```
+
+<details>
+<summary>From source</summary>
+
+```bash
+helm dependency build deploy/helm/claude-lb/
+helm upgrade --install claude-lb deploy/helm/claude-lb/ \
+  -f deploy/helm/claude-lb/values-bundled.yaml \
+  --set postgresql.auth.password=change-me
+```
+
+</details>
+
+### 2. External DB
+
+Use an already reachable PostgreSQL database. This is the preferred production contract when the database is managed separately.
+
+Key properties:
+
+- `postgresql.enabled=false`
+- direct DB URL or DB secret is available at install time
+- migration Job runs `pre-install,pre-upgrade`
+- application pods still keep the schema gate initContainer enabled
+
+Supported DB wiring:
+
+- `externalDatabase.url`
+- `externalDatabase.host`, `externalDatabase.port`, `externalDatabase.database`, `externalDatabase.user`
+- `externalDatabase.existingSecret`
+- `auth.existingSecret` if one secret contains both `database-url` and `encryption-key`
+
+Example using a direct URL:
+
+```bash
+helm install claude-lb oci://ghcr.io/soju06/charts/claude-lb \
+  --set postgresql.enabled=false \
+  --set externalDatabase.url='postgresql+asyncpg://user:pass@db.example.com:5432/claudelb'
+```
+
+Example using separate secrets:
+
+```bash
+helm install claude-lb oci://ghcr.io/soju06/charts/claude-lb \
+  --set postgresql.enabled=false \
+  --set externalDatabase.existingSecret=claude-lb-db \
+  --set auth.existingSecret=claude-lb-app
+```
+
+<details>
+<summary>From source</summary>
+
+```bash
+helm upgrade --install claude-lb deploy/helm/claude-lb/ \
+  -f deploy/helm/claude-lb/values-external-db.yaml \
+  --set externalDatabase.url='postgresql+asyncpg://user:pass@db.example.com:5432/claudelb'
+```
+
+</details>
+
+### 3. External Secrets
+
+Use External Secrets Operator to materialize credentials.
+
+Key properties:
+
+- `externalSecrets.enabled=true`
+- requires External Secrets Operator v0.17.0 or newer (the first release that serves `external-secrets.io/v1`)
+- DB credentials are not assumed to exist at render time
+- remote secret keys and optional JSON properties are configurable independently
+- migration Job remains `post-install,pre-upgrade`
+- application pods keep the schema gate initContainer enabled and wait for schema head before starting the app container
+
+Example:
+
+```bash
+helm install claude-lb oci://ghcr.io/soju06/charts/claude-lb \
+  --set postgresql.enabled=false \
+  --set externalSecrets.enabled=true \
+  --set externalSecrets.secretStoreRef.name=my-store
+```
+
+<details>
+<summary>From source</summary>
+
+```bash
+helm upgrade --install claude-lb deploy/helm/claude-lb/ \
+  -f deploy/helm/claude-lb/values-external-secrets.yaml \
+  --set externalSecrets.secretStoreRef.name=my-store
+```
+
+</details>
+
+By default, both values are read from JSON properties in a remote secret named
+after the release. Providers such as Infisical commonly store each value as an
+individual secret instead. Configure absolute keys and clear the property fields
+for that layout:
+
+```yaml
+externalSecrets:
+  enabled: true
+  secretStoreRef:
+    name: infisical
+    kind: ClusterSecretStore
+  remoteRefs:
+    databaseUrl:
+      key: /apps/claude-lb/DATABASE_URL
+      property: ""
+    encryptionKey:
+      key: /apps/claude-lb/ENCRYPTION_KEY
+      property: ""
+```
+
+## Quick Start
+
+No repo clone required — install directly from the OCI registry.
+
+### Docker Desktop / kind style cluster
+
+Bundled PostgreSQL:
+
+```bash
+helm install claude-lb oci://ghcr.io/soju06/charts/claude-lb \
+  --set postgresql.auth.password=local-dev-password \
+  --set config.databaseMigrateOnStartup=true \
+  --set migration.schemaGate.enabled=false
+```
+
+### Managed PostgreSQL
+
+```bash
+helm install claude-lb oci://ghcr.io/soju06/charts/claude-lb \
+  --set postgresql.enabled=false \
+  --set externalDatabase.url='postgresql+asyncpg://user:pass@db.example.com:5432/claudelb'
+```
+
+### From source (development)
+
+If you need to customize the chart itself, clone the repo and install from path:
+
+```bash
+helm dependency build deploy/helm/claude-lb/
+helm upgrade --install claude-lb deploy/helm/claude-lb/ \
+  -f deploy/helm/claude-lb/values-bundled.yaml \
+  --set postgresql.auth.password=local-dev-password
+```
+
+## Included Value Overlays
+
+Mode-centric overlays:
+
+- `values-bundled.yaml`
+- `values-external-db.yaml`
+- `values-external-secrets.yaml`
+
+Environment-oriented overlays kept for convenience:
+
+- `values-dev.yaml`
+- `values-staging.yaml`
+- `values-prod.yaml`
+
+The mode overlays define the installation contract. The environment overlays tune scale, observability, and routing posture.
+
+## Schema and Migration Behavior
+
+This chart intentionally keeps migration behavior explicit by install mode.
+
+- In external DB and external secrets modes, the chart relies on the dedicated migration Job to advance schema.
+- Application pods use a schema gate initContainer when `migration.enabled=true`, `config.databaseMigrateOnStartup=false`, and `migration.schemaGate.enabled=true`.
+- That initContainer runs `python -m app.db.migrate wait-for-head` and blocks the app container until the database is at Alembic head.
+- In bundled mode, `values-bundled.yaml` enables startup migration instead of the schema gate so fresh self-contained installs do not deadlock on `helm install --wait`.
+
+This means:
+
+- bundled PostgreSQL installs bootstrap themselves without requiring a separate install-time migration writer
+- external DB installs with direct credentials can migrate before StatefulSet creation
+- external secrets installs fail closed instead of serving on a stale schema
+
+## Secret Model
+
+The chart supports two secret patterns.
+
+### Single secret
+
+Use `auth.existingSecret` when one secret contains both:
+
+- `database-url`
+- `encryption-key`
+
+### Split secrets
+
+Use `externalDatabase.existingSecret` for the database URL and let the chart manage or reference a separate app secret for `encryption-key`.
+
+When `externalDatabase.existingSecret` is set and `auth.existingSecret` is not, the chart-managed app secret contains only the encryption key; the StatefulSet reads `CLAUDE_LB_DATABASE_URL` from the external DB secret.
+
+## Network Policy
+
+When `networkPolicy.enabled=true`, the chart now fails closed for the main HTTP ingress port.
+
+- The chart does **not** open port `2455` to every namespace by default.
+- To allow ingress-controller traffic, set `networkPolicy.ingressNSMatchLabels`.
+- For custom cases, use `networkPolicy.extraIngress`.
+
+Example:
+
+```yaml
+networkPolicy:
+  enabled: true
+  ingressNSMatchLabels:
+    kubernetes.io/metadata.name: ingress-nginx
+```
+
+`values-prod.yaml` ships this allowlist by default (matching an ingress-nginx controller in the `ingress-nginx` namespace); adjust the labels if your controller runs elsewhere. If you enable `networkPolicy` together with `ingress` in a hand-rolled overlay and omit the allowlist, external traffic through the controller is denied on port `2455` while pods stay Ready — the rendered install NOTES warn about this combination.
+
+## Connection Pool Sizing
+
+Normative contracts: [database backends](../../../openspec/specs/database-backends/)
+and [deployment installation](../../../openspec/specs/deployment-installation/).
+
+Each supported pod runs one application worker with two independent SQLAlchemy
+pools: one for request-path work and one for background tasks.
+
+```
+total_connections = (databasePoolSize + databaseMaxOverflow) × 2 pools × 1 worker × replicas
+```
+
+Keep this within your PostgreSQL `max_connections` budget, including capacity
+for migrations and administrative clients, or place PgBouncer in front of the
+database.
+
+The owned `app.cli` launcher explicitly pins Uvicorn to one worker, so
+`WEB_CONCURRENCY` does not multiply pools. Custom Uvicorn/Gunicorn multi-worker
+launchers are unsupported; scale through replicas or the HPA.
+
+## Production Workload
+
+Multi-replica production deployments require careful coordination of database connectivity, session routing, and graceful shutdown. This section covers the key patterns and tuning parameters.
+
+### Prerequisites for Multi-Replica
+
+Single-replica deployments can use SQLite, but **multi-replica requires PostgreSQL**:
+
+- **Database**: PostgreSQL is mandatory for multi-replica because:
+  - SQLite does not support concurrent writes from multiple pods
+  - Leader election requires a shared database backend
+  - Session bridge ring membership is stored in the database
+  
+- **Leader Election**: Enabled by default (`config.leaderElectionEnabled=true`)
+  - Ensures only one pod performs background tasks (e.g., session cleanup, metrics aggregation)
+  - Uses database-backed locking with a TTL (`config.leaderElectionTtlSeconds=30`)
+  - If the leader crashes, another pod acquires the lock within 30 seconds
+  
+- **Circuit Breaker**: Enabled by default (`config.circuitBreakerEnabled=true`)
+  - Protects upstream API endpoints from cascading failures
+  - Opens after 5 consecutive failures; enters half-open state after 60
+    seconds (fixed application constants)
+  - Prevents thundering herd when upstream is degraded
+
+### Session Bridge Ring
+
+The session bridge is an in-memory cache of upstream WebSocket connections, shared across the pod ring.
+
+**Automatic Ring Membership (PostgreSQL)**
+
+When using PostgreSQL, ring membership is **automatic and database-backed**:
+
+- Each pod registers itself in the database on startup
+- Each pod auto-advertises its owner-handoff endpoint via headless-service DNS
+- The `sessionBridgeInstanceRing` field is **optional** and only needed for manual pod list override
+- Pods discover each other via database queries; no manual configuration required
+- Ring membership is cleaned up automatically when pods terminate
+
+The chart configures each pod with:
+
+- StatefulSet name: `<release>-claude-lb-workload`
+- `serviceName: <release>-claude-lb-bridge` on the StatefulSet
+- `CLAUDE_LB_HTTP_RESPONSES_SESSION_BRIDGE_INSTANCE_ID=$(POD_NAME)`
+- `CLAUDE_LB_HTTP_RESPONSES_SESSION_BRIDGE_ADVERTISE_BASE_URL=http://$(POD_NAME).<headless-service>.$(POD_NAMESPACE).svc.<clusterDomain>:2455`
+
+`clusterDomain` defaults to `cluster.local`. If your cluster uses another suffix, set:
+
+```yaml
+clusterDomain: corp.internal
+```
+
+In most clusters no extra values are required for `/responses` owner handoff. If pods must be reached through a different internal address, the override must stay **per-pod**: the application refuses to start when the advertise hostname is not replica-specific, so a shared Service hostname crashloops every replica. Use the kubelet `$(POD_NAME)` expansion — the chart defines `POD_NAME` earlier in the container env list, so the kubelet expands it per pod:
+
+```yaml
+config:
+  sessionBridgeAdvertiseBaseUrl: "http://$(POD_NAME).claude-lb-bridge.default.svc.cluster.local:2455"
+```
+
+Replace `claude-lb-bridge`, `default`, and `cluster.local` with your headless service name (`<release>-bridge` by default), namespace, and cluster domain. For a release named `claude-lb` the first pod then advertises `http://claude-lb-workload-0.claude-lb-bridge.default.svc.cluster.local:2455`.
+
+When `networkPolicy.enabled=true`, the chart also allows port `2455` traffic between claude-lb pods so owner handoff can work without extra rules.
+
+**Manual Ring Override (Advanced)**
+
+If you need to manually specify the pod ring (e.g., for testing or debugging), list the **bare StatefulSet pod names**. Each pod's bridge instance id is `$(POD_NAME)`, and the application requires its instance id to appear literally in the ring — FQDN entries fail Settings validation and crashloop the pods:
+
+```yaml
+config:
+  sessionBridgeInstanceRing: "claude-lb-workload-0,claude-lb-workload-1"
+```
+
+A static ring is incompatible with autoscaling and must list exactly the StatefulSet pod names (`<workload-name>-0` through `<workload-name>-<replicaCount - 1>`); the chart refuses to render when `autoscaling.enabled=true`, when any expected pod name is missing from the ring, or when a ring entry does not match any expected pod name (for example FQDN-style entries). This is rarely needed in production; the database-backed discovery is preferred.
+
+### Connection Pool Budget
+
+Each supported pod maintains one worker with two independent SQLAlchemy
+connection pools: the request pool and the background-task pool. The total
+connections across all replicas must leave room within PostgreSQL's
+`max_connections` for reserved slots, migrations, and operations:
+
+```
+(databasePoolSize + databaseMaxOverflow) × 2 × 1 × maxReplicas ≤ PostgreSQL max_connections - reserve
+```
+
+**Example for `values-prod.yaml`:**
+
+```yaml
+config:
+  databasePoolSize: 1
+  databaseMaxOverflow: 1
+autoscaling:
+  maxReplicas: 20
+```
+
+Calculation: `(1 + 1) × 2 × 20 = 80` application connections. This fits
+within PostgreSQL's default `max_connections=100` while reserving 20
+raw server slots: three default superuser-reserved slots, two simultaneous
+migrator connections, and fifteen further operational connections.
+
+**Tuning:**
+
+- Increase `databasePoolSize` if pods frequently wait for connections
+- Increase `databaseMaxOverflow` for temporary spikes, but keep it small (overflow is slower)
+- Reduce `maxReplicas` if you cannot increase PostgreSQL's `max_connections`
+- Use PgBouncer or pgcat as a connection pooler in front of PostgreSQL if needed
+
+### values-prod.yaml Reference
+
+The `values-prod.yaml` overlay is pre-configured for production multi-replica deployments:
+
+```yaml
+replicaCount: 3                    # Start with 3 replicas
+postgresql:
+  enabled: false                   # Use external PostgreSQL
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 20
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 600  # 10 min cooldown (see below)
+affinity:
+  podAntiAffinity: hard            # Spread pods across nodes
+topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: topology.kubernetes.io/zone  # Spread across zones
+networkPolicy:
+  enabled: true                    # Restrict ingress/egress
+  ingressNSMatchLabels:            # REQUIRED with ingress: allow the controller namespace
+    kubernetes.io/metadata.name: ingress-nginx
+ingress:
+  enabled: true
+  nginx:
+    enabled: true                  # Streaming-safety + sticky-hash annotations as one set
+metrics:
+  serviceMonitor:
+    enabled: true                  # Prometheus scraping
+  prometheusRule:
+    enabled: true                  # Alerting rules
+  grafanaDashboard:
+    enabled: true                  # Pre-built dashboards
+externalSecrets:
+  enabled: true                    # Use External Secrets Operator
+```
+
+The Grafana sidecar imports the dashboard JSON but does not provision
+datasources or database credentials. In the **claude-lb TTFT Breakdown**
+dashboard, select the Grafana PostgreSQL datasource that points to the
+claude-lb database from the visible **PostgreSQL** (`DS_SQL`) dropdown. All
+four SQL panels follow that one runtime selection. The owning contract is in
+[proxy runtime observability](../../../openspec/specs/proxy-runtime-observability/).
+
+Install with:
+
+```bash
+helm install claude-lb oci://ghcr.io/soju06/charts/claude-lb \
+  -f deploy/helm/claude-lb/values-prod.yaml \
+  --set externalDatabase.url='postgresql+asyncpg://user:pass@db.example.com:5432/claudelb'
+```
+
+### Graceful Shutdown Tuning
+
+Graceful shutdown coordinates one application drain deadline plus a Kubernetes hard deadline:
+The owning requirements live in the
+[deployment-installation OpenSpec capability](../../../openspec/specs/deployment-installation/).
+
+```
+preStop starts shared config.shutdownDrainTimeoutSeconds (30s)
+├─ preStopSleepSeconds routing dwell (15s default)
+└─ in-flight drain until zero or the shared deadline
+terminationGracePeriodSeconds (65s) bounds preStop, SIGTERM, and final cleanup
+```
+
+**Timeline:**
+
+1. **preStop / preStopSleepSeconds (15s default)**: Pod termination begins
+   - Calls `/internal/drain/start` so readiness fails and new app requests are rejected
+   - When the Python helper starts, it establishes the routing-dwell clock and sends that helper-anchored monotonic deadline to the loopback endpoint; that deadline-bearing call commits the one-way shutdown barrier
+   - The app clamps the deadline to its configured timeout and returns the effective absolute deadline for the hook to reuse
+   - Starts the same `config.shutdownDrainTimeoutSeconds` deadline later reused by SIGTERM
+   - Measures routing dwell from Python helper start; the local start request consumes that same budget
+   - Polls `/internal/drain/status`, then exits after dwell when `in_flight=0`
+   - On start/status failure, exits promptly so SIGTERM becomes the fallback
+   
+2. **SIGTERM / remaining shared drain budget**:
+   - Does not restart or extend the deadline established by preStop
+   - Stops accepting new HTTP and WebSocket work
+   - Lets admitted Responses turns finish terminal delivery, persistence, and settlement within the remaining budget
+   
+3. **terminationGracePeriodSeconds (65s default)**: Hard deadline
+   - Starts before the preStop helper process and covers helper launch, preStop, SIGTERM, and final process cleanup before SIGKILL
+   - Must be ≥ `config.shutdownDrainTimeoutSeconds + 32`
+   - After the helper starts, the extra two seconds cover a failed local drain-start request before direct SIGTERM starts the application budget
+   - After the application deadline, the launcher stops awaiting Uvicorn connection or lifespan cleanup after a further 25 seconds; if cleanup remains cancellation-resistant, it forces the captured signal (or SIGTERM for programmatic shutdown), while the remaining five seconds cover signal delivery and ordinary process exit
+   - Kubelet's exec/Python launch latency is outside the application's control and consumes only this hard grace, not the application budget. Production overrides should retain headroom above the minimum; the 65-second default includes three additional seconds
+   - This post-drain phase is not a second request-drain period
+
+**Tuning:**
+
+- Keep `preStopSleepSeconds <= config.shutdownDrainTimeoutSeconds`
+- Increase `preStopSleepSeconds` if your load balancer takes longer to deregister
+- Increase `config.shutdownDrainTimeoutSeconds` if requests typically take >30s to complete
+- Preserve the fixed 32-second start-fallback and post-drain reserve when changing `terminationGracePeriodSeconds`
+- Run one worker per pod/container and scale with replicas; the owned launcher pins one worker and ignores ambient `WEB_CONCURRENCY`
+
+Example for long-running requests:
+
+```yaml
+preStopSleepSeconds: 20
+config:
+  shutdownDrainTimeoutSeconds: 60
+terminationGracePeriodSeconds: 95
+```
+
+### Scale-Down Caution
+
+The `stabilizationWindowSeconds: 600` (10 minutes) in `values-prod.yaml` is intentionally high.
+
+**Why?**
+
+- Session bridge connections have fixed idle TTLs (120s for API sessions, 900s for Codex sessions; application constants, not chart values)
+- When a pod scales down, its in-memory sessions are lost
+- Clients reconnecting to a different pod must re-establish upstream connections
+- A 10-minute cooldown prevents rapid scale-down/up cycles that would thrash session state
+
+**Behavior:**
+
+- HPA will scale down at most 1 pod every 2 minutes (when cooldown is active)
+- If load drops suddenly, scale-down is delayed by up to 10 minutes
+- This trades off faster scale-down for session stability
+
+**Tuning:**
+
+- Reduce `stabilizationWindowSeconds` if you prioritize cost over session stability
+- Increase it if you see frequent session reconnections during scale events
+- Monitor `sessionBridgeInstanceRing` size changes in logs to detect scale-down impact
+
+## Security
+
+The chart targets the Kubernetes Restricted Pod Security Standard.
+
+- `runAsNonRoot: true`
+- `readOnlyRootFilesystem: true`
+- `allowPrivilegeEscalation: false`
+- all Linux capabilities dropped
+- `automountServiceAccountToken: false`
+
+Rollout controls for externally managed config:
+
+- `rollout.reloader.enabled=true` adds Stakater Reloader annotations
+- `rollout.manualToken` forces a StatefulSet rollout when external Secret contents change outside Helm
+
+## Ingress and Gateway API
+
+The chart supports either classic Ingress or Gateway API.
+
+Ingress example:
+
+```yaml
+ingress:
+  enabled: true
+  ingressClassName: nginx
+  hosts:
+    - host: claude-lb.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+```
+
+Gateway API example:
+
+```yaml
+gatewayApi:
+  enabled: true
+  parentRefs:
+    - name: my-gateway
+      namespace: gateway-system
+  hostnames:
+    - claude-lb.example.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /v1
+        - path:
+            type: PathPrefix
+            value: /backend-api/codex
+        - path:
+            type: PathPrefix
+            value: /backend-api/wham
+        - path:
+            type: PathPrefix
+            value: /backend-api/transcribe
+        - path:
+            type: PathPrefix
+            value: /backend-api/files
+        - path:
+            type: PathPrefix
+            value: /api/codex
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: traefik.io
+            kind: Middleware
+            name: oauth-forward-auth
+```
+
+When `rules` is empty, the chart renders the existing catch-all route. For
+custom rules, the chart preserves their order and adds the claude-lb Service as
+the backend of every rule. Referenced extension resources must be valid for the
+HTTPRoute namespace according to the selected Gateway implementation.
+
+For application-specific Gateway setup, see the
+[Kubernetes deployment guide](../../../docs/deployment/kubernetes.md#application-specific-gateway)
+and the owning OpenSpec capability, [`deployment-networking`](../../../openspec/specs/deployment-networking/spec.md).
+
+### nginx annotations and responses sticky routing
+
+All nginx-specific annotations are gated behind `ingress.nginx.enabled=true` and render as **one coherent set**: the streaming-safety annotations (proxy buffering off, 3600s read/send timeouts, 50m body size, HTTP/1.1) and the sticky-hash annotations always appear together. Enabling ingress on an nginx class without `ingress.nginx.enabled=true` renders no nginx annotations at all — which means the controller's defaults (60s read timeout, 1m body cap) apply and will cut long-lived SSE/WebSocket streams.
+
+The dedicated responses ingress defaults to a snippet-free sticky key:
+
+```yaml
+ingress:
+  responses:
+    nginx:
+      upstreamHashBy: "$http_x_codex_session_id$http_authorization"
+```
+
+Undefined nginx `$http_*` variables render empty, so requests carrying `x-codex-session-id` hash by session (+API key) and requests without it hash by the Authorization header alone. This is admitted by stock ingress-nginx at the default `annotations-risk-level`.
+
+Advanced snippet-based keys via `ingress.responses.nginx.configurationSnippet` are opt-in only: stock ingress-nginx >= 1.12 rejects `configuration-snippet` at admission unless the controller runs with `--allow-snippet-annotations=true` and `annotations-risk-level: Critical`.
+
+## Upgrade Contract
+
+```bash
+helm upgrade claude-lb oci://ghcr.io/soju06/charts/claude-lb <your values...>
+```
+
+**Upgrade warning:** the chart enforces a render-time timing guard. Existing
+values files, `--set` overrides, or values retained by
+`helm upgrade --reuse-values` with
+`terminationGracePeriodSeconds < config.shutdownDrainTimeoutSeconds + 32`
+make `helm template`, `helm install`, and `helm upgrade` fail before resources
+are applied. With the default `config.shutdownDrainTimeoutSeconds: 30`, the
+minimum is `62`; the chart default is `65`. Raise every retained low value
+explicitly to at least the computed minimum (`65` preserves the chart's default
+headroom for a 30-second drain). Omitting the key does not clear its stored
+value when `--reuse-values` is used. To adopt the chart default instead, use an
+intentional non-reuse or `--reset-values` upgrade with the key absent. Production
+overrides should retain additional helper-launch headroom.
+
+- External DB installs can migrate before StatefulSet creation.
+- External secrets installs keep the dedicated migration Job and fail closed behind the schema gate.
+- Bundled installs stay easy to bootstrap and keep the migration hook for upgrades.
+- StatefulSet pod-template checksums force rollouts when chart-managed ConfigMaps or Secrets change.
+- The workload resource name is intentionally different from the pre-1.13 Deployment name to avoid Helm kind-migration conflicts. Releases first installed before chart 1.13.0 must complete the cutover on a 1.24.x chart first — see [Upgrading](#upgrading).
+
+## Upgrading
+
+`helm upgrade` follows the [Upgrade Contract](#upgrade-contract) above. This
+section covers the upgrade paths that need operator attention.
+
+### From chart versions older than 1.13.0
+
+Chart 1.13.0 (claude-lb v1.13.0, April 2026, #363) moved the application from a
+`Deployment` named `<fullname>` to a `StatefulSet` named `<fullname>-workload`
+so `/responses` owner handoff can address pods by stable name. Helm cannot
+change a resource's kind in place, so charts 1.13.0 - 1.24.x carried a
+migration shim — a `pre-upgrade` `legacy-prepare` hook, a `post-upgrade`
+`legacy-cleanup` hook, and a lookup-based `auto` Service selector mode behind
+`migration.serviceSelectorMode` — that kept the public Service pointed at the
+legacy Deployment's pods until the StatefulSet was ready, then cut it over.
+
+**This chart no longer carries that shim.** The public Service always renders
+the StatefulSet selector (`claude-lb.soju.dev/traffic: workload`), `helm upgrade`
+no longer creates the two hook Jobs or their ServiceAccount/Role/RoleBinding,
+and `migration.serviceSelectorMode` no longer exists — setting it has no
+effect. Upgrading a pre-1.13 release straight to this chart would point the
+Service at StatefulSet pods that do not exist yet and drop traffic.
+
+Supported path for a release still on a chart older than 1.13.0:
+
+1. `helm upgrade` to a **1.24.x** chart first. It still ships the shim and runs
+   the `Deployment` -> `StatefulSet` cutover. Plan it as a maintenance window,
+   not a zero-downtime rollout: Helm removes the legacy Deployment during the
+   upgrade's resource sync, before the `post-upgrade` cleanup hook runs, so its
+   pods can start terminating while the Service still selects them. The shim
+   bounds that gap; it does not eliminate it.
+2. Verify the cutover finished:
+
+   ```bash
+   # the Service selects the StatefulSet pods
+   kubectl get svc <fullname> -n <namespace> -o jsonpath='{.spec.selector}'
+   # expected to contain "claude-lb.soju.dev/traffic":"workload"
+
+   # the legacy Deployment is gone and the StatefulSet is ready
+   kubectl get deploy <fullname> -n <namespace>   # NotFound
+   kubectl get sts <fullname>-workload -n <namespace>
+   ```
+
+3. `helm upgrade` to this release, and drop `migration.serviceSelectorMode`
+   from your values file if it is still set.
+
+`<fullname>` above is the chart fullname (`claude-lb.fullname`): the release
+name itself when it contains `claude-lb` (release `claude-lb` -> `claude-lb`, the
+name used by the install commands in this README), otherwise
+`<release>-claude-lb`; `fullnameOverride` replaces both. A `NotFound` for the
+Deployment is only meaningful when the StatefulSet exists and the Service
+selector already says `workload`.
+
+Releases first installed on chart 1.13.0 or later, and releases that already
+completed the cutover, upgrade to this release directly. The removed hooks were
+no-ops for them, so upgrades now skip two short-lived Jobs, their RBAC objects
+and a StatefulSet-readiness wait.
+
+
+### Upgrading across 1.24 -> 1.25
+
+claude-lb 1.25 kept moving behaviour tunables out of the environment and into
+the dashboard (PRINCIPLES.md P2 / P6). Visible to Helm users:
+
+**Removed environment variables.** `templates/configmap.yaml` no longer
+templates these; the application ignores them and logs one
+`removed setting(s) ignored` WARN at startup for at least one release (the
+names are pruned from the warning list afterwards and stay inert).
+
+| Removed variable | Former chart value | Replacement |
+| --- | --- | --- |
+| `CLAUDE_LB_UPSTREAM_STREAM_TRANSPORT` (#2192) | `config.upstreamStreamTransport` | Settings -> Advanced -> Routing -> Upstream stream transport (`auto` / `http` / `websocket`). Operators who pinned `http` or `websocket` must pin it again in the dashboard after upgrading; persisted `default` rows are migrated to `auto`. |
+| `CLAUDE_LB_OPENAI_CACHE_AFFINITY_MAX_AGE_SECONDS` (#2190) | `config.cacheAffinityMaxAgeSeconds` | The dashboard cache-affinity TTL, which was already the effective source: the env value only seeded the first-created settings row. |
+| `CLAUDE_LB_REQUEST_LOG_RETENTION_DAYS`, `CLAUDE_LB_USAGE_HISTORY_RETENTION_DAYS` (#2190) | `extraEnv` only | Settings -> Advanced -> Data retention. An empty dashboard value means retention is disabled; set the window once after upgrading. |
+| `CLAUDE_LB_HTTP_DOWNSTREAM_TRANSPORT_POLICY`, `CLAUDE_LB_WARMUP_MODEL`, `CLAUDE_LB_HTTP_RESPONSES_SESSION_BRIDGE_GATEWAY_SAFE_MODE` (#2190) | `extraEnv` only | Dashboard settings of the same name (first-boot seeds or never read). |
+| `CLAUDE_LB_OPENAI_PROMPT_CACHE_KEY_DERIVATION_ENABLED` (#2261) | `config.promptCacheKeyDerivationEnabled` | None: proxy-generated prompt-cache-key derivation is always on (it was never turned off in any deployment). |
+| `CLAUDE_LB_STICKY_SESSION_CLEANUP_ENABLED` (#2261) | `config.stickySessionCleanupEnabled` | None: the sticky-session cleanup loop always runs (its interval was already a fixed constant). |
+| The other 25 `constantize-core-tunables` names (#2261): upstream SSE / websocket frame and `response.create` budgets, the upstream compact timeout, OAuth and token-refresh timeouts, refresh claim TTL and failure cooldown, admission wait and gate sizes, usage / reset-credits fetch and refresh cadences, the always-on usage refresh / live ingestion / model registry / quota planner switches, HTTP ingress body budgets, inline image fetching and its host allowlist, `CLAUDE_LB_IMAGES_DEFAULT_MODEL` | `extraEnv` only | None: fixed application constants equal to the former defaults (see `docs/reference/settings.md`). |
+| `CLAUDE_LB_HTTP_RESPONSES_SESSION_BRIDGE_IDLE_TTL_SECONDS`, `CLAUDE_LB_HTTP_RESPONSES_SESSION_BRIDGE_CODEX_IDLE_TTL_SECONDS` (#2256) | `config.sessionBridgeIdleTtlSeconds`, `config.sessionBridgeCodexIdleTtlSeconds` | None: fixed application constants equal to the former chart defaults (120 s for API sessions, 900 s for Codex sessions). |
+| `CLAUDE_LB_HTTP_RESPONSES_SESSION_BRIDGE_STUCK_GATE_RETIRE_AFTER_SECONDS`, `..._ANCHOR_POISON_FAILURE_THRESHOLD`, `..._SERVER_RECOVERY_MAX_ATTEMPTS`, `..._CLEAN_CLOSE_RETRY_JITTER_MAX_SECONDS`, `..._OPERATION_LEDGER_ENABLED` (#2256) | `extraEnv` only | None: fixed application constants (300 s stuck gate, poison threshold = retry-circuit threshold of 2, 0-2 s clean-close jitter, operation ledger always on). `..._SERVER_RECOVERY_MAX_ATTEMPTS` capped the server-owned recovery loop, which #2336 deleted together with the constant, so that name now bounds nothing at all. An `ANCHOR_POISON_FAILURE_THRESHOLD=1`, `CLEAN_CLOSE_RETRY_JITTER_MAX_SECONDS=0` or `OPERATION_LEDGER_ENABLED=false` override no longer has any effect. |
+| `CLAUDE_LB_HTTP_RESPONSES_SESSION_BRIDGE_AMBIGUOUS_CONTINUATION_RECOVERY_MODE` (#2336) | `extraEnv` only | None: fail-closed is the only behaviour. The three non-default modes (`client_full_history_once`, `server_anchored_replay_once`, `server_indefinite_recovery`) were at-least-once delivery semantics and are deleted; only the shipped default `fail_closed` was ever used, so a deployment on the default sees no change. |
+| `CLAUDE_LB_TOKEN_REFRESH_INTERVAL_DAYS` (#2365) | `extraEnv` only | None: the proactive token-refresh window is a fixed eight days (`TOKEN_REFRESH_INTERVAL_DAYS` in `app/core/auth/refresh.py`), which is the former default. An account is still refreshed on demand whenever upstream answers 401, so shortening the window was never a recovery lever; lengthening it only delayed a refresh that had to happen anyway. |
+
+`values.schema.json` does not reject unknown `config.*` keys, so values files or
+`--reuse-values` state that still carry `config.upstreamStreamTransport`,
+`config.cacheAffinityMaxAgeSeconds`, `config.promptCacheKeyDerivationEnabled`,
+`config.stickySessionCleanupEnabled`, `config.sessionBridgeIdleTtlSeconds` or
+`config.sessionBridgeCodexIdleTtlSeconds` render fine and are ignored (nothing
+references them). Drop them at your convenience, and drop the raw names from
+`extraEnv` to silence the startup WARN.
+
+**Environment variables that became deprecated aliases** (#2220, #2221,
+#2224). Two chart values still template settings the dashboard now owns:
+
+| Chart value | Environment variable | Dashboard home |
+| --- | --- | --- |
+| `config.upstreamConnectTimeout` | `CLAUDE_LB_UPSTREAM_CONNECT_TIMEOUT_SECONDS` | Settings -> Advanced -> Upstream timeouts |
+| `config.circuitBreakerEnabled` | `CLAUDE_LB_CIRCUIT_BREAKER_ENABLED` | Settings -> Advanced -> Resilience |
+
+Precedence is code default < environment < dashboard: the chart value is the
+effective value only while the dashboard field is left empty (shown as
+inherited). Once an operator saves a dashboard value, changing the chart value
+and rolling the pods has no effect until the dashboard field is cleared. The
+same precedence applies to every setting marked `T3 (dashboard)` in the
+[settings reference](https://soju06.github.io/claude-lb/reference/settings/) when
+it is passed through `extraEnv` (request budgets, stream idle timeout, SSE
+keepalive, soft drain, deterministic failover, routing weights, overload
+isolation, per-account caps).
+
+Whether the shadowing is announced depends on the setting. For
+`config.upstreamConnectTimeout` and the other timeout/budget, per-account cap,
+routing-weight and overload-isolation aliases, startup logs one
+`environment value(s) ignored because the dashboard owns the setting` WARN
+naming the shadowed variables. The three resilience toggles
+(`config.circuitBreakerEnabled` / `CLAUDE_LB_CIRCUIT_BREAKER_ENABLED`, soft
+drain, deterministic failover) are overridden by a saved dashboard value
+without a startup WARN; check the toggle's provenance in Settings -> Advanced
+-> Resilience instead. These aliases are slated for removal in a later minor;
+move persistent overrides into the dashboard.
+
+## Validation
+
+Recommended after install:
+
+```bash
+helm test claude-lb -n <namespace>
+kubectl get pods -n <namespace>
+kubectl logs job/<release>-migrate -n <namespace>
+```
+
+If you are using a port-forwarded install:
+
+```bash
+kubectl port-forward svc/claude-lb 2455:2455 -n <namespace>
+curl -i http://127.0.0.1:2455/health/live
+curl -i http://127.0.0.1:2455/health/ready
+```
+
+## Troubleshooting
+
+Migration Job:
+
+```bash
+kubectl describe job <release>-migrate -n <namespace>
+kubectl logs job/<release>-migrate -n <namespace>
+```
+
+App pod stuck in init:
+
+```bash
+kubectl describe pod -l app.kubernetes.io/name=claude-lb -n <namespace>
+kubectl logs deploy/<release> -c wait-for-schema-head -n <namespace>
+```
+
+Health failures:
+
+```bash
+kubectl describe deploy <release> -n <namespace>
+kubectl logs deploy/<release> -n <namespace>
+```

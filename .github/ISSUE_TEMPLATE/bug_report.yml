@@ -1,5 +1,5 @@
 name: 🐛 Bug Report
-description: Report a reproducible bug, crash, or unexpected behavior in codex-lb.
+description: Report a reproducible bug, crash, or unexpected behavior in claude-lb.
 title: "bug: <one-line summary of what's broken>"
 labels: ["bug", "triage"]
 body:
@@ -21,7 +21,7 @@ body:
       options:
         - label: I searched existing issues and confirmed this is not a duplicate.
           required: true
-        - label: I am running a supported codex-lb version (see Releases).
+        - label: I am running a supported claude-lb version (see Releases).
           required: true
         - label: I can reproduce the problem with the steps below.
           required: true
@@ -29,7 +29,7 @@ body:
   - type: input
     id: version
     attributes:
-      label: codex-lb version
+      label: claude-lb version
       description: Version shown in the dashboard status bar (or `GET /api/runtime/version`), or the image tag you deployed.
       placeholder: "1.25.0 (dashboard status bar, `GET /api/runtime/version`, or the deployed image tag)"
     validations:
@@ -41,11 +41,11 @@ body:
       label: Deployment method
       multiple: false
       options:
-        - uvx (codex-lb)
-        - pip install codex-lb
+        - uvx (claude-lb)
+        - pip install claude-lb
         - Docker (ghcr.io/Soju06/codex-lb)
         - Docker Compose
-        - Helm chart (oci://ghcr.io/soju06/charts/codex-lb)
+        - Helm chart (oci://ghcr.io/soju06/charts/claude-lb)
         - From source
         - Other (describe below)
     validations:
@@ -54,7 +54,7 @@ body:
   - type: dropdown
     id: client
     attributes:
-      label: Client used against codex-lb
+      label: Client used against claude-lb
       multiple: true
       description: Select every client that triggers the bug.
       options:
@@ -117,7 +117,7 @@ body:
       label: Steps to reproduce
       description: Minimal reproduction — config, request payload, command sequence.
       placeholder: |
-        1. Start codex-lb with `docker compose up -d` (compose snippet below).
+        1. Start claude-lb with `docker compose up -d` (compose snippet below).
         2. Configure Codex CLI to point at http://localhost:<port>.
         3. Run `codex … <prompt>`.
         4. Observe …
@@ -130,7 +130,7 @@ body:
     attributes:
       label: Relevant logs
       description: |
-        Paste the **codex-lb server logs** spanning the failing request. Redact API
+        Paste the **claude-lb server logs** spanning the failing request. Redact API
         keys, tokens, and any account identifiers before pasting.
       render: shell
 

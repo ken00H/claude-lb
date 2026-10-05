@@ -3,7 +3,7 @@
 **Question the trace answers:** of the Responses SSE streams the proxy settled, how many had their terminal frame actually handed to the HTTP server's writer on a live connection?
 
 ```
-sum by (outcome) (rate(codex_lb_stream_terminal_delivery_total{surface="responses"}[15m]))
+sum by (outcome) (rate(claude_lb_stream_terminal_delivery_total{surface="responses"}[15m]))
 ```
 
 `terminal_written` means "handed to uvicorn's transport buffer", not "received by the client": the socket buffer and any reverse proxy in front (HAProxy) are not observed. End-to-end confirmation still needs HAProxy termination-state logs or client telemetry.

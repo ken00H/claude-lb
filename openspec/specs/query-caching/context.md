@@ -35,10 +35,10 @@ The query-caching capability is broader than cache TTLs. It also owns the databa
   (<=0.5s) ~= 1s for coalesced bumps and one poll interval for awaited bumps.
 - Failure semantics: `bump()` retries transient lock errors (3 attempts, 0.05s base backoff); a
   final failure logs ERROR and increments
-  `codex_lb_cache_invalidation_bump_failures_total{namespace}` but never fails the mutation —
+  `claude_lb_cache_invalidation_bump_failures_total{namespace}` but never fails the mutation —
   peers then converge via the cache's fallback TTL. Failed coalesced flushes stay pending and
   retry next cycle. Poll failures escalate to WARNING after 3 and ERROR after 10 consecutive
-  failures and increment `codex_lb_cache_invalidation_poll_failures_total`.
+  failures and increment `claude_lb_cache_invalidation_poll_failures_total`.
 - Poller callbacks must be registered with non-propagating variants — a propagating callback
   would re-bump on every observed bump and loop.
 - Routing-unavailable derivation: an account is routing-unavailable when the snapshot says

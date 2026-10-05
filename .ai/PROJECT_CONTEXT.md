@@ -15,9 +15,9 @@
 - **Languages and versions:** Python 3.13 (uv-managed), TypeScript (React 19), SQL (Alembic).
 - **Frameworks:** FastAPI (+ uvicorn), SQLAlchemy 2 async, Pydantic v2 / pydantic-settings, aiohttp (egress); frontend React 19 + Vite + Tailwind v4.
 - **Runtime and package tools:** `uv` (Python, `uv.lock`), `bun` (frontend, `frontend/bun.lock`), `make` (task entry points), `ty` for typechecking (not mypy).
-- **Primary data stores:** SQLite (aiosqlite, default; data dir `~/.codex-lb`) and PostgreSQL (asyncpg).
+- **Primary data stores:** SQLite (aiosqlite, default; data dir `~/.claude-lb`) and PostgreSQL (asyncpg).
 - **External services:** Anthropic/Claude upstream (claude.ai OAuth + api.anthropic.com). Optional extras: Prometheus metrics, OpenTelemetry tracing.
-- **Supported platforms:** Linux/macOS via uv or Docker; Kubernetes via `deploy/helm/codex-lb/`.
+- **Supported platforms:** Linux/macOS via uv or Docker; Kubernetes via `deploy/helm/claude-lb/`.
 
 ## Architecture
 
@@ -27,7 +27,7 @@
 - **Public contracts:** `app/modules/*/api.py` — proxy routes (`/v1/messages`), dashboard API (`/backend-api`), SCIM v2, websocket bridges.
 - **Persistence:** `app/db/models.py`; Alembic revisions in `app/db/alembic/versions/`.
 - **Frontend features:** `frontend/src/` (SPA; builds into `app/static/`).
-- **Configuration:** `app/core/config/settings.py` + `app/core/config/tiers.py`; precedence code < env (`CODEX_LB_*`) < dashboard override.
+- **Configuration:** `app/core/config/settings.py` + `app/core/config/tiers.py`; precedence code < env (`CLAUDE_LB_*`) < dashboard override.
 - **Generated files:** `app/static/**` → built from `frontend/` by `bun run build`; `CHANGELOG.md` → release-please (never hand-edit).
 - **Architecture decisions:** `openspec/specs/**` (SSOT); `spec/` holds the TLA+ ownership model (`CoreOwnership.tla`).
 
@@ -59,9 +59,9 @@
 ## Safe local environment
 
 - **Disposable test data:** Tests use temp SQLite DBs (mktemp under `/tmp`, auto-removed) and fixtures under `tests/fixtures/`.
-- **Allowed local services:** Loopback only — server `127.0.0.1:2455`, Vite dev `5173`, test PostgreSQL `127.0.0.1:5432` (`codex_lb`/`codex_lb` test credentials).
+- **Allowed local services:** Loopback only — server `127.0.0.1:2455`, Vite dev `5173`, test PostgreSQL `127.0.0.1:5432` (`claude_lb`/`claude_lb` test credentials).
 - **Forbidden targets:** Production, real Anthropic accounts or tokens, shared databases, any external system.
-- **Secret handling:** `.env` files loaded via `CODEX_LB_ENV_FILE`; `GITHUB_TOKEN` comes from the environment. Never commit or log values.
+- **Secret handling:** `.env` files loaded via `CLAUDE_LB_ENV_FILE`; `GITHUB_TOKEN` comes from the environment. Never commit or log values.
 
 ## Quality gates
 
@@ -82,5 +82,5 @@
 ## Known limitations
 
 - The Anthropic proxy-core rewrite (increment 3 of the adaptation roadmap) has not landed; the proxy does not yet serve `/v1/messages`.
-- Upstream naming residue: env prefix `CODEX_LB_*`, Helm chart `deploy/helm/codex-lb/`, docs URLs, and `docs/rust-architecture.md` (describes `crates/` deleted in this fork — no Rust code exists).
+- Upstream naming residue: env prefix `CLAUDE_LB_*`, Helm chart `deploy/helm/claude-lb/`, docs URLs, and `docs/rust-architecture.md` (describes `crates/` deleted in this fork — no Rust code exists).
 - `make test-postgres`, `make docker`, `make helm-check`, and `make helm-smoke-kind` need local PostgreSQL/Docker/helm/kind that may not be installed.

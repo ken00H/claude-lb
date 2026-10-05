@@ -1,13 +1,13 @@
 # Database
 
-SQLite is the default database backend and needs no configuration. PostgreSQL is optional via `CODEX_LB_DATABASE_URL` (for example `postgresql+asyncpg://codex_lb:codex_lb@127.0.0.1:5432/codex_lb`).
+SQLite is the default database backend and needs no configuration. PostgreSQL is optional via `CLAUDE_LB_DATABASE_URL` (for example `postgresql+asyncpg://claude_lb:claude_lb@127.0.0.1:5432/claude_lb`).
 
 ## Data paths
 
 | Environment | Path |
 |-------------|------|
-| Local / uvx | `~/.codex-lb/` |
-| Docker | `/var/lib/codex-lb/` |
+| Local / uvx | `~/.claude-lb/` |
+| Docker | `/var/lib/claude-lb/` |
 
 Backup this directory to preserve your data (database, encryption key, archives).
 
@@ -25,8 +25,8 @@ Existing Postgres 16 compose volumes must be upgraded before the Postgres 18 con
 
 ```bash
 docker compose --profile postgres stop postgres
-docker run --rm -v codex-lb-postgres-data:/var/lib/postgresql -v "$PWD:/backup" alpine \
-  tar -C /var/lib/postgresql -czf /backup/codex-lb-postgres-data-before-pg18.tgz .
+docker run --rm -v claude-lb-postgres-data:/var/lib/postgresql -v "$PWD:/backup" alpine \
+  tar -C /var/lib/postgresql -czf /backup/claude-lb-postgres-data-before-pg18.tgz .
 docker compose --profile postgres-upgrade run --rm postgres-upgrade
 docker compose --profile postgres up -d postgres
 ```
@@ -34,7 +34,7 @@ docker compose --profile postgres up -d postgres
 The `postgres-upgrade` profile runs `pg_upgrade` in one-shot mode against the same named volume and exits after the
 data directory has been upgraded to the Postgres 18 layout. Because that helper mounts and rewrites the operator's
 database volume, Compose pins the helper image by digest; refresh and review the digest deliberately when changing the
-helper image tag. Keep the backup until the application has started and `codex-lb-db check` succeeds against the
+helper image tag. Keep the backup until the application has started and `claude-lb-db check` succeeds against the
 upgraded database.
 
 The normal `postgres` service refuses to start when it detects the old root-level `PG_VERSION` file from a pre-18

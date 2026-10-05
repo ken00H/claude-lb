@@ -110,7 +110,7 @@ def local_login_admits(user: DashboardUser, policy: str) -> bool:
     can enrol there, which is the path the migrated install takes. The only
     way to reach ``break_glass_only`` with nothing qualifying is an
     out-of-band write to the database, and that state is repaired from the
-    host with ``codex-lb admin local-login enable`` (PLAN §4.6, docs/sso.md).
+    host with ``claude-lb admin local-login enable`` (PLAN §4.6, docs/sso.md).
     """
 
     if policy == LocalLoginPolicy.ADMINS_ONLY.value:

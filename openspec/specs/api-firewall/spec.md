@@ -1,7 +1,7 @@
 # api-firewall Specification
 
 ## Purpose
-Governs the IP allowlist that gates the proxy surfaces (`/backend-api/codex/*`, `/v1/*`) and the dashboard API for managing it. Operators who expose codex-lb beyond a private network need to restrict which client addresses may reach the proxy, including deployments behind a reverse proxy where the client IP must be derived from trusted forwarding headers. This capability defines allowlist management, enforcement on protected paths, trusted-proxy header handling, and the safety defaults around header trust and cache TTL.
+Governs the IP allowlist that gates the proxy surfaces (`/backend-api/codex/*`, `/v1/*`) and the dashboard API for managing it. Operators who expose claude-lb beyond a private network need to restrict which client addresses may reach the proxy, including deployments behind a reverse proxy where the client IP must be derived from trusted forwarding headers. This capability defines allowlist management, enforcement on protected paths, trusted-proxy header handling, and the safety defaults around header trust and cache TTL.
 ## Requirements
 ### Requirement: Firewall allowlist management API
 Dashboard API MUST expose firewall allowlist management endpoints at `/api/firewall/ips` for listing, creating, and deleting allowed client IP addresses.
@@ -116,7 +116,7 @@ For protected HTTP and WebSocket requests, firewall IP resolution MUST use the c
 
 ### Requirement: Firewall IP cache TTL is operator-configurable with a safe default
 
-The application MUST cache firewall allow/deny decisions per source IP for a configurable TTL, and the default TTL MUST be large enough (at least 30 seconds) that the cache provides material relief on hot paths under load. Operators MUST be able to tune it via `firewall_ip_cache_ttl_seconds` (env `CODEX_LB_FIREWALL_IP_CACHE_TTL_SECONDS`). Explicit cache invalidation paths (allowlist mutation in `/api/firewall/ips`, the `cache_poller` invalidation channel) MUST keep working unchanged.
+The application MUST cache firewall allow/deny decisions per source IP for a configurable TTL, and the default TTL MUST be large enough (at least 30 seconds) that the cache provides material relief on hot paths under load. Operators MUST be able to tune it via `firewall_ip_cache_ttl_seconds` (env `CLAUDE_LB_FIREWALL_IP_CACHE_TTL_SECONDS`). Explicit cache invalidation paths (allowlist mutation in `/api/firewall/ips`, the `cache_poller` invalidation channel) MUST keep working unchanged.
 
 #### Scenario: Default TTL provides effective caching
 
@@ -126,7 +126,7 @@ The application MUST cache firewall allow/deny decisions per source IP for a con
 
 #### Scenario: Operator override is honoured
 
-- **WHEN** `CODEX_LB_FIREWALL_IP_CACHE_TTL_SECONDS=120` is set
+- **WHEN** `CLAUDE_LB_FIREWALL_IP_CACHE_TTL_SECONDS=120` is set
 - **AND** the application starts
 - **THEN** the firewall cache TTL is 120 seconds
 

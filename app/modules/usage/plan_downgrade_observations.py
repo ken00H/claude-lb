@@ -88,7 +88,7 @@ def _is_missing_observations_schema(exc: Exception) -> bool:
 # domain separation, not secrecy. Bumped to v2 when the digest input changed
 # from token material to seat identity, so values from the two schemes can
 # never read as an agreeing lineage.
-_FINGERPRINT_SALT = b"codex-lb/plan-downgrade-observation/v2"
+_FINGERPRINT_SALT = b"claude-lb/plan-downgrade-observation/v2"
 _FINGERPRINT_LEN = 64
 
 

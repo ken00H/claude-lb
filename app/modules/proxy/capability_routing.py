@@ -5,7 +5,7 @@ from collections.abc import Collection, Mapping
 from dataclasses import dataclass
 from enum import StrEnum
 
-from app.core.clients.proxy import CODEX_LB_REQUIRED_CAPABILITY_HEADER, ProxyResponseError
+from app.core.clients.proxy import CLAUDE_LB_REQUIRED_CAPABILITY_HEADER, ProxyResponseError
 from app.core.errors import openai_error
 from app.core.types import JsonValue
 from app.core.utils.json_guards import is_json_mapping
@@ -16,7 +16,7 @@ from app.modules.proxy.capability_lineage import (
 )
 from app.modules.proxy.repo_bundle import ProxyRepoFactory
 
-REQUIRED_CAPABILITY_HEADER = CODEX_LB_REQUIRED_CAPABILITY_HEADER
+REQUIRED_CAPABILITY_HEADER = CLAUDE_LB_REQUIRED_CAPABILITY_HEADER
 CODEX_PARENT_THREAD_ID_HEADER = "x-codex-parent-thread-id"
 CODEX_WINDOW_ID_HEADER = "x-codex-window-id"
 CAPABILITY_SIGNAL_UNTRUSTED_CODE = "capability_signal_untrusted"

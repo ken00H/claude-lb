@@ -14,19 +14,19 @@ from scripts.release_versions import update_project_versions
 def write_minimal_release_files(root: Path, version: str = "1.20.0") -> None:
     (root / "app").mkdir(parents=True)
     (root / "frontend").mkdir(parents=True)
-    (root / "deploy" / "helm" / "codex-lb").mkdir(parents=True)
-    (root / "pyproject.toml").write_text(f'[project]\nname = "codex-lb"\nversion = "{version}"\n', encoding="utf-8")
+    (root / "deploy" / "helm" / "claude-lb").mkdir(parents=True)
+    (root / "pyproject.toml").write_text(f'[project]\nname = "claude-lb"\nversion = "{version}"\n', encoding="utf-8")
     (root / "app" / "__init__.py").write_text(f'__version__ = "{version}"\n', encoding="utf-8")
     (root / "frontend" / "package.json").write_text(
         json.dumps({"name": "frontend", "version": version}) + "\n",
         encoding="utf-8",
     )
-    (root / "deploy" / "helm" / "codex-lb" / "Chart.yaml").write_text(
-        f"apiVersion: v2\nname: codex-lb\nversion: {version}\nappVersion: {version}\n",
+    (root / "deploy" / "helm" / "claude-lb" / "Chart.yaml").write_text(
+        f"apiVersion: v2\nname: claude-lb\nversion: {version}\nappVersion: {version}\n",
         encoding="utf-8",
     )
     (root / "uv.lock").write_text(
-        f'[[package]]\nname = "codex-lb"\nversion = "{version}"\nsource = {{ editable = "." }}\n',
+        f'[[package]]\nname = "claude-lb"\nversion = "{version}"\nsource = {{ editable = "." }}\n',
         encoding="utf-8",
     )
 
@@ -142,11 +142,11 @@ def test_pr_guard_accepts_dependency_only_release_managed_file_edits(tmp_path: P
     repo.mkdir()
     init_repo_with_beta_commit(repo)
     (repo / "pyproject.toml").write_text(
-        '[project]\nname = "codex-lb"\nversion = "1.20.0-beta.3"\ndependencies = ["aiohttp-socks>=0.10.1"]\n',
+        '[project]\nname = "claude-lb"\nversion = "1.20.0-beta.3"\ndependencies = ["aiohttp-socks>=0.10.1"]\n',
         encoding="utf-8",
     )
     (repo / "uv.lock").write_text(
-        '[[package]]\nname = "codex-lb"\nversion = "1.20.0-beta.3"\nsource = { editable = "." }\n'
+        '[[package]]\nname = "claude-lb"\nversion = "1.20.0-beta.3"\nsource = { editable = "." }\n'
         'dependencies = [{ name = "aiohttp-socks" }]\n',
         encoding="utf-8",
     )
@@ -183,7 +183,7 @@ def test_pr_guard_accepts_noncanonical_noop_on_inconsistent_release_metadata_bas
     git(repo, "commit", "-m", "chore: inconsistent partial release state")
     git(repo, "branch", "-M", "main")
     (repo / "pyproject.toml").write_text(
-        '[project]\nname = "codex-lb"\nversion = "1.20.0"\ndependencies = ["aiohttp-socks>=0.10.1"]\n',
+        '[project]\nname = "claude-lb"\nversion = "1.20.0"\ndependencies = ["aiohttp-socks>=0.10.1"]\n',
         encoding="utf-8",
     )
     git(repo, "add", "pyproject.toml")
@@ -218,7 +218,7 @@ def test_pr_guard_accepts_invalid_beta_prefixed_branch_when_release_metadata_is_
     git(repo, "commit", "-m", "chore: release v1.20.0-beta.3")
     git(repo, "branch", "-M", "main")
     (repo / "pyproject.toml").write_text(
-        '[project]\nname = "codex-lb"\nversion = "1.20.0-beta.3"\ndependencies = ["aiohttp-socks>=0.10.1"]\n',
+        '[project]\nname = "claude-lb"\nversion = "1.20.0-beta.3"\ndependencies = ["aiohttp-socks>=0.10.1"]\n',
         encoding="utf-8",
     )
     git(repo, "add", "pyproject.toml")
@@ -282,7 +282,7 @@ def test_pr_guard_rejects_inconsistent_release_managed_beta_metadata(tmp_path: P
         (
             "pyproject.toml",
             lambda repo: (repo / "pyproject.toml").write_text(
-                '[project]\nname = "codex-lb"\nversion = "1.20.0b3"\n',
+                '[project]\nname = "claude-lb"\nversion = "1.20.0b3"\n',
                 encoding="utf-8",
             ),
         ),
@@ -373,7 +373,7 @@ def test_pr_guard_accepts_pep440_uv_lock_beta_version_on_dependency_edits(tmp_pa
     repo.mkdir()
     write_minimal_release_files(repo, version="1.20.0-beta.3")
     (repo / "uv.lock").write_text(
-        '[[package]]\nname = "codex-lb"\nversion = "1.20.0b3"\nsource = { editable = "." }\n'
+        '[[package]]\nname = "claude-lb"\nversion = "1.20.0b3"\nsource = { editable = "." }\n'
         '\n[[package]]\nname = "starlette"\nversion = "1.3.1"\n',
         encoding="utf-8",
     )
@@ -386,7 +386,7 @@ def test_pr_guard_accepts_pep440_uv_lock_beta_version_on_dependency_edits(tmp_pa
     base = git(repo, "rev-parse", "HEAD")
 
     (repo / "uv.lock").write_text(
-        '[[package]]\nname = "codex-lb"\nversion = "1.20.0b3"\nsource = { editable = "." }\n'
+        '[[package]]\nname = "claude-lb"\nversion = "1.20.0b3"\nsource = { editable = "." }\n'
         '\n[[package]]\nname = "starlette"\nversion = "1.3.2"\n',
         encoding="utf-8",
     )
@@ -495,7 +495,7 @@ def test_pr_guard_rejects_forked_canonical_beta_branch(tmp_path: Path) -> None:
         head_ref=branch,
         head_sha=sha,
         body=validation_body(sha),
-        head_repo="evil-fork/codex-lb",
+        head_repo="evil-fork/claude-lb",
     )
 
     result = run_guard(
@@ -512,7 +512,7 @@ def test_pr_guard_rejects_forked_canonical_beta_branch(tmp_path: Path) -> None:
     assert result.returncode == 1
     assert "canonical repository release branch" in result.stderr
     assert "Expected head repository: Soju06/codex-lb" in result.stderr
-    assert "Actual head repository: evil-fork/codex-lb" in result.stderr
+    assert "Actual head repository: evil-fork/claude-lb" in result.stderr
 
 
 def test_publish_guard_rejects_stale_candidate_sha_evidence(tmp_path: Path) -> None:
@@ -554,7 +554,7 @@ def test_publish_guard_rejects_forked_canonical_beta_branch(tmp_path: Path) -> N
         head_sha=sha,
         body=validation_body(sha),
         merged=True,
-        head_repo="evil-fork/codex-lb",
+        head_repo="evil-fork/claude-lb",
     )
 
     result = run_guard(Path(__file__).resolve().parents[2], repo, "--mode", "publish", "--event-path", str(event))
@@ -562,7 +562,7 @@ def test_publish_guard_rejects_forked_canonical_beta_branch(tmp_path: Path) -> N
     assert result.returncode == 1
     assert "canonical repository release branch" in result.stderr
     assert "Expected head repository: Soju06/codex-lb" in result.stderr
-    assert "Actual head repository: evil-fork/codex-lb" in result.stderr
+    assert "Actual head repository: evil-fork/claude-lb" in result.stderr
 
 
 def test_publish_guard_rejects_merge_tree_that_differs_from_validated_head(tmp_path: Path) -> None:

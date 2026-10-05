@@ -53,7 +53,7 @@
         inherit (projectMetadata) description;
         homepage = "https://github.com/Soju06/codex-lb";
         license = lib.licenses.mit;
-        mainProgram = "codex-lb";
+        mainProgram = "claude-lb";
         maintainers = [ lib.maintainers.aaravrav ];
       };
 
@@ -111,7 +111,7 @@
           bun2nixPackage = bun2nix.packages.${system}.default;
         in
         pkgs.stdenvNoCC.mkDerivation {
-          pname = "codex-lb-frontend";
+          pname = "claude-lb-frontend";
           inherit (projectMetadata) version;
           src = frontendSource;
 
@@ -143,7 +143,7 @@
       );
 
       packageOverlay = system: _final: prev: {
-        codex-lb = prev.codex-lb.overrideAttrs (old: {
+        claude-lb = prev.claude-lb.overrideAttrs (old: {
           meta = codexLbMeta;
           src = packageSource;
           postPatch = (old.postPatch or "") + ''
@@ -154,7 +154,7 @@
       };
 
       editableProjectOverlay = final: prev: {
-        codex-lb = prev.codex-lb.overrideAttrs (old: {
+        claude-lb = prev.claude-lb.overrideAttrs (old: {
           src = editableSource;
           nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [ final.editables ];
           # Editable imports use the checkout, not packaged dashboard assets.
@@ -184,8 +184,8 @@
           inherit (pkgs.callPackages pyproject-nix.build.util { }) mkApplication;
         in
         mkApplication {
-          venv = pythonSet.mkVirtualEnv "codex-lb-env" workspace.deps.default;
-          package = pythonSet.codex-lb;
+          venv = pythonSet.mkVirtualEnv "claude-lb-env" workspace.deps.default;
+          package = pythonSet.claude-lb;
         }
       );
 
@@ -193,11 +193,11 @@
       # root, which for this package is the read-only Nix store where env
       # files can never exist. Instead of changing that discovery for every
       # launch mode, the packaged entry points default the explicit
-      # CODEX_LB_ENV_FILE settings-load override to the launch directory,
+      # CLAUDE_LB_ENV_FILE settings-load override to the launch directory,
       # preserving `nix run` env-file ergonomics without touching non-Nix
-      # behavior. An operator-provided CODEX_LB_ENV_FILE always wins.
+      # behavior. An operator-provided CLAUDE_LB_ENV_FILE always wins.
       launchDirEnvFileHook = ''
-        export CODEX_LB_ENV_FILE="''${CODEX_LB_ENV_FILE:-$PWD/.env:$PWD/.env.local}"
+        export CLAUDE_LB_ENV_FILE="''${CLAUDE_LB_ENV_FILE:-$PWD/.env:$PWD/.env.local}"
       '';
 
       wrappedApplications = forAllSystems (
@@ -206,7 +206,7 @@
           pkgs = nixpkgs.legacyPackages.${system};
         in
         pkgs.symlinkJoin {
-          name = "codex-lb-${projectMetadata.version}";
+          name = "claude-lb-${projectMetadata.version}";
           paths = [ applicationPackages.${system} ];
           nativeBuildInputs = [ pkgs.makeWrapper ];
           postBuild = ''
@@ -221,7 +221,7 @@
     {
       packages = forAllSystems (system: {
         default = wrappedApplications.${system};
-        codex-lb = wrappedApplications.${system};
+        claude-lb = wrappedApplications.${system};
       });
 
       apps = forAllSystems (
@@ -234,7 +234,7 @@
         in
         {
           default = app;
-          codex-lb = app;
+          claude-lb = app;
         }
       );
 
@@ -248,8 +248,8 @@
               editableProjectOverlay
             ]
           );
-          virtualenv = pythonSet.mkVirtualEnv "codex-lb-dev-env" {
-            codex-lb = [ "dev" ];
+          virtualenv = pythonSet.mkVirtualEnv "claude-lb-dev-env" {
+            claude-lb = [ "dev" ];
           };
         in
         {

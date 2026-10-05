@@ -68,7 +68,7 @@ async def test_public_catalog_http_fetch_and_source_fallback(monkeypatch, primar
         prices = await catalog.fetch_catalogs()
     assert prices["gpt-test"].input_per_1m == 10
     assert prices["gpt-test"].flex_output_per_1m == 25
-    assert requests == ["codex-lb"]
+    assert requests == ["claude-lb"]
 
 
 async def test_all_source_failures_leave_existing_prices_untouched(monkeypatch):

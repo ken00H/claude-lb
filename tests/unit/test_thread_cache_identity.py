@@ -173,8 +173,8 @@ def test_token_is_deterministic_across_calls_and_processes() -> None:
     assert _isolated().token == _isolated().token
     # Pinned literal: changing the derivation must be a deliberate, visible
     # edit, because it flushes every account's warm prefix.
-    assert _isolated().token == "20d2b7f022ed18bd"
-    assert _isolated().scope_line == "codex-lb-cache-scope: 20d2b7f022ed18bd"
+    assert _isolated().token == "d7c647c035ef4d4e"
+    assert _isolated().scope_line == "claude-lb-cache-scope: d7c647c035ef4d4e"
 
 
 def test_token_diverges_across_accounts() -> None:
@@ -563,7 +563,7 @@ async def test_isolated_mode_scopes_all_three_legs_over_http(loopback: list[_Wir
     isolated_body = json.loads(isolated.body)
 
     assert isolated_body["prompt_cache_key"] == f"{baseline_body['prompt_cache_key']}-{token}"
-    assert isolated_body["input"][0]["content"][0]["text"] == f"codex-lb-cache-scope: {token}"
+    assert isolated_body["input"][0]["content"][0]["text"] == f"claude-lb-cache-scope: {token}"
     assert isolated_body["instructions"] == ""
 
     baseline_headers = {k.lower(): v for k, v in baseline.headers}

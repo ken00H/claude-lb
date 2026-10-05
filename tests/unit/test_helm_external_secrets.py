@@ -11,7 +11,7 @@ import yaml
 pytestmark = pytest.mark.unit
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
-_CHART_DIR = _REPO_ROOT / "deploy" / "helm" / "codex-lb"
+_CHART_DIR = _REPO_ROOT / "deploy" / "helm" / "claude-lb"
 _DEPENDENCY_BUILD_COMPLETE = False
 
 
@@ -38,7 +38,7 @@ def _helm_template(*args: str) -> str:
         pytest.skip("helm is required for chart rendering tests")
     _ensure_chart_dependencies()
     completed = subprocess.run(
-        ["helm", "template", "codex-lb", str(_CHART_DIR), *args],
+        ["helm", "template", "claude-lb", str(_CHART_DIR), *args],
         cwd=_REPO_ROOT,
         check=True,
         capture_output=True,
@@ -53,7 +53,7 @@ def _helm_template_failure(*args: str) -> subprocess.CalledProcessError:
     _ensure_chart_dependencies()
     with pytest.raises(subprocess.CalledProcessError) as exc_info:
         subprocess.run(
-            ["helm", "template", "codex-lb", str(_CHART_DIR), *args],
+            ["helm", "template", "claude-lb", str(_CHART_DIR), *args],
             cwd=_REPO_ROOT,
             check=True,
             capture_output=True,
@@ -101,7 +101,7 @@ def test_external_secrets_install_uses_startup_migration_and_skips_pre_install_h
         "migration.enabled=true",
     )
 
-    assert 'CODEX_LB_DATABASE_MIGRATE_ON_STARTUP: "false"' in rendered
+    assert 'CLAUDE_LB_DATABASE_MIGRATE_ON_STARTUP: "false"' in rendered
     assert '"helm.sh/hook": "post-install,pre-upgrade"' in rendered
     assert '"helm.sh/hook": "pre-install,pre-upgrade"' not in rendered
 
@@ -117,7 +117,7 @@ def test_external_secrets_upgrade_keeps_startup_migration_disabled_and_runs_hook
         "migration.enabled=true",
     )
 
-    assert 'CODEX_LB_DATABASE_MIGRATE_ON_STARTUP: "false"' in rendered
+    assert 'CLAUDE_LB_DATABASE_MIGRATE_ON_STARTUP: "false"' in rendered
     assert '"helm.sh/hook": "post-install,pre-upgrade"' in rendered
 
 
@@ -136,11 +136,11 @@ def test_external_secret_uses_v1_api_and_default_json_properties() -> None:
     assert external_secret["spec"]["data"] == [
         {
             "secretKey": "database-url",
-            "remoteRef": {"key": "codex-lb", "property": "database-url"},
+            "remoteRef": {"key": "claude-lb", "property": "database-url"},
         },
         {
             "secretKey": "encryption-key",
-            "remoteRef": {"key": "codex-lb", "property": "encryption-key"},
+            "remoteRef": {"key": "claude-lb", "property": "encryption-key"},
         },
     ]
 
@@ -154,11 +154,11 @@ def test_external_secret_supports_individual_remote_secret_keys() -> None:
         "--set",
         "externalSecrets.secretStoreRef.name=infisical",
         "--set-string",
-        "externalSecrets.remoteRefs.databaseUrl.key=/apps/codex-lb/DATABASE_URL",
+        "externalSecrets.remoteRefs.databaseUrl.key=/apps/claude-lb/DATABASE_URL",
         "--set",
         "externalSecrets.remoteRefs.databaseUrl.property=",
         "--set-string",
-        "externalSecrets.remoteRefs.encryptionKey.key=/apps/codex-lb/ENCRYPTION_KEY",
+        "externalSecrets.remoteRefs.encryptionKey.key=/apps/claude-lb/ENCRYPTION_KEY",
         "--set",
         "externalSecrets.remoteRefs.encryptionKey.property=",
     )
@@ -167,11 +167,11 @@ def test_external_secret_supports_individual_remote_secret_keys() -> None:
     assert external_secret["spec"]["data"] == [
         {
             "secretKey": "database-url",
-            "remoteRef": {"key": "/apps/codex-lb/DATABASE_URL"},
+            "remoteRef": {"key": "/apps/claude-lb/DATABASE_URL"},
         },
         {
             "secretKey": "encryption-key",
-            "remoteRef": {"key": "/apps/codex-lb/ENCRYPTION_KEY"},
+            "remoteRef": {"key": "/apps/claude-lb/ENCRYPTION_KEY"},
         },
     ]
 
@@ -192,11 +192,11 @@ def test_external_secret_nulled_remote_refs_render_default_layout() -> None:
     assert external_secret["spec"]["data"] == [
         {
             "secretKey": "database-url",
-            "remoteRef": {"key": "codex-lb", "property": "database-url"},
+            "remoteRef": {"key": "claude-lb", "property": "database-url"},
         },
         {
             "secretKey": "encryption-key",
-            "remoteRef": {"key": "codex-lb", "property": "encryption-key"},
+            "remoteRef": {"key": "claude-lb", "property": "encryption-key"},
         },
     ]
 
@@ -212,7 +212,7 @@ def test_upgrade_renders_no_legacy_deployment_migration_hooks() -> None:
     assert "legacy-prepare" not in rendered
     assert "legacy-cleanup" not in rendered
     assert "LEGACY_DEPLOYMENT_NAME" not in rendered
-    assert "codex-lb.soju.dev/traffic: legacy" not in rendered
+    assert "claude-lb.soju.dev/traffic: legacy" not in rendered
 
 
 def test_public_service_always_selects_the_statefulset_workload_lane() -> None:
@@ -225,9 +225,9 @@ def test_public_service_always_selects_the_statefulset_workload_lane() -> None:
 
         (service,) = _helm_documents(rendered)
         assert service["spec"]["selector"] == {
-            "app.kubernetes.io/name": "codex-lb",
-            "app.kubernetes.io/instance": "codex-lb",
-            "codex-lb.soju.dev/traffic": "workload",
+            "app.kubernetes.io/name": "claude-lb",
+            "app.kubernetes.io/instance": "claude-lb",
+            "claude-lb.soju.dev/traffic": "workload",
         }
 
 
@@ -240,8 +240,8 @@ def test_removed_service_selector_mode_value_no_longer_changes_the_selector() ->
         "migration.serviceSelectorMode=legacy",
     )
 
-    assert "codex-lb.soju.dev/traffic: workload" in rendered
-    assert "codex-lb.soju.dev/traffic: legacy" not in rendered
+    assert "claude-lb.soju.dev/traffic: workload" in rendered
+    assert "claude-lb.soju.dev/traffic: legacy" not in rendered
 
 
 def test_statefulset_translates_legacy_recreate_strategy_to_rolling_update() -> None:
@@ -277,12 +277,12 @@ def test_chart_managed_secret_uses_post_install_hook_path() -> None:
         "--set",
         "externalSecrets.enabled=false",
         "--set",
-        "externalDatabase.url=postgresql+asyncpg://user:pass@db.example.com:5432/codexlb",
+        "externalDatabase.url=postgresql+asyncpg://user:pass@db.example.com:5432/claudelb",
         "--set",
         "migration.enabled=true",
     )
 
-    assert 'CODEX_LB_DATABASE_MIGRATE_ON_STARTUP: "false"' in rendered
+    assert 'CLAUDE_LB_DATABASE_MIGRATE_ON_STARTUP: "false"' in rendered
     assert '"helm.sh/hook": "post-install,pre-upgrade"' in rendered
     assert "serviceAccountName: default" in rendered
 
@@ -292,7 +292,7 @@ def test_direct_external_database_install_uses_post_install_hook_path() -> None:
         "--set",
         "postgresql.enabled=false",
         "--set",
-        "externalDatabase.url=postgresql+asyncpg://user:pass@db.example.com:5432/codexlb",
+        "externalDatabase.url=postgresql+asyncpg://user:pass@db.example.com:5432/claudelb",
         "--set",
         "migration.enabled=true",
     )
@@ -309,7 +309,7 @@ def test_bundled_mode_overlay_enables_startup_migration_and_skips_schema_gate() 
         "postgresql.auth.password=local-password",
     )
 
-    assert 'CODEX_LB_DATABASE_MIGRATE_ON_STARTUP: "true"' in rendered
+    assert 'CLAUDE_LB_DATABASE_MIGRATE_ON_STARTUP: "true"' in rendered
     assert "name: wait-for-schema-head" not in rendered
     assert "name: wait-for-database" in rendered
     assert '"helm.sh/hook": "pre-upgrade"' in rendered
@@ -320,14 +320,14 @@ def test_existing_secret_install_keeps_pre_install_hook_path() -> None:
         "--set",
         "postgresql.enabled=false",
         "--set",
-        "auth.existingSecret=codex-lb-secrets",
+        "auth.existingSecret=claude-lb-secrets",
         "--set",
-        "externalDatabase.url=postgresql+asyncpg://user:pass@db.example.com:5432/codexlb",
+        "externalDatabase.url=postgresql+asyncpg://user:pass@db.example.com:5432/claudelb",
         "--set",
         "migration.enabled=true",
     )
 
-    assert 'CODEX_LB_DATABASE_MIGRATE_ON_STARTUP: "false"' in rendered
+    assert 'CLAUDE_LB_DATABASE_MIGRATE_ON_STARTUP: "false"' in rendered
     assert '"helm.sh/hook": "pre-install,pre-upgrade"' in rendered
     assert "serviceAccountName: default" in rendered
 
@@ -339,7 +339,7 @@ def test_external_database_existing_secret_install_keeps_pre_install_hook_path()
         "--set",
         "externalDatabase.existingSecret=external-db-secret",
         "--set",
-        "auth.existingSecret=codex-lb-secrets",
+        "auth.existingSecret=claude-lb-secrets",
         "--set",
         "migration.enabled=true",
     )
@@ -354,7 +354,7 @@ def test_external_db_mode_overlay_renders_schema_gate_init_container() -> None:
         "--show-only",
         "templates/deployment.yaml",
         "--set",
-        "externalDatabase.url=postgresql+asyncpg://user:pass@db.example.com:5432/codexlb",
+        "externalDatabase.url=postgresql+asyncpg://user:pass@db.example.com:5432/claudelb",
     )
 
     assert "name: wait-for-schema-head" in rendered
@@ -429,8 +429,8 @@ def test_deployment_anti_affinity_targets_workload_lane_only() -> None:
         "affinity.podAntiAffinity=hard",
     )
 
-    assert "codex-lb.soju.dev/traffic: workload" in rendered
-    assert "codex-lb.soju.dev/traffic: legacy" not in rendered
+    assert "claude-lb.soju.dev/traffic: workload" in rendered
+    assert "claude-lb.soju.dev/traffic: legacy" not in rendered
 
 
 def test_deployment_sets_encryption_key_file_env_by_default() -> None:
@@ -439,8 +439,8 @@ def test_deployment_sets_encryption_key_file_env_by_default() -> None:
         "templates/deployment.yaml",
     )
 
-    assert "CODEX_LB_ENCRYPTION_KEY_FILE" in rendered
-    assert "/var/lib/codex-lb/encryption.key" in rendered
+    assert "CLAUDE_LB_ENCRYPTION_KEY_FILE" in rendered
+    assert "/var/lib/claude-lb/encryption.key" in rendered
 
 
 def test_ingress_renders_dedicated_responses_ingress_with_session_hash() -> None:
@@ -454,11 +454,11 @@ def test_ingress_renders_dedicated_responses_ingress_with_session_hash() -> None
         "--set",
         "ingress.nginx.enabled=true",
         "--set-string",
-        "ingress.hosts[0].host=codex-lb.localtest.me",
+        "ingress.hosts[0].host=claude-lb.localtest.me",
     )
 
     assert rendered.count("kind: Ingress") == 2
-    assert "name: codex-lb-responses" in rendered
+    assert "name: claude-lb-responses" in rendered
     assert "nginx.ingress.kubernetes.io/upstream-hash-by: $http_x_codex_session_id$http_authorization" in rendered
     assert "nginx.ingress.kubernetes.io/configuration-snippet:" not in rendered
     assert "nginx.ingress.kubernetes.io/upstream-hash-by: $http_authorization" in rendered
@@ -478,7 +478,7 @@ def test_gateway_api_defaults_to_catch_all_backend_rule() -> None:
     )
 
     (route,) = _helm_documents(rendered)
-    assert route["spec"]["rules"] == [{"backendRefs": [{"name": "codex-lb", "port": 2455}]}]
+    assert route["spec"]["rules"] == [{"backendRefs": [{"name": "claude-lb", "port": 2455}]}]
 
 
 def test_gateway_api_renders_ordered_path_matches_and_filters() -> None:
@@ -536,7 +536,7 @@ def test_gateway_api_renders_ordered_path_matches_and_filters() -> None:
             {"path": {"type": "PathPrefix", "value": "/backend-api/files"}},
             {"path": {"type": "PathPrefix", "value": "/api/codex"}},
         ],
-        "backendRefs": [{"name": "codex-lb", "port": 2455}],
+        "backendRefs": [{"name": "claude-lb", "port": 2455}],
     }
     assert rules[1]["matches"] == [{"path": {"type": "PathPrefix", "value": "/"}}]
     assert rules[1]["filters"] == [
@@ -549,7 +549,7 @@ def test_gateway_api_renders_ordered_path_matches_and_filters() -> None:
             },
         }
     ]
-    assert rules[1]["backendRefs"] == [{"name": "codex-lb", "port": 2455}]
+    assert rules[1]["backendRefs"] == [{"name": "claude-lb", "port": 2455}]
 
 
 def test_gateway_api_can_create_application_specific_gateway() -> None:
@@ -567,7 +567,7 @@ def test_gateway_api_can_create_application_specific_gateway() -> None:
     (gateway,) = _helm_documents(rendered)
     assert gateway["apiVersion"] == "gateway.networking.k8s.io/v1"
     assert gateway["kind"] == "Gateway"
-    assert gateway["metadata"]["name"] == "codex-lb"
+    assert gateway["metadata"]["name"] == "claude-lb"
     assert gateway["spec"]["gatewayClassName"] == "envoy"
     assert gateway["spec"]["listeners"] == [{"name": "http", "port": 80, "protocol": "HTTP"}]
 
@@ -589,7 +589,7 @@ def test_gateway_api_httproute_attaches_to_chart_managed_gateway() -> None:
     )
 
     (route,) = _helm_documents(rendered)
-    assert route["spec"]["parentRefs"] == [{"name": "codex-lb"}]
+    assert route["spec"]["parentRefs"] == [{"name": "claude-lb"}]
 
 
 def test_gateway_api_gateway_supports_custom_listeners() -> None:
@@ -611,7 +611,7 @@ def test_gateway_api_gateway_supports_custom_listeners() -> None:
         "--set-string",
         "gatewayApi.gateway.listeners[0].tls.mode=Terminate",
         "--set-string",
-        "gatewayApi.gateway.listeners[0].tls.certificateRefs[0].name=codex-lb-tls",
+        "gatewayApi.gateway.listeners[0].tls.certificateRefs[0].name=claude-lb-tls",
     )
 
     (gateway,) = _helm_documents(rendered)
@@ -620,7 +620,7 @@ def test_gateway_api_gateway_supports_custom_listeners() -> None:
             "name": "https",
             "port": 443,
             "protocol": "HTTPS",
-            "tls": {"mode": "Terminate", "certificateRefs": [{"name": "codex-lb-tls"}]},
+            "tls": {"mode": "Terminate", "certificateRefs": [{"name": "claude-lb-tls"}]},
         }
     ]
 
@@ -652,7 +652,7 @@ def test_gateway_api_does_not_render_gateway_by_default() -> None:
 def test_bundled_kind_smoke_preserves_primary_ingress_paths() -> None:
     script = (_REPO_ROOT / "scripts" / "helm-kind-smoke.sh").read_text()
 
-    assert "--set-string 'ingress.hosts[0].host=codex-lb.localtest.me'" in script
+    assert "--set-string 'ingress.hosts[0].host=claude-lb.localtest.me'" in script
     assert "--set-string 'ingress.hosts[0].paths[0].path=/'" in script
     assert "--set-string 'ingress.hosts[0].paths[0].pathType=Prefix'" in script
     assert 'run_bundled_migration "${release}" "${namespace}"' not in script
@@ -677,14 +677,14 @@ def test_helm_test_pod_image_can_be_overridden() -> None:
         "--set",
         "test.image.registry=ghcr.io",
         "--set",
-        "test.image.repository=soju06/codex-lb",
+        "test.image.repository=ken00H/claude-lb",
         "--set",
         "test.image.tag=ci",
         "--set",
         "test.image.pullPolicy=Never",
     )
 
-    assert "image: ghcr.io/soju06/codex-lb:ci" in rendered
+    assert "image: ghcr.io/ken00H/claude-lb:ci" in rendered
     assert "imagePullPolicy: Never" in rendered
     assert "docker.io/library/busybox:1.37" not in rendered
 
@@ -697,8 +697,8 @@ def test_helm_test_pod_image_can_be_overridden() -> None:
     assert "import urllib.request" in script
     assert "urllib.request.urlopen(url, timeout=10)" in script
     assert "else" in script
-    assert "wget --spider --timeout=10 http://codex-lb:2455/health || exit 1" in script
-    assert "wget -qO- --timeout=10 http://codex-lb:2455/health/ready || exit 1" in script
+    assert "wget --spider --timeout=10 http://claude-lb:2455/health || exit 1" in script
+    assert "wget -qO- --timeout=10 http://claude-lb:2455/health/ready || exit 1" in script
 
 
 def test_kind_smoke_overrides_helm_test_image_and_external_db_replicas() -> None:
@@ -753,13 +753,13 @@ def test_migration_job_image_does_not_duplicate_registry_prefix() -> None:
         "--set",
         "image.registry=ghcr.io",
         "--set",
-        "image.repository=soju06/codex-lb",
+        "image.repository=ken00H/claude-lb",
         "--set",
         "image.tag=local-test",
     )
 
     assert "ghcr.io/ghcr.io/" not in rendered
-    assert "ghcr.io/soju06/codex-lb:local-test" in rendered
+    assert "ghcr.io/ken00H/claude-lb:local-test" in rendered
 
 
 def test_external_secrets_mode_overlay_renders_schema_gate_init_container() -> None:
@@ -806,21 +806,21 @@ def test_deployment_rolls_when_chart_managed_secret_changes() -> None:
 def test_deployment_can_enable_reloader_for_external_secret_changes() -> None:
     rendered = _helm_template(
         "--set",
-        "auth.existingSecret=codex-lb-secrets",
+        "auth.existingSecret=claude-lb-secrets",
         "--set",
         "rollout.reloader.enabled=true",
     )
 
     assert 'reloader.stakater.com/auto: "true"' in rendered
-    assert 'configmap.reloader.stakater.com/reload: "codex-lb"' in rendered
-    assert 'secret.reloader.stakater.com/reload: "codex-lb-secrets"' in rendered
+    assert 'configmap.reloader.stakater.com/reload: "claude-lb"' in rendered
+    assert 'secret.reloader.stakater.com/reload: "claude-lb-secrets"' in rendered
 
 
 def test_manual_rollout_token_changes_deployment_template() -> None:
-    baseline = _helm_template("--set", "auth.existingSecret=codex-lb-secrets")
+    baseline = _helm_template("--set", "auth.existingSecret=claude-lb-secrets")
     updated = _helm_template(
         "--set",
-        "auth.existingSecret=codex-lb-secrets",
+        "auth.existingSecret=claude-lb-secrets",
         "--set",
         "rollout.manualToken=secret-rotation-2026-04-01",
     )
@@ -861,7 +861,7 @@ def test_external_database_existing_secret_is_used_for_database_url_env() -> Non
     )
 
     assert re.search(
-        r"name: CODEX_LB_DATABASE_URL\s+valueFrom:\s+secretKeyRef:\s+name: external-db-secret\s+key: database-url",
+        r"name: CLAUDE_LB_DATABASE_URL\s+valueFrom:\s+secretKeyRef:\s+name: external-db-secret\s+key: database-url",
         rendered,
         re.S,
     )
@@ -886,10 +886,10 @@ def test_external_database_url_is_rendered_into_chart_managed_secret_when_postgr
         "--set",
         "postgresql.enabled=false",
         "--set",
-        "externalDatabase.url=postgresql+asyncpg://user:pass@db.example.com:5432/codexlb",
+        "externalDatabase.url=postgresql+asyncpg://user:pass@db.example.com:5432/claudelb",
     )
 
-    assert 'database-url: "postgresql+asyncpg://user:pass@db.example.com:5432/codexlb"' in rendered
+    assert 'database-url: "postgresql+asyncpg://user:pass@db.example.com:5432/claudelb"' in rendered
 
 
 def test_network_policy_uses_external_database_port() -> None:
@@ -901,9 +901,9 @@ def test_network_policy_uses_external_database_port() -> None:
         "--set",
         "externalDatabase.host=db.example.test",
         "--set",
-        "externalDatabase.user=codexlb",
+        "externalDatabase.user=claudelb",
         "--set",
-        "externalDatabase.database=codexlb",
+        "externalDatabase.database=claudelb",
         "--set",
         "externalDatabase.port=6432",
     )
@@ -913,14 +913,14 @@ def test_network_policy_uses_external_database_port() -> None:
     (network_policy,) = [
         document
         for document in documents
-        if document.get("kind") == "NetworkPolicy" and document["metadata"]["name"] == "codex-lb"
+        if document.get("kind") == "NetworkPolicy" and document["metadata"]["name"] == "claude-lb"
     ]
-    assert secret["stringData"]["database-url"] == "postgresql+asyncpg://codexlb@db.example.test:6432/codexlb"
+    assert secret["stringData"]["database-url"] == "postgresql+asyncpg://claudelb@db.example.test:6432/claudelb"
     assert network_policy["spec"]["egress"][1] == {"ports": [{"port": 6432, "protocol": "TCP"}]}
 
 
 def test_network_policy_uses_port_from_external_database_url() -> None:
-    database_url = "postgresql+asyncpg://codexlb@db.example.test:6432/codexlb"
+    database_url = "postgresql+asyncpg://claudelb@db.example.test:6432/claudelb"
     rendered = _helm_template(
         "--set",
         "postgresql.enabled=false",
@@ -935,14 +935,14 @@ def test_network_policy_uses_port_from_external_database_url() -> None:
     (network_policy,) = [
         document
         for document in documents
-        if document.get("kind") == "NetworkPolicy" and document["metadata"]["name"] == "codex-lb"
+        if document.get("kind") == "NetworkPolicy" and document["metadata"]["name"] == "claude-lb"
     ]
     assert secret["stringData"]["database-url"] == database_url
     assert network_policy["spec"]["egress"][1] == {"ports": [{"port": 6432, "protocol": "TCP"}]}
 
 
 def test_network_policy_uses_default_port_for_external_database_url_without_port() -> None:
-    database_url = "postgresql+asyncpg://codexlb@db.example.test/codexlb"
+    database_url = "postgresql+asyncpg://claudelb@db.example.test/claudelb"
     rendered = _helm_template(
         "--set",
         "postgresql.enabled=false",
@@ -959,7 +959,7 @@ def test_network_policy_uses_default_port_for_external_database_url_without_port
     (network_policy,) = [
         document
         for document in documents
-        if document.get("kind") == "NetworkPolicy" and document["metadata"]["name"] == "codex-lb"
+        if document.get("kind") == "NetworkPolicy" and document["metadata"]["name"] == "claude-lb"
     ]
     assert secret["stringData"]["database-url"] == database_url
     assert network_policy["spec"]["egress"][1] == {"ports": [{"port": 5432, "protocol": "TCP"}]}
@@ -968,42 +968,42 @@ def test_network_policy_uses_default_port_for_external_database_url_without_port
 @pytest.mark.parametrize(
     ("database_url", "expected_ports"),
     [
-        ("postgresql+asyncpg://codexlb@db.example.test:5432/codexlb?port=6432", (6432,)),
-        ("postgresql+asyncpg://codexlb@/codexlb?host=db.example.test:6432", (6432,)),
-        ("postgresql+asyncpg://codexlb@/codexlb?host=db.example.test%3A6432", (6432,)),
-        ("postgresql+asyncpg://codexlb@db.example.test:06432/codexlb", (6432,)),
-        ("postgresql+asyncpg://codexlb@db.example.test/codexlb?port=%36%34%33%32", (6432,)),
-        ("postgresql+asyncpg://codexlb@/codexlb?host=2001:db8::1", (5432,)),
+        ("postgresql+asyncpg://claudelb@db.example.test:5432/claudelb?port=6432", (6432,)),
+        ("postgresql+asyncpg://claudelb@/claudelb?host=db.example.test:6432", (6432,)),
+        ("postgresql+asyncpg://claudelb@/claudelb?host=db.example.test%3A6432", (6432,)),
+        ("postgresql+asyncpg://claudelb@db.example.test:06432/claudelb", (6432,)),
+        ("postgresql+asyncpg://claudelb@db.example.test/claudelb?port=%36%34%33%32", (6432,)),
+        ("postgresql+asyncpg://claudelb@/claudelb?host=2001:db8::1", (5432,)),
         (
-            "postgresql+asyncpg://codexlb@/codexlb?host=db1.example.test:6432&host=db2.example.test:7432",
+            "postgresql+asyncpg://claudelb@/claudelb?host=db1.example.test:6432&host=db2.example.test:7432",
             (6432, 7432),
         ),
         (
-            "postgresql+asyncpg://codexlb@primary.example.test:6432/codexlb?host=failover.example.test",
+            "postgresql+asyncpg://claudelb@primary.example.test:6432/claudelb?host=failover.example.test",
             (6432,),
         ),
         (
-            "postgresql+asyncpg://codexlb@primary.example.test:6432/codexlb?host=2001:db8::a",
+            "postgresql+asyncpg://claudelb@primary.example.test:6432/claudelb?host=2001:db8::a",
             (6432,),
         ),
         (
-            "postgresql+asyncpg://codexlb@primary.example.test:6432/codexlb?port=7432&port=",
+            "postgresql+asyncpg://claudelb@primary.example.test:6432/claudelb?port=7432&port=",
             (7432,),
         ),
         (
-            "postgresql+asyncpg://codexlb@primary.example.test:6432/codexlb?host=failover.example.test:7432&host=",
+            "postgresql+asyncpg://claudelb@primary.example.test:6432/claudelb?host=failover.example.test:7432&host=",
             (7432,),
         ),
         (
-            "postgresql+asyncpg://codexlb@primary.example.test:5432/codexlb?port=%096432%09",
+            "postgresql+asyncpg://claudelb@primary.example.test:5432/claudelb?port=%096432%09",
             (6432,),
         ),
         (
-            "postgresql+asyncpg://codexlb@primary.example.test:5432/codexlb?port=6_432",
+            "postgresql+asyncpg://claudelb@primary.example.test:5432/claudelb?port=6_432",
             (6432,),
         ),
         (
-            "postgresql+asyncpg://codexlb@primary.example.test:6432/codexlb?host=failover.example.test:%2D1",
+            "postgresql+asyncpg://claudelb@primary.example.test:6432/claudelb?host=failover.example.test:%2D1",
             (6432,),
         ),
     ],
@@ -1042,7 +1042,7 @@ def test_network_policy_uses_effective_port_from_external_database_url(
     (network_policy,) = [
         document
         for document in documents
-        if document.get("kind") == "NetworkPolicy" and document["metadata"]["name"] == "codex-lb"
+        if document.get("kind") == "NetworkPolicy" and document["metadata"]["name"] == "claude-lb"
     ]
     assert secret["stringData"]["database-url"] == database_url
     assert network_policy["spec"]["egress"][1] == {
@@ -1071,7 +1071,7 @@ def test_network_policy_ignores_inactive_external_database_url(source_args: tupl
         "--set",
         "networkPolicy.enabled=true",
         "--set-string",
-        "externalDatabase.url=postgresql+asyncpg://codexlb@stale.example.test:5432/codexlb",
+        "externalDatabase.url=postgresql+asyncpg://claudelb@stale.example.test:5432/claudelb",
         "--set",
         "externalDatabase.port=6432",
         *source_args,
@@ -1081,7 +1081,7 @@ def test_network_policy_ignores_inactive_external_database_url(source_args: tupl
     (network_policy,) = [
         document
         for document in documents
-        if document.get("kind") == "NetworkPolicy" and document["metadata"]["name"] == "codex-lb"
+        if document.get("kind") == "NetworkPolicy" and document["metadata"]["name"] == "claude-lb"
     ]
     assert network_policy["spec"]["egress"][1] == {"ports": [{"port": 6432, "protocol": "TCP"}]}
 
@@ -1089,9 +1089,9 @@ def test_network_policy_ignores_inactive_external_database_url(source_args: tupl
 @pytest.mark.parametrize(
     "database_url",
     [
-        "postgresql+asyncpg://codexlb@db.example.test:0/codexlb",
-        "postgresql+asyncpg://codexlb@db.example.test:65536/codexlb",
-        "postgresql+asyncpg://codexlb@db.example.test/codexlb?port=-1",
+        "postgresql+asyncpg://claudelb@db.example.test:0/claudelb",
+        "postgresql+asyncpg://claudelb@db.example.test:65536/claudelb",
+        "postgresql+asyncpg://claudelb@db.example.test/claudelb?port=-1",
     ],
     ids=["zero", "above-maximum", "negative-query-port"],
 )
@@ -1117,9 +1117,9 @@ def test_network_policy_uses_default_external_database_port() -> None:
         "--set",
         "externalDatabase.host=db.example.test",
         "--set",
-        "externalDatabase.user=codexlb",
+        "externalDatabase.user=claudelb",
         "--set",
-        "externalDatabase.database=codexlb",
+        "externalDatabase.database=claudelb",
     )
 
     documents = _helm_documents(rendered)
@@ -1127,9 +1127,9 @@ def test_network_policy_uses_default_external_database_port() -> None:
     (network_policy,) = [
         document
         for document in documents
-        if document.get("kind") == "NetworkPolicy" and document["metadata"]["name"] == "codex-lb"
+        if document.get("kind") == "NetworkPolicy" and document["metadata"]["name"] == "claude-lb"
     ]
-    assert secret["stringData"]["database-url"] == "postgresql+asyncpg://codexlb@db.example.test:5432/codexlb"
+    assert secret["stringData"]["database-url"] == "postgresql+asyncpg://claudelb@db.example.test:5432/claudelb"
     assert network_policy["spec"]["egress"][1] == {"ports": [{"port": 5432, "protocol": "TCP"}]}
 
 
@@ -1143,7 +1143,7 @@ def test_network_policy_keeps_bundled_postgresql_egress() -> None:
     (network_policy,) = [
         document
         for document in documents
-        if document.get("kind") == "NetworkPolicy" and document["metadata"]["name"] == "codex-lb"
+        if document.get("kind") == "NetworkPolicy" and document["metadata"]["name"] == "claude-lb"
     ]
     assert network_policy["spec"]["egress"][1] == {
         "to": [
@@ -1151,7 +1151,7 @@ def test_network_policy_keeps_bundled_postgresql_egress() -> None:
                 "podSelector": {
                     "matchLabels": {
                         "app.kubernetes.io/name": "postgresql",
-                        "app.kubernetes.io/instance": "codex-lb",
+                        "app.kubernetes.io/instance": "claude-lb",
                     }
                 }
             }

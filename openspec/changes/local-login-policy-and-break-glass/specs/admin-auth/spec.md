@@ -121,50 +121,50 @@ The count and the settings write SHALL be one atomic step, not a check followed 
 
 ### Requirement: Host recovery commands
 
-The `codex-lb` console entry point SHALL carry an `admin` command group with exactly four recovery commands that act on the configured database directly, take no environment variable of their own, make no network call, and never import the web application: `admin reset-password <username>` (prompts for the new password, never accepting it on the command line, revokes the account's sessions, and with `--clear-two-factor` also removes its second-factor secret, because a designated account that holds one must always present it and a lost authenticator would otherwise be a permanent lockout), `admin local-login enable` (sets `local_login_policy` back to `enabled`), `admin disable-provider <id>` (clears a provider row's `enabled`), and `admin reset-login-policy` (sets the policy back to `enabled` and disables every non-password sign-in provider, so an identity the provider keeps refusing cannot go on pre-empting the local session, while the password provider — the recovery path itself — is kept). Each SHALL write one audit row `break_glass_cli_used` with `severity` `critical` and `auth_method` `cli`, naming the command and its target and carrying no acting account, in the same transaction as the change it makes. `codex-lb admin` without a sub-command SHALL exit non-zero with a message and MUST NOT fall through into the server launch path. A database with no schema SHALL produce a readable instruction rather than a traceback. These commands SHALL bypass the policy and provider gates by design: they are the recovery path for the lockout those gates are meant to prevent.
+The `claude-lb` console entry point SHALL carry an `admin` command group with exactly four recovery commands that act on the configured database directly, take no environment variable of their own, make no network call, and never import the web application: `admin reset-password <username>` (prompts for the new password, never accepting it on the command line, revokes the account's sessions, and with `--clear-two-factor` also removes its second-factor secret, because a designated account that holds one must always present it and a lost authenticator would otherwise be a permanent lockout), `admin local-login enable` (sets `local_login_policy` back to `enabled`), `admin disable-provider <id>` (clears a provider row's `enabled`), and `admin reset-login-policy` (sets the policy back to `enabled` and disables every non-password sign-in provider, so an identity the provider keeps refusing cannot go on pre-empting the local session, while the password provider — the recovery path itself — is kept). Each SHALL write one audit row `break_glass_cli_used` with `severity` `critical` and `auth_method` `cli`, naming the command and its target and carrying no acting account, in the same transaction as the change it makes. `claude-lb admin` without a sub-command SHALL exit non-zero with a message and MUST NOT fall through into the server launch path. A database with no schema SHALL produce a readable instruction rather than a traceback. These commands SHALL bypass the policy and provider gates by design: they are the recovery path for the lockout those gates are meant to prevent.
 
 `admin reset-password` SHALL NOT be able to leave the install unreachable through the very form it just handed out a password for. After its write, and in the same transaction, it SHALL determine whether any account would still be admitted by the stored `local_login_policy` — the same admission rule the login path applies, over active accounts that hold a password — and when none would, it SHALL set the policy back to `enabled`, report the old and new values, and record the re-open in its audit row. A policy that still admits at least one such account SHALL be left exactly as it is, and `enabled` is never touched: this is a lockout repair, not a way to relax a policy. The case this exists for is `--clear-two-factor` on the last designated admin under `break_glass_only`, where clearing the secret is precisely what stops the account qualifying.
 
 #### Scenario: Re-opening local sign-in from the host
 
 - **GIVEN** `local_login_policy` is `break_glass_only` and the identity provider is unreachable
-- **WHEN** the operator runs `codex-lb admin local-login enable` on the host
+- **WHEN** the operator runs `claude-lb admin local-login enable` on the host
 - **THEN** the stored policy becomes `enabled` without any qualifying-account check
 - **AND** one `break_glass_cli_used` row with severity `critical` and `auth_method` `cli` is written
 
 #### Scenario: Resetting a password without exposing it
 
-- **WHEN** the operator runs `codex-lb admin reset-password admin`
+- **WHEN** the operator runs `claude-lb admin reset-password admin`
 - **THEN** the command prompts for the password instead of reading it from the arguments
 - **AND** the stored hash changes, the account's sessions are invalidated, and `break_glass_cli_used` is audited
 
 #### Scenario: A lost authenticator does not strand the emergency account
 
 - **GIVEN** the only qualifying break-glass account enrolled a second factor and the authenticator is gone
-- **WHEN** the operator runs `codex-lb admin reset-password <username> --clear-two-factor`
+- **WHEN** the operator runs `claude-lb admin reset-password <username> --clear-two-factor`
 - **THEN** the account's secret is removed, the install-wide two-factor requirement is left as configured, and the account signs in with the new password and enrols again
 
 #### Scenario: Clearing the last second factor re-opens local sign-in
 
 - **GIVEN** `local_login_policy` is `break_glass_only` and one designated admin is the only qualifying account
-- **WHEN** the operator runs `codex-lb admin reset-password <that account> --clear-two-factor`
+- **WHEN** the operator runs `claude-lb admin reset-password <that account> --clear-two-factor`
 - **THEN** the stored policy becomes `enabled`, the report names the value it came from, and the audit row records the re-open
 
 #### Scenario: A policy that still has a way in is left alone
 
 - **GIVEN** `local_login_policy` is `break_glass_only` and a second qualifying break-glass admin exists
-- **WHEN** the operator runs `codex-lb admin reset-password <the first one> --clear-two-factor`
+- **WHEN** the operator runs `claude-lb admin reset-password <the first one> --clear-two-factor`
 - **THEN** the stored policy is still `break_glass_only` and the report says nothing about re-opening it
 
 #### Scenario: A bare admin invocation does not start a server
 
-- **WHEN** `codex-lb admin` is run with no sub-command
+- **WHEN** `claude-lb admin` is run with no sub-command
 - **THEN** the process exits non-zero with a message and no server is started
 
 #### Scenario: A database without a schema explains itself
 
 - **GIVEN** a database that has never been migrated
-- **WHEN** any `codex-lb admin` command runs
+- **WHEN** any `claude-lb admin` command runs
 - **THEN** the output is a readable instruction to run the migrations, not a traceback
 
 ## MODIFIED Requirements

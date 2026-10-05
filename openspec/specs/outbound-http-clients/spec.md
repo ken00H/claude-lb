@@ -48,7 +48,7 @@ Explicit configuration MUST still override auto-detection.
 
 ### Requirement: Runtime version status checks latest GitHub release
 
-The service SHALL expose a dashboard-auth protected runtime version status API that reports the running codex-lb version, the latest known GitHub release version when available, whether an update is available, and the time of the latest lookup attempt. The lookup MUST be cached in-process to avoid per-request GitHub traffic, and lookup failures MUST NOT cause the API to fail.
+The service SHALL expose a dashboard-auth protected runtime version status API that reports the running claude-lb version, the latest known GitHub release version when available, whether an update is available, and the time of the latest lookup attempt. The lookup MUST be cached in-process to avoid per-request GitHub traffic, and lookup failures MUST NOT cause the API to fail.
 
 #### Scenario: Latest release is newer than current version
 
@@ -480,7 +480,7 @@ NOT fail client construction.
 
 ### Requirement: Packaged native egress is preferred only across a replay-safe boundary
 
-When the fixed packaged `codex-lb-native-egress` executable is available, direct and account-routed Codex model-discovery, JSON/raw/multipart HTTP, Responses HTTP/SSE, and Responses or Live WebSocket calls MUST prefer it over the corresponding Python data-plane client. Python MUST retain ownership of account selection, route resolution, ordered proxy endpoint fallback, route metadata, and health classification, while each native command MUST target exactly one concrete direct or proxy endpoint. The worker MUST reuse one persistent helper generation and compatible reqwest HTTP/2 client pools across HTTP requests, and MUST multiplex concurrent HTTP and WebSocket operations without cross-delivering events. Native calls MUST preserve standard direct HTTP/HTTPS/SOCKS proxy environment resolution and `NO_PROXY` bypass behavior, and routed calls MUST use the resolved endpoint without consulting environment proxy variables. Python fallback is permitted only when the executable is absent or cannot be spawned. Once a helper process launches, a malformed, timed-out, or incompatible hello/negotiation exchange MUST fail closed without dispatching the operation to Python. A non-idempotent request, WebSocket handshake, or WebSocket frame MUST NOT fall back to Python after its native command may have been dispatched. Helper failure MUST fail operations from that generation without replay and MAY be recovered only by starting a new generation for a later operation. A confirmed pre-dispatch routed connection failure MAY use the next endpoint under the existing route policy, while a TLS verification failure or ambiguous delivery MUST NOT gain new replay eligibility.
+When the fixed packaged `claude-lb-native-egress` executable is available, direct and account-routed Codex model-discovery, JSON/raw/multipart HTTP, Responses HTTP/SSE, and Responses or Live WebSocket calls MUST prefer it over the corresponding Python data-plane client. Python MUST retain ownership of account selection, route resolution, ordered proxy endpoint fallback, route metadata, and health classification, while each native command MUST target exactly one concrete direct or proxy endpoint. The worker MUST reuse one persistent helper generation and compatible reqwest HTTP/2 client pools across HTTP requests, and MUST multiplex concurrent HTTP and WebSocket operations without cross-delivering events. Native calls MUST preserve standard direct HTTP/HTTPS/SOCKS proxy environment resolution and `NO_PROXY` bypass behavior, and routed calls MUST use the resolved endpoint without consulting environment proxy variables. Python fallback is permitted only when the executable is absent or cannot be spawned. Once a helper process launches, a malformed, timed-out, or incompatible hello/negotiation exchange MUST fail closed without dispatching the operation to Python. A non-idempotent request, WebSocket handshake, or WebSocket frame MUST NOT fall back to Python after its native command may have been dispatched. Helper failure MUST fail operations from that generation without replay and MAY be recovered only by starting a new generation for a later operation. A confirmed pre-dispatch routed connection failure MAY use the next endpoint under the existing route policy, while a TLS verification failure or ambiguous delivery MUST NOT gain new replay eligibility.
 
 Credential-bearing routed proxy endpoints MAY use `http://`, `socks5://`, or
 `socks5h://` transport; the credential then crosses the LB-to-proxy hop
@@ -496,14 +496,14 @@ target.
 
 - **GIVEN** a routed endpoint contains credentials
 - **AND** the upstream target is not an `https`/`wss` URL, so aiohttp could not carry the credential on a CONNECT tunnel
-- **WHEN** codex-lb resolves the route for that operation
+- **WHEN** claude-lb resolves the route for that operation
 - **THEN** the operation fails closed before either native or Python egress is selected
 - **AND** neither connector receives the credential-bearing route
 
 #### Scenario: Plaintext proxy credentials are accepted and flagged
 
 - **GIVEN** a routed endpoint contains credentials and uses `http://`, `socks5://`, or `socks5h://`
-- **WHEN** codex-lb resolves the route for an HTTP or WebSocket operation
+- **WHEN** claude-lb resolves the route for an HTTP or WebSocket operation
 - **THEN** route resolution succeeds with the endpoint marked as carrying plaintext credentials
 - **AND** one warning naming the endpoint id, scheme, host, and port (never the credential) is logged the first time that endpoint resolves in the process
 
@@ -530,7 +530,7 @@ target.
 #### Scenario: Missing helper preserves zero-configuration behavior
 
 - **GIVEN** no native helper executable is available
-- **WHEN** codex-lb starts and sends a supported direct or routed request or opens a supported WebSocket
+- **WHEN** claude-lb starts and sends a supported direct or routed request or opens a supported WebSocket
 - **THEN** startup succeeds
 - **AND** the existing Python transport handles the operation
 
@@ -570,7 +570,7 @@ target.
 #### Scenario: Direct WebSocket uses native helper
 
 - **GIVEN** the fixed helper is available before connection dispatch
-- **WHEN** codex-lb opens a direct or account-routed Responses or Live upstream WebSocket
+- **WHEN** claude-lb opens a direct or account-routed Responses or Live upstream WebSocket
 - **THEN** the handshake and frames use the persistent native helper
 - **AND** the Python WebSocket connector is not opened
 
@@ -579,7 +579,7 @@ target.
 - **GIVEN** a native WebSocket handshake or frame command may have reached the helper
 - **WHEN** the helper reports a denial, transport failure, protocol failure, or exits
 - **THEN** that connection fails through the existing WebSocket error contract
-- **AND** codex-lb does not open a replacement Python connection or resend the frame
+- **AND** claude-lb does not open a replacement Python connection or resend the frame
 
 #### Scenario: Confirmed routed connect failure uses next endpoint
 
@@ -635,7 +635,7 @@ bytes for maximum header-list size.
 
 ### Requirement: Native Codex header replacement preserves wire order
 
-For an inbound native Codex request, codex-lb MUST replace authorization,
+For an inbound native Codex request, claude-lb MUST replace authorization,
 accept, content-type, and selected-account values at the position and spelling
 of their existing case-insensitive field names. It MUST append a field only
 when that field is absent and MUST NOT emit duplicate case variants.
@@ -644,7 +644,7 @@ when that field is absent and MUST NOT emit duplicate case variants.
 
 - **GIVEN** a native Codex request contains ordered authorization, accept,
   content-type, and account-id fields
-- **WHEN** codex-lb installs the selected account and upstream values
+- **WHEN** claude-lb installs the selected account and upstream values
 - **THEN** those field names retain their relative wire order and spelling
 - **AND** each case-insensitive singleton occurs exactly once
 
@@ -658,7 +658,7 @@ direct-client profile explicitly requires it.
 
 #### Scenario: Authenticated model discovery is serialized
 
-- **WHEN** codex-lb fetches models for an authenticated ChatGPT account
+- **WHEN** claude-lb fetches models for an authenticated ChatGPT account
 - **THEN** the decoded header-name order matches the maintained direct profile
 - **AND** no standalone `version` header is present
 
@@ -1150,17 +1150,17 @@ The upstream client MUST create (and keep) a per-account circuit breaker regardl
 
 #### Scenario: Toggle turned on without a restart
 
-- **GIVEN** the process started with `CODEX_LB_CIRCUIT_BREAKER_ENABLED=false`
+- **GIVEN** the process started with `CLAUDE_LB_CIRCUIT_BREAKER_ENABLED=false`
 - **WHEN** an operator turns the circuit breaker on in the dashboard and an account fails with upstream server errors up to the fixed threshold
 - **THEN** the account's breaker opens and the following attempt is rejected with the breaker-open error
 
 ### Requirement: Upstream connect timeout is dashboard-managed
 
-The upstream connect timeout applied to every outbound upstream request — Responses streams, thread-goal and control calls, compaction, transcription, file uploads, upstream WebSocket handshakes and the HTTP bridge owner forward — MUST be the effective `upstream_connect_timeout_seconds` resolved as code default < environment < dashboard: a non-NULL `dashboard_settings.upstream_connect_timeout_seconds` overrides `CODEX_LB_UPSTREAM_CONNECT_TIMEOUT_SECONDS`. Consumers MUST read it from the `SettingsCache` snapshot bound at the request or connection entry point (never from the database on the request path); per-attempt overrides that clamp the connect timeout to a remaining budget keep applying on top of the effective value. `PUT /api/settings` MUST reject, with `400 timeout_invariant_violation`, a connect timeout that would exceed the effective proxy, compact or transcription request budget, because such a value is clamped to the budget and can never be honoured.
+The upstream connect timeout applied to every outbound upstream request — Responses streams, thread-goal and control calls, compaction, transcription, file uploads, upstream WebSocket handshakes and the HTTP bridge owner forward — MUST be the effective `upstream_connect_timeout_seconds` resolved as code default < environment < dashboard: a non-NULL `dashboard_settings.upstream_connect_timeout_seconds` overrides `CLAUDE_LB_UPSTREAM_CONNECT_TIMEOUT_SECONDS`. Consumers MUST read it from the `SettingsCache` snapshot bound at the request or connection entry point (never from the database on the request path); per-attempt overrides that clamp the connect timeout to a remaining budget keep applying on top of the effective value. `PUT /api/settings` MUST reject, with `400 timeout_invariant_violation`, a connect timeout that would exceed the effective proxy, compact or transcription request budget, because such a value is clamped to the budget and can never be honoured.
 
 #### Scenario: Dashboard connect timeout overrides startup environment
 
-- **GIVEN** `CODEX_LB_UPSTREAM_CONNECT_TIMEOUT_SECONDS=8` and an operator stores `3` through `PUT /api/settings`
+- **GIVEN** `CLAUDE_LB_UPSTREAM_CONNECT_TIMEOUT_SECONDS=8` and an operator stores `3` through `PUT /api/settings`
 - **WHEN** a new request opens an upstream connection on any replica
 - **THEN** the aiohttp connect (`sock_connect`) timeout is 3 seconds
 - **AND** `GET /api/settings` reports `upstreamConnectTimeoutSeconds: 3` with `provenance.upstream_connect_timeout_seconds.source = "dashboard"`
@@ -1174,7 +1174,7 @@ The upstream connect timeout applied to every outbound upstream request — Resp
 
 #### Scenario: Startup warns when the environment is shadowed
 
-- **GIVEN** `CODEX_LB_UPSTREAM_CONNECT_TIMEOUT_SECONDS` is set in the environment and the dashboard column is non-NULL
+- **GIVEN** `CLAUDE_LB_UPSTREAM_CONNECT_TIMEOUT_SECONDS` is set in the environment and the dashboard column is non-NULL
 - **WHEN** the process starts
 - **THEN** one WARN names the shadowed variable and points at the dashboard
 - **AND** no WARN is logged when the variable is unset or the column is NULL

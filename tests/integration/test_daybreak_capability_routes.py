@@ -13,7 +13,7 @@ from starlette.testclient import WebSocketDenialResponse
 
 import app.modules.proxy.api as proxy_api_module
 from app.core.auth import dependencies as auth_dependencies
-from app.core.clients.proxy import CODEX_LB_REQUIRED_CAPABILITY_HEADER, CodexControlResponse
+from app.core.clients.proxy import CLAUDE_LB_REQUIRED_CAPABILITY_HEADER, CodexControlResponse
 from app.db.session import SessionLocal
 from app.modules.api_keys.repository import ApiKeysRepository
 from app.modules.api_keys.service import ApiKeyCreateData, ApiKeysService
@@ -21,7 +21,7 @@ from app.modules.proxy.service import ProxyService
 
 pytestmark = pytest.mark.integration
 
-_CAPABILITY_HEADERS = {CODEX_LB_REQUIRED_CAPABILITY_HEADER: "trusted_cyber"}
+_CAPABILITY_HEADERS = {CLAUDE_LB_REQUIRED_CAPABILITY_HEADER: "trusted_cyber"}
 _TRANSPORT_DENIAL = {
     "error": {
         "code": "required_capability_transport_unsupported",
@@ -451,7 +451,7 @@ async def test_daybreak_capability_cannot_be_appended_to_signed_internal_bridge(
         authorization = "Bearer invalid-daybreak-key"
     inbound_headers = {} if authorization is None else {"authorization": authorization}
     headers = build_owner_forward_headers(headers=inbound_headers, payload=payload, context=context)
-    headers[CODEX_LB_REQUIRED_CAPABILITY_HEADER] = "trusted_cyber"
+    headers[CLAUDE_LB_REQUIRED_CAPABILITY_HEADER] = "trusted_cyber"
 
     response = await async_client.post(
         "/internal/bridge/responses",
@@ -828,7 +828,7 @@ async def test_capability_signal_in_client_metadata_is_rejected_over_http(async_
         json={
             "model": "gpt-5.6-sol",
             "input": "hello",
-            "client_metadata": {CODEX_LB_REQUIRED_CAPABILITY_HEADER: "trusted_cyber"},
+            "client_metadata": {CLAUDE_LB_REQUIRED_CAPABILITY_HEADER: "trusted_cyber"},
         },
     )
 
@@ -871,7 +871,7 @@ async def test_metadata_only_capability_signal_is_rejected_on_every_responses_ro
     response = await async_client.post(
         path,
         headers={"Authorization": f"Bearer {key}"},
-        json={**body, "client_metadata": {CODEX_LB_REQUIRED_CAPABILITY_HEADER: "trusted_cyber"}},
+        json={**body, "client_metadata": {CLAUDE_LB_REQUIRED_CAPABILITY_HEADER: "trusted_cyber"}},
     )
 
     assert response.status_code == 400
@@ -902,7 +902,7 @@ async def test_metadata_only_capability_signal_is_rejected_on_signed_internal_br
             "instructions": "",
             "input": "inert",
             "stream": True,
-            "client_metadata": {CODEX_LB_REQUIRED_CAPABILITY_HEADER: "trusted_cyber"},
+            "client_metadata": {CLAUDE_LB_REQUIRED_CAPABILITY_HEADER: "trusted_cyber"},
         }
     )
     context = HTTPBridgeForwardContext(

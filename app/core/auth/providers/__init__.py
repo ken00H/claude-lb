@@ -89,14 +89,14 @@ class PasswordProvider:
 
 
 class TrustedHeaderProvider:
-    """The reverse-proxy identity header (``CODEX_LB_DASHBOARD_AUTH_PROXY_HEADER``).
+    """The reverse-proxy identity header (``CLAUDE_LB_DASHBOARD_AUTH_PROXY_HEADER``).
 
     Reuses the request-auth resolution that already checks the trusted-proxy
     peer and the singular header. The subject is case-folded: two proxies
     spelling the same person differently must not become two accounts. The
     raw value is kept as the display name and, when it parses as an e-mail,
     as the identity's e-mail. Groups arrive on the same request-auth value,
-    read from ``CODEX_LB_DASHBOARD_AUTH_PROXY_GROUPS_HEADER``.
+    read from ``CLAUDE_LB_DASHBOARD_AUTH_PROXY_GROUPS_HEADER``.
     """
 
     kind = AuthProviderKind.TRUSTED_HEADER

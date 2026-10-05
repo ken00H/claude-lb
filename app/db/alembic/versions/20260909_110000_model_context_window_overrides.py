@@ -7,7 +7,7 @@ Create Date: 2026-09-09
 Adds the ``model_context_window_overrides`` table (M4 of the slop-removal
 campaign): one row per model slug whose reported context window an operator
 overrides from the dashboard. A row wins over the
-``CODEX_LB_MODEL_CONTEXT_WINDOW_OVERRIDES`` entry for the same slug; slugs
+``CLAUDE_LB_MODEL_CONTEXT_WINDOW_OVERRIDES`` entry for the same slug; slugs
 without a row keep inheriting the environment entry (or have no override).
 The migration never copies the environment dict into rows.
 """

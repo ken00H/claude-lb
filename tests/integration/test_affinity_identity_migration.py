@@ -23,11 +23,11 @@ _AUTH_TABLES = ("dashboard_roles", "dashboard_role_grants", "dashboard_users", "
 @pytest.fixture
 def migration_url(tmp_path: Path, db_setup: bool) -> Iterator[str]:
     del db_setup
-    configured = os.environ["CODEX_LB_DATABASE_URL"]
+    configured = os.environ["CLAUDE_LB_DATABASE_URL"]
     if not configured.startswith("postgresql"):
         yield f"sqlite+aiosqlite:///{tmp_path / 'identity-merge.sqlite'}"
         return
-    assert os.environ["CODEX_LB_TEST_DATABASE_URL"] == configured
+    assert os.environ["CLAUDE_LB_TEST_DATABASE_URL"] == configured
     engine = create_engine(to_sync_database_url(configured))
     # Historical enum migrations inspect all schemas, so use the disposable
     # test database's public schema, as the other PostgreSQL migration tests do.

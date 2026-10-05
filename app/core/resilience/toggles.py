@@ -1,7 +1,7 @@
 """Dashboard-managed resilience toggles (soft drain, deterministic failover, circuit breaker).
 
 Each toggle is a nullable ``dashboard_settings`` column that inherits the
-``CODEX_LB_*`` environment variable (deprecated alias) and then the code
+``CLAUDE_LB_*`` environment variable (deprecated alias) and then the code
 default, resolved through :func:`resolve_inheritable`. Hot paths resolve the
 toggles from the dashboard-settings snapshot they already hold; they never read
 the database or ``get_settings().<toggle>`` directly.

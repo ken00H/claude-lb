@@ -686,7 +686,7 @@ def _encode_native_multipart(data: Any, files: Any) -> tuple[bytes, str] | None:
     file_items = _form_items(files)
     if data_items is None or file_items is None:
         return None
-    boundary = f"codex-lb-{secrets.token_hex(16)}"
+    boundary = f"claude-lb-{secrets.token_hex(16)}"
     chunks: list[bytes] = []
     for name, value in data_items:
         if not isinstance(value, (str, bytes, bytearray, memoryview, int, float, bool)):

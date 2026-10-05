@@ -23,7 +23,7 @@ def test_main_passes_timestamped_log_config(monkeypatch):
         captured["args"] = args
         captured["kwargs"] = kwargs
 
-    monkeypatch.setattr(sys, "argv", ["codex-lb"])
+    monkeypatch.setattr(sys, "argv", ["claude-lb"])
     monkeypatch.setattr(cli, "_run_server", fake_run)
 
     cli.main()
@@ -81,7 +81,7 @@ def test_main_validates_selected_port_before_loading_uvicorn(monkeypatch):
         pytest.fail("Uvicorn must not load when the selected port conflicts with the metrics port")
 
     monkeypatch.setenv("PORT", "2455")
-    monkeypatch.setenv("CODEX_LB_METRICS_PORT", "9090")
+    monkeypatch.setenv("CLAUDE_LB_METRICS_PORT", "9090")
     monkeypatch.setattr(cli, "_load_uvicorn", fail_load_uvicorn)
 
     with pytest.raises(ValueError, match="metrics_port must not match the main application port \\(9090\\)"):
@@ -95,7 +95,7 @@ def test_main_passes_custom_keep_alive_timeout(monkeypatch):
         captured["args"] = args
         captured["kwargs"] = kwargs
 
-    monkeypatch.setattr(sys, "argv", ["codex-lb", "--timeout-keep-alive", "900"])
+    monkeypatch.setattr(sys, "argv", ["claude-lb", "--timeout-keep-alive", "900"])
     monkeypatch.setattr(cli, "_run_server", fake_run)
 
     cli.main()
@@ -110,7 +110,7 @@ def test_main_passes_custom_ws_max_size_flag(monkeypatch):
         captured["args"] = args
         captured["kwargs"] = kwargs
 
-    monkeypatch.setattr(sys, "argv", ["codex-lb", "--ws-max-size", "33554432"])
+    monkeypatch.setattr(sys, "argv", ["claude-lb", "--ws-max-size", "33554432"])
     monkeypatch.setattr(cli, "_run_server", fake_run)
 
     cli.main()
@@ -125,7 +125,7 @@ def test_main_reads_ws_max_size_from_env(monkeypatch):
         captured["args"] = args
         captured["kwargs"] = kwargs
 
-    monkeypatch.setattr(sys, "argv", ["codex-lb"])
+    monkeypatch.setattr(sys, "argv", ["claude-lb"])
     monkeypatch.setenv("UVICORN_WS_MAX_SIZE", "67108864")
     monkeypatch.setattr(cli, "_run_server", fake_run)
 
@@ -141,7 +141,7 @@ def test_main_ws_max_size_flag_overrides_env(monkeypatch):
         captured["args"] = args
         captured["kwargs"] = kwargs
 
-    monkeypatch.setattr(sys, "argv", ["codex-lb", "--ws-max-size", "33554432"])
+    monkeypatch.setattr(sys, "argv", ["claude-lb", "--ws-max-size", "33554432"])
     monkeypatch.setenv("UVICORN_WS_MAX_SIZE", "67108864")
     monkeypatch.setattr(cli, "_run_server", fake_run)
 
@@ -151,7 +151,7 @@ def test_main_ws_max_size_flag_overrides_env(monkeypatch):
 
 
 def test_main_reports_invalid_ws_max_size_env(monkeypatch):
-    monkeypatch.setattr(sys, "argv", ["codex-lb"])
+    monkeypatch.setattr(sys, "argv", ["claude-lb"])
     monkeypatch.setenv("UVICORN_WS_MAX_SIZE", "not-a-size")
 
     with pytest.raises(SystemExit, match="--ws-max-size/UVICORN_WS_MAX_SIZE must be an integer"):
@@ -159,7 +159,7 @@ def test_main_reports_invalid_ws_max_size_env(monkeypatch):
 
 
 def test_main_reports_non_positive_ws_max_size(monkeypatch):
-    monkeypatch.setattr(sys, "argv", ["codex-lb", "--ws-max-size", "0"])
+    monkeypatch.setattr(sys, "argv", ["claude-lb", "--ws-max-size", "0"])
 
     with pytest.raises(SystemExit, match="--ws-max-size/UVICORN_WS_MAX_SIZE must be positive"):
         cli.main()
@@ -409,7 +409,7 @@ def test_run_server_handles_keyboard_interrupt_during_app_loading(
 
 
 def test_main_reports_invalid_keep_alive_timeout_env(monkeypatch):
-    monkeypatch.setattr(sys, "argv", ["codex-lb"])
+    monkeypatch.setattr(sys, "argv", ["claude-lb"])
     monkeypatch.setenv("UVICORN_TIMEOUT_KEEP_ALIVE", "not-a-timeout")
 
     with pytest.raises(SystemExit, match="--timeout-keep-alive/UVICORN_TIMEOUT_KEEP_ALIVE must be an integer"):
@@ -431,7 +431,7 @@ def test_codex_sessions_retag_refuses_noninteractive_write_without_yes(monkeypat
                 "--from",
                 "openai",
                 "--to",
-                "codex-lb",
+                "claude-lb",
                 "--codex-home",
                 str(tmp_path),
             ]
@@ -452,7 +452,7 @@ def test_codex_sessions_retag_ignores_invalid_server_port_env(monkeypatch, capsy
             "--from",
             "openai",
             "--to",
-            "codex-lb",
+            "claude-lb",
             "--codex-home",
             str(tmp_path),
             "--dry-run",
@@ -476,7 +476,7 @@ def test_codex_sessions_retag_dry_run_skips_confirmation(capsys, tmp_path):
             "--from",
             "openai",
             "--to",
-            "codex-lb",
+            "claude-lb",
             "--codex-home",
             str(tmp_path),
             "--dry-run",
@@ -503,7 +503,7 @@ def test_codex_sessions_retag_reports_file_access_errors(monkeypatch, tmp_path):
                 "--from",
                 "openai",
                 "--to",
-                "codex-lb",
+                "claude-lb",
                 "--codex-home",
                 str(tmp_path),
                 "--dry-run",
@@ -527,7 +527,7 @@ def test_codex_sessions_retag_yes_updates_jsonl_and_sqlite(capsys, tmp_path):
             "--from",
             "openai",
             "--to",
-            "codex-lb",
+            "claude-lb",
             "--codex-home",
             str(tmp_path),
             "--yes",
@@ -538,9 +538,9 @@ def test_codex_sessions_retag_yes_updates_jsonl_and_sqlite(capsys, tmp_path):
     assert "Close Codex/Codex CLI" in captured.err
     assert "Updated JSONL files: 1" in captured.out
     assert "Updated SQLite rows: 1" in captured.out
-    assert json.loads(session_file.read_text(encoding="utf-8"))["model_provider"] == "codex-lb"
+    assert json.loads(session_file.read_text(encoding="utf-8"))["model_provider"] == "claude-lb"
     with sqlite3.connect(state_db) as conn:
-        assert conn.execute("SELECT model_provider FROM threads").fetchone()[0] == "codex-lb"
+        assert conn.execute("SELECT model_provider FROM threads").fetchone()[0] == "claude-lb"
 
 
 def test_utc_default_formatter_formats_without_converter_binding_error():

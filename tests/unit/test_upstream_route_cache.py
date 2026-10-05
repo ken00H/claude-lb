@@ -19,7 +19,7 @@ pytestmark = pytest.mark.unit
 
 @pytest.fixture
 def route_cache_ttl(monkeypatch):
-    monkeypatch.setenv("CODEX_LB_UPSTREAM_ROUTE_CACHE_TTL_SECONDS", "60")
+    monkeypatch.setenv("CLAUDE_LB_UPSTREAM_ROUTE_CACHE_TTL_SECONDS", "60")
     get_settings.cache_clear()
     yield
     get_settings.cache_clear()

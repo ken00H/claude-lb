@@ -659,7 +659,7 @@ async def test_set_and_clear_account_alias(async_client):
 
 @pytest.mark.asyncio
 async def test_list_accounts_flags_email_duplicates(async_client):
-    """Pin codex-lb #787 (B): after a token-invalidation cascade, the
+    """Pin claude-lb #787 (B): after a token-invalidation cascade, the
     re-add OAuth flow creates a second account row with the same email
     but a fresh accountId for the same ChatGPT account identity and workspace
     slot. /api/accounts surfaces that pair via isEmailDuplicate=true on both

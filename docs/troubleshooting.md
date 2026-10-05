@@ -2,14 +2,14 @@
 
 ## Usage and quota
 
-**Why does codex-lb still say `rate_limited` when Codex Desktop says the window reset?**
-codex-lb refreshes usage on its own schedule and treats upstream samples conservatively. The full policy — refresh cadence, expiry, and why displays can briefly disagree with upstream — is documented in the
+**Why does claude-lb still say `rate_limited` when Codex Desktop says the window reset?**
+claude-lb refreshes usage on its own schedule and treats upstream samples conservatively. The full policy — refresh cadence, expiry, and why displays can briefly disagree with upstream — is documented in the
 [usage refresh policy context](https://github.com/Soju06/codex-lb/blob/main/openspec/specs/usage-refresh-policy/context.md).
 
 ## Streaming
 
 **Codex CLI falls back to POST instead of WebSockets.**
-Run the [WebSocket verification steps](client-setup.md#verify-websocket-transport). If codex-lb sits behind a reverse proxy, make sure it forwards WebSocket upgrades — see [Remote Access](deployment/remote.md).
+Run the [WebSocket verification steps](client-setup.md#verify-websocket-transport). If claude-lb sits behind a reverse proxy, make sure it forwards WebSocket upgrades — see [Remote Access](deployment/remote.md).
 
 ## Fast Mode, Ultrafast, and service tiers
 

@@ -57,7 +57,7 @@ def test_parse_args_rejects_explicit_empty_database_url(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    monkeypatch.setattr(sys, "argv", ["codex-lb-db", "--db-url", "", "current"])
+    monkeypatch.setattr(sys, "argv", ["claude-lb-db", "--db-url", "", "current"])
 
     with pytest.raises(SystemExit) as exc_info:
         migrate_module._parse_args()
@@ -67,7 +67,7 @@ def test_parse_args_rejects_explicit_empty_database_url(
 
 
 def test_parse_args_preserves_omitted_database_url(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(sys, "argv", ["codex-lb-db", "current"])
+    monkeypatch.setattr(sys, "argv", ["claude-lb-db", "current"])
 
     args = migrate_module._parse_args()
 
@@ -1758,7 +1758,7 @@ def test_run_upgrade_backfills_additional_usage_quota_key_from_configured_regist
         encoding="utf-8",
     )
 
-    monkeypatch.setenv("CODEX_LB_ADDITIONAL_QUOTA_REGISTRY_FILE", str(registry_path))
+    monkeypatch.setenv("CLAUDE_LB_ADDITIONAL_QUOTA_REGISTRY_FILE", str(registry_path))
     get_settings.cache_clear()
     clear_additional_quota_registry_cache()
 
@@ -1881,7 +1881,7 @@ def test_run_upgrade_rejects_duplicate_additional_quota_aliases_in_registry(
         encoding="utf-8",
     )
 
-    monkeypatch.setenv("CODEX_LB_ADDITIONAL_QUOTA_REGISTRY_FILE", str(registry_path))
+    monkeypatch.setenv("CLAUDE_LB_ADDITIONAL_QUOTA_REGISTRY_FILE", str(registry_path))
     get_settings.cache_clear()
     clear_additional_quota_registry_cache()
 
@@ -2913,7 +2913,7 @@ def test_an_empty_ledger_on_an_empty_database_is_a_fresh_install(tmp_path: Path,
     A first run that died after creating ``alembic_version`` -- which
     ``_ensure_alembic_version_table_capacity`` does before any revision runs --
     leaves an empty ledger on an empty database. Reading that emptiness as "not
-    fresh", or reading ``config.attributes["codex_lb_fresh_install"]``, which is
+    fresh", or reading ``config.attributes["claude_lb_fresh_install"]``, which is
     false for exactly this database because the table exists, would tell an
     operator to drain replicas of a release that has never run here, over
     columns that do not exist yet.

@@ -25,9 +25,9 @@ _SET_LOCAL_FRAGMENT = "SET LOCAL synchronous_commit"
 
 
 def _require_postgres() -> None:
-    url = os.environ.get("CODEX_LB_TEST_DATABASE_URL", "")
+    url = os.environ.get("CLAUDE_LB_TEST_DATABASE_URL", "")
     if not url.startswith("postgresql+asyncpg://"):
-        pytest.skip("requires CODEX_LB_TEST_DATABASE_URL=postgresql+asyncpg://...")
+        pytest.skip("requires CLAUDE_LB_TEST_DATABASE_URL=postgresql+asyncpg://...")
 
 
 @contextmanager

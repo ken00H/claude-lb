@@ -500,7 +500,7 @@ class _RedactedRepr:
 
 # Context values the default handler renders as text rather than repr().
 _UNREDACTED_LOOP_CONTEXT_KEYS = frozenset({"message", "exception", "source_traceback", "handle_traceback"})
-_REDACTING_LOOP_HANDLER_MARKER = "_codex_lb_redacting_loop_handler"
+_REDACTING_LOOP_HANDLER_MARKER = "_claude_lb_redacting_loop_handler"
 _LOOP_CONTEXT_REDACTION_FAILED = "[REDACTED: loop context redaction failed]"
 
 

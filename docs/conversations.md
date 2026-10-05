@@ -1,7 +1,7 @@
 # Conversations
 
 The dashboard's **Conversations** view groups request logs by their
-`conversation_id`. It is a read-only, derived view: codex-lb does not store a
+`conversation_id`. It is a read-only, derived view: claude-lb does not store a
 separate conversation entity.
 
 Conversation functionality turns request-log metadata into an operator view of
@@ -11,7 +11,7 @@ displaying raw prompt or response content.
 
 ## How IDs Are Extracted
 
-codex-lb extracts a conversation ID from the inbound request's `User-Agent` and
+claude-lb extracts a conversation ID from the inbound request's `User-Agent` and
 conversation headers while creating request-log metadata. The value is stored
 as the nullable `conversation_id` field and is then used for dashboard and
 report aggregation. The extraction does not modify or reject the proxied

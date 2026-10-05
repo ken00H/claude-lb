@@ -233,7 +233,7 @@ def test_build_log_config_uses_json_access_formatter_when_json(monkeypatch):
     """build_log_config() should use JsonAccessFormatter when log_format == 'json'."""
     from typing import cast
 
-    monkeypatch.setenv("CODEX_LB_LOG_FORMAT", "json")
+    monkeypatch.setenv("CLAUDE_LB_LOG_FORMAT", "json")
     # Clear lru_cache so the setting is re-read
     from app.core.config.settings import get_settings
 
@@ -250,7 +250,7 @@ def test_build_log_config_uses_utc_access_formatter_when_text(monkeypatch):
     """build_log_config() should use UtcAccessFormatter when log_format == 'text'."""
     from typing import cast
 
-    monkeypatch.setenv("CODEX_LB_LOG_FORMAT", "text")
+    monkeypatch.setenv("CLAUDE_LB_LOG_FORMAT", "text")
     from app.core.config.settings import get_settings
 
     get_settings.cache_clear()
@@ -265,7 +265,7 @@ def test_build_log_config_uses_utc_access_formatter_when_text(monkeypatch):
 def test_build_log_config_exposes_app_loggers_via_root_handler(monkeypatch):
     from typing import cast
 
-    monkeypatch.setenv("CODEX_LB_LOG_FORMAT", "text")
+    monkeypatch.setenv("CLAUDE_LB_LOG_FORMAT", "text")
     from app.core.config.settings import get_settings
 
     get_settings.cache_clear()
@@ -299,7 +299,7 @@ def _formatter_from_config(monkeypatch, log_format: str, name: str = "default") 
 
     from app.core.config.settings import get_settings
 
-    monkeypatch.setenv("CODEX_LB_LOG_FORMAT", log_format)
+    monkeypatch.setenv("CLAUDE_LB_LOG_FORMAT", log_format)
     get_settings.cache_clear()
     try:
         spec = dict(cast(dict, cast(dict, build_log_config()["formatters"])[name]))

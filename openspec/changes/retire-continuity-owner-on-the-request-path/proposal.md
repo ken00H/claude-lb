@@ -36,7 +36,7 @@ decide for itself rather than waiting out a fixed window.
   the global timestamp form. Both read as retired, and a replica on a build without the columns
   keeps treating `account_id` as hard ownership through a rolling deploy.
 
-No schema change — this uses the columns the previous change added. No new `CODEX_LB_*` setting:
+No schema change — this uses the columns the previous change added. No new `CLAUDE_LB_*` setting:
 the deadline is the request's existing budget. No ceiling-guarded proxy file grows.
 
 ## Not in this change

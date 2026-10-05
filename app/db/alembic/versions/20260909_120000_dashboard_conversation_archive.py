@@ -2,7 +2,7 @@
 
 One nullable ``dashboard_settings`` BOOLEAN column named after the ``Settings``
 field it takes over: ``conversation_archive_enabled``. NULL means "inherit":
-the deprecated ``CODEX_LB_CONVERSATION_ARCHIVE_ENABLED`` environment alias,
+the deprecated ``CLAUDE_LB_CONVERSATION_ARCHIVE_ENABLED`` environment alias,
 then the code default (off), keep applying until an operator sets a value in
 the dashboard (configuration-tiers; slop-removal campaign 0908, M5).
 

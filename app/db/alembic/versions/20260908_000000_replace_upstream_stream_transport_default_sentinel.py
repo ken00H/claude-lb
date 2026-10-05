@@ -17,7 +17,7 @@ depends_on = None
 
 
 def upgrade() -> None:
-    # "default" used to mean "defer to CODEX_LB_UPSTREAM_STREAM_TRANSPORT",
+    # "default" used to mean "defer to CLAUDE_LB_UPSTREAM_STREAM_TRANSPORT",
     # whose own default was "auto". The env var is removed and the dashboard
     # row is the only source, so the sentinel maps to the documented default.
     # A migration cannot read the environment the removed variable was set in;

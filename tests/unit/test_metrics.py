@@ -131,22 +131,22 @@ def test_prometheus_metrics_defined_when_dependency_available(monkeypatch: pytes
 
     assert prometheus_module.PROMETHEUS_AVAILABLE is True
     assert prometheus_module.REGISTRY is not None
-    assert prometheus_module.requests_total.name == "codex_lb_requests_total"
-    assert prometheus_module.request_duration_seconds.name == "codex_lb_request_duration_seconds"
-    assert prometheus_module.active_connections.name == "codex_lb_active_connections"
-    assert prometheus_module.bridge_instance_mismatch_total.name == "codex_lb_bridge_instance_mismatch_total"
+    assert prometheus_module.requests_total.name == "claude_lb_requests_total"
+    assert prometheus_module.request_duration_seconds.name == "claude_lb_request_duration_seconds"
+    assert prometheus_module.active_connections.name == "claude_lb_active_connections"
+    assert prometheus_module.bridge_instance_mismatch_total.name == "claude_lb_bridge_instance_mismatch_total"
     assert prometheus_module.bridge_instance_mismatch_total.labelnames == ("outcome",)
-    assert prometheus_module.continuity_owner_resolution_total.name == "codex_lb_continuity_owner_resolution_total"
+    assert prometheus_module.continuity_owner_resolution_total.name == "claude_lb_continuity_owner_resolution_total"
     assert prometheus_module.continuity_owner_resolution_total.labelnames == ("surface", "source", "outcome")
-    assert prometheus_module.continuity_fail_closed_total.name == "codex_lb_continuity_fail_closed_total"
+    assert prometheus_module.continuity_fail_closed_total.name == "claude_lb_continuity_fail_closed_total"
     assert prometheus_module.continuity_fail_closed_total.labelnames == ("surface", "reason")
-    assert prometheus_module.continuity_replay_rejected_total.name == "codex_lb_continuity_replay_rejected_total"
+    assert prometheus_module.continuity_replay_rejected_total.name == "claude_lb_continuity_replay_rejected_total"
     assert prometheus_module.continuity_replay_rejected_total.labelnames == ("surface", "reason")
-    assert prometheus_module.upstream_reasoning_replay_400_total.name == "codex_lb_upstream_reasoning_replay_400_total"
+    assert prometheus_module.upstream_reasoning_replay_400_total.name == "claude_lb_upstream_reasoning_replay_400_total"
     assert prometheus_module.upstream_reasoning_replay_400_total.labelnames == ()
-    assert prometheus_module.account_inflight_leases.name == "codex_lb_account_inflight_leases"
+    assert prometheus_module.account_inflight_leases.name == "claude_lb_account_inflight_leases"
     assert prometheus_module.account_inflight_leases.labelnames == ("account_id", "kind")
-    assert prometheus_module.image_requests_total.name == "codex_lb_image_requests_total"
+    assert prometheus_module.image_requests_total.name == "claude_lb_image_requests_total"
     assert prometheus_module.image_requests_total.labelnames == (
         "route",
         "model",
@@ -154,7 +154,7 @@ def test_prometheus_metrics_defined_when_dependency_available(monkeypatch: pytes
         "status",
         "outcome",
     )
-    assert prometheus_module.image_request_duration_seconds.name == "codex_lb_image_request_duration_seconds"
+    assert prometheus_module.image_request_duration_seconds.name == "claude_lb_image_request_duration_seconds"
     assert prometheus_module.image_request_duration_seconds.labelnames == (
         "route",
         "model",
@@ -173,7 +173,7 @@ def test_cap_partition_replicas_gauge_uses_livemax_in_multiprocess_mode(
     assert prometheus_module.MULTIPROCESS_MODE is True
     gauge = prometheus_module.cap_partition_replicas
     assert gauge is not None
-    assert gauge.name == "codex_lb_cap_partition_replicas"
+    assert gauge.name == "claude_lb_cap_partition_replicas"
     # Regression: "max" aggregates dead workers too (mark_process_dead only
     # removes live* gauge files), so a scaled-down worker's stale higher
     # count would be reported forever. "livemax" drops dead workers while

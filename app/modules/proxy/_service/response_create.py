@@ -54,7 +54,7 @@ _UPSTREAM_RESPONSE_CREATE_MAX_BYTES = UPSTREAM_RESPONSE_CREATE_MAX_BYTES
 _UPSTREAM_RESPONSE_CREATE_WARN_BYTES = int(_UPSTREAM_RESPONSE_CREATE_MAX_BYTES * 0.8)
 _OVERSIZED_RESPONSE_CREATE_LARGEST_ITEMS = 10
 _RESPONSE_CREATE_HISTORY_OMISSION_NOTICE = (
-    "[codex-lb omitted {count} historical input items to fit upstream websocket budget]"
+    "[claude-lb omitted {count} historical input items to fit upstream websocket budget]"
 )
 _OVERSIZED_RESPONSE_CREATE_DUMP_DIR: Path | None = None
 _RESPONSE_CREATE_DUMP_SUFFIX = ".response-create.json.gz"

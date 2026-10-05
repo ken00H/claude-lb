@@ -26,12 +26,12 @@ def test_smoke_backend_disables_dotenv_sources_before_importing_the_app(
 ) -> None:
     dotenv = tmp_path / ".env.local"
     dotenv.write_text(
-        "CODEX_LB_DATABASE_URL=sqlite+aiosqlite:////must-not-load.db\nCODEX_LB_DASHBOARD_AUTH_MODE=trusted_header\n",
+        "CLAUDE_LB_DATABASE_URL=sqlite+aiosqlite:////must-not-load.db\nCLAUDE_LB_DASHBOARD_AUTH_MODE=trusted_header\n",
         encoding="utf-8",
     )
-    monkeypatch.setenv("CODEX_LB_DATA_DIR", str(tmp_path))
-    monkeypatch.delenv("CODEX_LB_DATABASE_URL", raising=False)
-    monkeypatch.delenv("CODEX_LB_DASHBOARD_AUTH_MODE", raising=False)
+    monkeypatch.setenv("CLAUDE_LB_DATA_DIR", str(tmp_path))
+    monkeypatch.delenv("CLAUDE_LB_DATABASE_URL", raising=False)
+    monkeypatch.delenv("CLAUDE_LB_DASHBOARD_AUTH_MODE", raising=False)
     monkeypatch.setattr(settings_module, "ENV_FILES", (dotenv,))
     monkeypatch.setitem(cast(dict[str, object], Settings.model_config), "env_file", (dotenv,))
 
@@ -52,8 +52,8 @@ def test_smoke_backend_disables_dotenv_sources_before_importing_the_app(
     assert settings.data_dir == tmp_path
     assert settings.database_url == f"sqlite+aiosqlite:///{tmp_path / 'store.db'}"
     assert settings.dashboard_auth_mode == DashboardAuthMode.STANDARD
-    assert "CODEX_LB_DATABASE_URL" not in settings_module._effective_environ()
-    assert "CODEX_LB_DASHBOARD_AUTH_MODE" not in settings_module._effective_environ()
+    assert "CLAUDE_LB_DATABASE_URL" not in settings_module._effective_environ()
+    assert "CLAUDE_LB_DASHBOARD_AUTH_MODE" not in settings_module._effective_environ()
     assert captured == {"app": "app.main:app", "fd": 123, "log_level": "warning"}
 
 
@@ -129,13 +129,13 @@ def test_smoke_environment_does_not_export_background_loop_env_kill_switches(tmp
     exported = sorted(
         key
         for key in environment
-        if key.startswith("CODEX_LB_")
+        if key.startswith("CLAUDE_LB_")
         and key.endswith("_ENABLED")
         and key
         not in {
-            "CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_ENABLED",
-            "CODEX_LB_METRICS_ENABLED",
-            "CODEX_LB_OTEL_ENABLED",
+            "CLAUDE_LB_HTTP_RESPONSES_SESSION_BRIDGE_ENABLED",
+            "CLAUDE_LB_METRICS_ENABLED",
+            "CLAUDE_LB_OTEL_ENABLED",
         }
     )
     assert exported == []

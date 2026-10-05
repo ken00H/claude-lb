@@ -2,7 +2,7 @@
 
 ## Purpose and scope
 
-codex-lb exposes OpenAI-compatible `/v1/images/*` endpoints and Codex-native
+claude-lb exposes OpenAI-compatible `/v1/images/*` endpoints and Codex-native
 aliases below `/backend-api/codex/images/*`. The native aliases let Codex's
 built-in `$imagegen` tool use the same account selection, validation, usage
 accounting, and response pipeline as other image clients.
@@ -17,7 +17,7 @@ Codex has two distinct provider-authentication paths that can make built-in
 image generation eligible:
 
 1. A provider with `requires_openai_auth = true` and current authentication
-   backed by Codex. This is the path used by the standard codex-lb examples in
+   backed by Codex. This is the path used by the standard claude-lb examples in
    the README; it does not require an actor-authorization header.
 2. A provider that deliberately skips OpenAI login with
    `requires_openai_auth = false` and supplies a non-empty
@@ -29,12 +29,12 @@ For the second path, a minimal provider fragment is:
 base_url = "http://127.0.0.1:2455/backend-api/codex"
 wire_api = "responses"
 requires_openai_auth = false
-http_headers = { "x-openai-actor-authorization" = "codex-lb" }
+http_headers = { "x-openai-actor-authorization" = "claude-lb" }
 ```
 
-The static `codex-lb` value is a non-secret client capability marker. It does
-not authenticate requests to codex-lb. A deployment that requires codex-lb API
-key authentication must still configure `env_key = "CODEX_LB_API_KEY"` and
+The static `claude-lb` value is a non-secret client capability marker. It does
+not authenticate requests to claude-lb. A deployment that requires claude-lb API
+key authentication must still configure `env_key = "CLAUDE_LB_API_KEY"` and
 provide that credential independently.
 
 ## Verified upstream behavior
@@ -64,11 +64,11 @@ keeps `requires_openai_auth = true` does not activate the actor-authorized path.
 
 ## Constraints and security boundary
 
-- The marker MUST NOT be described as authentication accepted by codex-lb.
+- The marker MUST NOT be described as authentication accepted by claude-lb.
 - The marker does not replace `Authorization: Bearer ...` when API-key auth is
   enabled.
 - The header value must be non-empty. No secret storage or rotation mechanism is
-  appropriate for the static `codex-lb` value.
+  appropriate for the static `claude-lb` value.
 - The provider `base_url` remains the Codex base, not `/v1`, because the built-in
   image client joins `images/generations` and `images/edits` directly onto it.
 
@@ -78,7 +78,7 @@ keeps `requires_openai_auth = true` does not activate the actor-authorized path.
   the actor-authorized eligibility path.
 - Provider capability state is initialized for a thread. Start a new Codex
   session after changing provider eligibility settings.
-- A missing or invalid codex-lb API key still produces the normal proxy
+- A missing or invalid claude-lb API key still produces the normal proxy
   authentication error even when the actor marker is present.
 - Route-level validation and upstream errors remain governed by the normative
   requirements in [spec.md](./spec.md).
@@ -87,11 +87,11 @@ keeps `requires_openai_auth = true` does not activate the actor-authorized path.
 
 1. Choose the Codex-backed authentication path documented in the README, or
    configure both `requires_openai_auth = false` and the actor marker.
-2. Preserve `env_key = "CODEX_LB_API_KEY"` when the deployment requires it.
+2. Preserve `env_key = "CLAUDE_LB_API_KEY"` when the deployment requires it.
 3. Start a new CLI or IDE session and invoke `$imagegen`.
 4. When the remaining model and feature gates allow the tool, Codex posts to
    `/backend-api/codex/images/generations` or
-   `/backend-api/codex/images/edits`; codex-lb handles the request through the
+   `/backend-api/codex/images/edits`; claude-lb handles the request through the
    existing Images compatibility pipeline.
 
 ## Internal host compatibility

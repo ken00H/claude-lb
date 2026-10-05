@@ -200,7 +200,7 @@ def _detached_account_copy(account: Account) -> Account:
     return Account(**data)
 
 
-_FAILED_ACCOUNT_ATTR = "_codex_lb_failed_account"
+_FAILED_ACCOUNT_ATTR = "_claude_lb_failed_account"
 _REQUEST_TRANSPORT_HTTP = "http"
 
 

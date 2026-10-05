@@ -281,7 +281,7 @@ async def test_v1_responses_downgrades_explicit_prompt_cache_for_subscription(as
     resp = await async_client.post("/v1/responses", json=payload)
 
     assert resp.status_code == 200
-    assert resp.headers["x-codex-lb-prompt-cache-mode"] == "subscription-implicit"
+    assert resp.headers["x-claude-lb-prompt-cache-mode"] == "subscription-implicit"
     forwarded = seen["payload"]
     assert forwarded["prompt_cache_key"] == "explicit-thread"
     assert "prompt_cache_options" not in forwarded
@@ -328,7 +328,7 @@ async def test_v1_responses_preserves_explicit_prompt_cache_for_model_source(asy
     resp = await async_client.post("/v1/responses", json=payload)
 
     assert resp.status_code == 200
-    assert "x-codex-lb-prompt-cache-mode" not in resp.headers
+    assert "x-claude-lb-prompt-cache-mode" not in resp.headers
     forwarded = seen["payload"]
     assert forwarded["prompt_cache_options"] == {"mode": "explicit"}
     assert forwarded["input"][0]["content"][0]["prompt_cache_breakpoint"] == {"mode": "explicit"}
@@ -711,7 +711,7 @@ async def test_v1_chat_completions_rejects_strict_function_tool_violation(async_
     silently, so the request reached the upstream Codex backend with a
     spec-violating schema and surfaced as a 502 ``upstream_rejected_input``.
     Real OpenAI returns 400 ``invalid_function_parameters`` for the same
-    payload; codex-lb now does too.
+    payload; claude-lb now does too.
     """
     payload = {
         "model": "gpt-5.2",

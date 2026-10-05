@@ -18,13 +18,13 @@ from app.db.sqlite_utils import normalize_sqlite_url, sqlite_db_path_from_url
 from app.modules.usage.repository import UsageRepository
 
 # The shape SQLAlchemy's `URL.render_as_string()` produces for the Windows
-# default SQLite path `C:\Users\me\.codex-lb\store.db` on a platform that
+# default SQLite path `C:\Users\me\.claude-lb\store.db` on a platform that
 # percent-encodes backslashes (the exact string that reaches
 # `sqlite_db_path_from_url` and `_build_alembic_config` at runtime on Windows,
 # and the shape CI reproduces on Linux). Using the encoded form directly keeps
 # the regression test platform-independent.
-ENCODED_WINDOWS_URL = "sqlite:///C%3A%5CUsers%5Cme%5C.codex-lb%5Cstore.db"
-DECODED_WINDOWS_PATH = r"C:\Users\me\.codex-lb\store.db"
+ENCODED_WINDOWS_URL = "sqlite:///C%3A%5CUsers%5Cme%5C.claude-lb%5Cstore.db"
+DECODED_WINDOWS_PATH = r"C:\Users\me\.claude-lb\store.db"
 
 
 def _encoded_windows_sqlite_url_for_path(path: Path) -> str:
@@ -105,22 +105,22 @@ class TestSqlitePathFromUrlWindows:
         assert normalize_sqlite_url(ENCODED_WINDOWS_URL) == f"sqlite:///{DECODED_WINDOWS_PATH}"
 
     def test_decodes_encoded_drive_with_unescaped_separators(self) -> None:
-        url = "sqlite:///C%3A/Users/me/.codex-lb/store.db"
+        url = "sqlite:///C%3A/Users/me/.claude-lb/store.db"
 
         path = sqlite_db_path_from_url(url)
 
         assert path is not None
-        assert str(path) == "C:/Users/me/.codex-lb/store.db"
-        assert normalize_sqlite_url(url) == "sqlite:///C:/Users/me/.codex-lb/store.db"
+        assert str(path) == "C:/Users/me/.claude-lb/store.db"
+        assert normalize_sqlite_url(url) == "sqlite:///C:/Users/me/.claude-lb/store.db"
 
     def test_decodes_lowercase_encoded_drive_with_unescaped_separators(self) -> None:
-        url = "sqlite:///c%3A/Users/me/.codex-lb/store.db"
+        url = "sqlite:///c%3A/Users/me/.claude-lb/store.db"
 
         path = sqlite_db_path_from_url(url)
 
         assert path is not None
-        assert str(path) == "c:/Users/me/.codex-lb/store.db"
-        assert normalize_sqlite_url(url) == "sqlite:///c:/Users/me/.codex-lb/store.db"
+        assert str(path) == "c:/Users/me/.claude-lb/store.db"
+        assert normalize_sqlite_url(url) == "sqlite:///c:/Users/me/.claude-lb/store.db"
 
     def test_preserves_literal_percent_sequences_from_data_dir_defaults(self) -> None:
         url = "sqlite+aiosqlite:////var/lib/codex%20lb/store.db"
@@ -240,7 +240,7 @@ class TestBuildAlembicConfigWindowsUrl:
         sqlalchemy_url = config.get_main_option("sqlalchemy.url")
         assert sqlalchemy_url is not None
         assert sqlalchemy_url == to_sync_database_url(ENCODED_WINDOWS_URL)
-        assert r"C:\Users\me\.codex-lb\store.db" in sqlalchemy_url
+        assert r"C:\Users\me\.claude-lb\store.db" in sqlalchemy_url
 
 
 def test_to_sync_database_url_decodes_percent_encoded_sqlite_path() -> None:
@@ -363,7 +363,7 @@ async def test_startup_init_db_decodes_percent_encoded_sqlite_path(tmp_path, mon
     await session_module.init_db()
 
     assert checked_paths == [str(decoded_db_path)]
-    assert not (tmp_path / "C%3A%5CUsers%5Cme%5C.codex-lb%5Cstore.db").exists()
+    assert not (tmp_path / "C%3A%5CUsers%5Cme%5C.claude-lb%5Cstore.db").exists()
 
 
 @pytest.mark.asyncio
@@ -480,4 +480,4 @@ async def test_dashboard_usage_sqlite_fast_path_decodes_percent_encoded_bind_url
     latest = await repository.latest_by_account("primary")
 
     assert latest["acc_dash"].used_percent == pytest.approx(42.0)
-    assert not Path("C%3A%5CUsers%5Cme%5C.codex-lb%5Cstore.db").exists()
+    assert not Path("C%3A%5CUsers%5Cme%5C.claude-lb%5Cstore.db").exists()

@@ -1,4 +1,4 @@
-"""Tests for the CODEX_LB_TRACE channels and the removed-settings warning.
+"""Tests for the CLAUDE_LB_TRACE channels and the removed-settings warning.
 
 Introduced by the ``reduce-settings-surface-phase-1`` change (issue #1340).
 """
@@ -22,7 +22,7 @@ def test_trace_defaults_to_no_channels():
 
 
 def test_trace_parses_comma_separated_channels(monkeypatch):
-    monkeypatch.setenv("CODEX_LB_TRACE", "shape,upstream_payload")
+    monkeypatch.setenv("CLAUDE_LB_TRACE", "shape,upstream_payload")
     settings = Settings()
     assert settings.trace_channels == frozenset({"shape", "upstream_payload"})
 
@@ -38,8 +38,8 @@ def test_trace_channels_is_cached_per_settings_instance():
 
 
 def test_removed_log_settings_env_vars_are_ignored(monkeypatch):
-    monkeypatch.setenv("CODEX_LB_LOG_PROXY_REQUEST_SHAPE", "true")
-    monkeypatch.setenv("CODEX_LB_LOG_UPSTREAM_REQUEST_PAYLOAD", "true")
+    monkeypatch.setenv("CLAUDE_LB_LOG_PROXY_REQUEST_SHAPE", "true")
+    monkeypatch.setenv("CLAUDE_LB_LOG_UPSTREAM_REQUEST_PAYLOAD", "true")
     settings = Settings()
     assert settings.trace_channels == frozenset()
     assert not hasattr(settings, "log_proxy_request_shape")
@@ -47,20 +47,20 @@ def test_removed_log_settings_env_vars_are_ignored(monkeypatch):
 
 def test_warn_removed_settings_logs_one_warning_listing_found_names(caplog):
     environ = {
-        "CODEX_LB_REQUEST_LOG_RETENTION_DAYS": "90",
-        "CODEX_LB_WARMUP_MODEL": "gpt-5.4-nano",
-        "CODEX_LB_TRACE": "shape",  # current setting, never reported
+        "CLAUDE_LB_REQUEST_LOG_RETENTION_DAYS": "90",
+        "CLAUDE_LB_WARMUP_MODEL": "gpt-5.4-nano",
+        "CLAUDE_LB_TRACE": "shape",  # current setting, never reported
         "UNRELATED": "1",
     }
     with caplog.at_level(logging.WARNING, logger="app.core.config.settings"):
         found = warn_removed_settings(environ)
 
-    assert found == ["CODEX_LB_REQUEST_LOG_RETENTION_DAYS", "CODEX_LB_WARMUP_MODEL"]
+    assert found == ["CLAUDE_LB_REQUEST_LOG_RETENTION_DAYS", "CLAUDE_LB_WARMUP_MODEL"]
     warnings = [record for record in caplog.records if record.levelno == logging.WARNING]
     assert len(warnings) == 1
     message = warnings[0].getMessage()
-    assert "CODEX_LB_REQUEST_LOG_RETENTION_DAYS" in message
-    assert "CODEX_LB_WARMUP_MODEL" in message
+    assert "CLAUDE_LB_REQUEST_LOG_RETENTION_DAYS" in message
+    assert "CLAUDE_LB_WARMUP_MODEL" in message
     assert "PRINCIPLES.md P2" in message
     assert "#1340" in message
     # Values must never be logged.
@@ -70,7 +70,7 @@ def test_warn_removed_settings_logs_one_warning_listing_found_names(caplog):
 
 def test_warn_removed_settings_is_silent_when_nothing_is_set(caplog):
     with caplog.at_level(logging.WARNING, logger="app.core.config.settings"):
-        found = warn_removed_settings({"CODEX_LB_TRACE": "shape"})
+        found = warn_removed_settings({"CLAUDE_LB_TRACE": "shape"})
 
     assert found == []
     assert not [record for record in caplog.records if record.levelno >= logging.WARNING]
@@ -78,60 +78,60 @@ def test_warn_removed_settings_is_silent_when_nothing_is_set(caplog):
 
 def test_warn_removed_settings_scans_env_files(tmp_path, monkeypatch, caplog):
     env_file = tmp_path / ".env.local"
-    env_file.write_text("CODEX_LB_OPENAI_CACHE_AFFINITY_MAX_AGE_SECONDS=64\n", encoding="utf-8")
+    env_file.write_text("CLAUDE_LB_OPENAI_CACHE_AFFINITY_MAX_AGE_SECONDS=64\n", encoding="utf-8")
     monkeypatch.setattr("app.core.config.settings.ENV_FILES", (tmp_path / ".env", env_file))
-    monkeypatch.delenv("CODEX_LB_OPENAI_CACHE_AFFINITY_MAX_AGE_SECONDS", raising=False)
+    monkeypatch.delenv("CLAUDE_LB_OPENAI_CACHE_AFFINITY_MAX_AGE_SECONDS", raising=False)
 
     with caplog.at_level(logging.WARNING, logger="app.core.config.settings"):
         found = warn_removed_settings()
 
-    assert found == ["CODEX_LB_OPENAI_CACHE_AFFINITY_MAX_AGE_SECONDS"]
+    assert found == ["CLAUDE_LB_OPENAI_CACHE_AFFINITY_MAX_AGE_SECONDS"]
     assert "64" not in caplog.text
 
 
 def test_removed_settings_tuple_covers_the_current_warning_batch():
     # Only the batches removed in the most recent release stay listed; names
     # whose one-release warning window has passed are pruned. Six names from
-    # remove-dead-env-settings + CODEX_LB_UPSTREAM_STREAM_TRANSPORT
+    # remove-dead-env-settings + CLAUDE_LB_UPSTREAM_STREAM_TRANSPORT
     # (remove-upstream-stream-transport-env: the dashboard owns the value)
     # + 27 never-tuned core tunables (constantize-core-tunables)
     # + seven K2 bridge names (constantize-session-bridge-tunables)
     # + the ambiguous-continuation recovery mode (drop-bridge-recovery-modes)
     # + the token refresh interval (constantize-token-refresh-interval).
     assert len(_REMOVED_SETTINGS) == 34 + 7 + 1 + 1
-    assert all(name.startswith("CODEX_LB_") for name in _REMOVED_SETTINGS)
+    assert all(name.startswith("CLAUDE_LB_") for name in _REMOVED_SETTINGS)
     assert len(set(_REMOVED_SETTINGS)) == len(_REMOVED_SETTINGS)
 
 
 def test_dead_env_settings_are_listed_and_ignored(monkeypatch):
     removed_names = (
-        "CODEX_LB_REQUEST_LOG_RETENTION_DAYS",
-        "CODEX_LB_USAGE_HISTORY_RETENTION_DAYS",
-        "CODEX_LB_HTTP_DOWNSTREAM_TRANSPORT_POLICY",
-        "CODEX_LB_OPENAI_CACHE_AFFINITY_MAX_AGE_SECONDS",
-        "CODEX_LB_WARMUP_MODEL",
-        "CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_GATEWAY_SAFE_MODE",
+        "CLAUDE_LB_REQUEST_LOG_RETENTION_DAYS",
+        "CLAUDE_LB_USAGE_HISTORY_RETENTION_DAYS",
+        "CLAUDE_LB_HTTP_DOWNSTREAM_TRANSPORT_POLICY",
+        "CLAUDE_LB_OPENAI_CACHE_AFFINITY_MAX_AGE_SECONDS",
+        "CLAUDE_LB_WARMUP_MODEL",
+        "CLAUDE_LB_HTTP_RESPONSES_SESSION_BRIDGE_GATEWAY_SAFE_MODE",
     )
     for name in removed_names:
         assert name in _REMOVED_SETTINGS
 
-    monkeypatch.setenv("CODEX_LB_REQUEST_LOG_RETENTION_DAYS", "7")  # would have failed the old floor
-    monkeypatch.setenv("CODEX_LB_HTTP_DOWNSTREAM_TRANSPORT_POLICY", "sometimes")  # old Literal rejected this
-    monkeypatch.setenv("CODEX_LB_WARMUP_MODEL", "   ")  # old validator rejected blanks
-    monkeypatch.setenv("CODEX_LB_OPENAI_CACHE_AFFINITY_MAX_AGE_SECONDS", "0")
-    monkeypatch.setenv("CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_GATEWAY_SAFE_MODE", "true")
+    monkeypatch.setenv("CLAUDE_LB_REQUEST_LOG_RETENTION_DAYS", "7")  # would have failed the old floor
+    monkeypatch.setenv("CLAUDE_LB_HTTP_DOWNSTREAM_TRANSPORT_POLICY", "sometimes")  # old Literal rejected this
+    monkeypatch.setenv("CLAUDE_LB_WARMUP_MODEL", "   ")  # old validator rejected blanks
+    monkeypatch.setenv("CLAUDE_LB_OPENAI_CACHE_AFFINITY_MAX_AGE_SECONDS", "0")
+    monkeypatch.setenv("CLAUDE_LB_HTTP_RESPONSES_SESSION_BRIDGE_GATEWAY_SAFE_MODE", "true")
     settings = Settings()
     for name in removed_names:
-        assert not hasattr(settings, name.removeprefix("CODEX_LB_").lower())
+        assert not hasattr(settings, name.removeprefix("CLAUDE_LB_").lower())
     found = warn_removed_settings(
         {
-            "CODEX_LB_USAGE_HISTORY_RETENTION_DAYS": "45",
-            "CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_GATEWAY_SAFE_MODE": "true",
+            "CLAUDE_LB_USAGE_HISTORY_RETENTION_DAYS": "45",
+            "CLAUDE_LB_HTTP_RESPONSES_SESSION_BRIDGE_GATEWAY_SAFE_MODE": "true",
         }
     )
     assert found == [
-        "CODEX_LB_USAGE_HISTORY_RETENTION_DAYS",
-        "CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_GATEWAY_SAFE_MODE",
+        "CLAUDE_LB_USAGE_HISTORY_RETENTION_DAYS",
+        "CLAUDE_LB_HTTP_RESPONSES_SESSION_BRIDGE_GATEWAY_SAFE_MODE",
     ]
 
 
@@ -140,9 +140,9 @@ def test_warn_removed_settings_matches_names_case_insensitively(caplog):
     # lowercase declaration that used to take effect must still be reported
     # (under its canonical name).
     with caplog.at_level(logging.WARNING, logger="app.core.config.settings"):
-        found = warn_removed_settings({"codex_lb_warmup_model": "gpt-5.4-nano"})
-    assert found == ["CODEX_LB_WARMUP_MODEL"]
-    assert "CODEX_LB_WARMUP_MODEL" in caplog.text
+        found = warn_removed_settings({"claude_lb_warmup_model": "gpt-5.4-nano"})
+    assert found == ["CLAUDE_LB_WARMUP_MODEL"]
+    assert "CLAUDE_LB_WARMUP_MODEL" in caplog.text
     assert "gpt-5.4-nano" not in caplog.text
 
 
@@ -150,10 +150,10 @@ def test_expired_removed_names_are_silently_ignored(monkeypatch, caplog):
     # Phases 1-4 (July 2026) had their warning release; the names stay inert
     # via extra="ignore" but no longer trip the startup warning.
     expired = {
-        "CODEX_LB_AUTH_BASE_URL": "https://auth.example.test",
-        "CODEX_LB_QUOTA_PLANNER_TICK_SECONDS": "60",
-        "CODEX_LB_DATABASE_POOL_RECYCLE_SECONDS": "600",
-        "CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_CODEX_PREWARM_CANARY_PERCENT": "25.0",
+        "CLAUDE_LB_AUTH_BASE_URL": "https://auth.example.test",
+        "CLAUDE_LB_QUOTA_PLANNER_TICK_SECONDS": "60",
+        "CLAUDE_LB_DATABASE_POOL_RECYCLE_SECONDS": "600",
+        "CLAUDE_LB_HTTP_RESPONSES_SESSION_BRIDGE_CODEX_PREWARM_CANARY_PERCENT": "25.0",
     }
     for name, value in expired.items():
         monkeypatch.setenv(name, value)
@@ -166,41 +166,43 @@ def test_expired_removed_names_are_silently_ignored(monkeypatch, caplog):
 
 
 def test_upstream_stream_transport_env_is_removed_and_ignored(monkeypatch):
-    assert "CODEX_LB_UPSTREAM_STREAM_TRANSPORT" in _REMOVED_SETTINGS
-    monkeypatch.setenv("CODEX_LB_UPSTREAM_STREAM_TRANSPORT", "http")
+    assert "CLAUDE_LB_UPSTREAM_STREAM_TRANSPORT" in _REMOVED_SETTINGS
+    monkeypatch.setenv("CLAUDE_LB_UPSTREAM_STREAM_TRANSPORT", "http")
     settings = Settings()
     assert not hasattr(settings, "upstream_stream_transport")
-    assert "CODEX_LB_UPSTREAM_STREAM_TRANSPORT" in warn_removed_settings({"CODEX_LB_UPSTREAM_STREAM_TRANSPORT": "http"})
+    assert "CLAUDE_LB_UPSTREAM_STREAM_TRANSPORT" in warn_removed_settings(
+        {"CLAUDE_LB_UPSTREAM_STREAM_TRANSPORT": "http"}
+    )
 
 
 CONSTANTIZED_CORE_TUNABLE_ENV_NAMES = (
-    "CODEX_LB_UPSTREAM_COMPACT_TIMEOUT_SECONDS",
-    "CODEX_LB_MAX_SSE_EVENT_BYTES",
-    "CODEX_LB_UPSTREAM_RESPONSE_CREATE_MAX_BYTES",
-    "CODEX_LB_OAUTH_TIMEOUT_SECONDS",
-    "CODEX_LB_TOKEN_REFRESH_TIMEOUT_SECONDS",
-    "CODEX_LB_TOKEN_REFRESH_CLAIM_TTL_SECONDS",
-    "CODEX_LB_PROXY_REFRESH_FAILURE_COOLDOWN_SECONDS",
-    "CODEX_LB_PROXY_ADMISSION_WAIT_TIMEOUT_SECONDS",
-    "CODEX_LB_USAGE_FETCH_TIMEOUT_SECONDS",
-    "CODEX_LB_USAGE_FETCH_MAX_RETRIES",
-    "CODEX_LB_USAGE_REFRESH_ENABLED",
-    "CODEX_LB_USAGE_REFRESH_INTERVAL_SECONDS",
-    "CODEX_LB_USAGE_REFRESH_AUTH_FAILURE_COOLDOWN_SECONDS",
-    "CODEX_LB_LIVE_USAGE_INGESTION_ENABLED",
-    "CODEX_LB_RATE_LIMIT_RESET_CREDITS_REFRESH_INTERVAL_SECONDS",
-    "CODEX_LB_STICKY_SESSION_CLEANUP_ENABLED",
-    "CODEX_LB_QUOTA_PLANNER_SCHEDULER_ENABLED",
-    "CODEX_LB_MODEL_REGISTRY_ENABLED",
-    "CODEX_LB_MAX_DECOMPRESSED_BODY_BYTES",
-    "CODEX_LB_MAX_DECOMPRESSED_RESPONSES_BODY_BYTES",
-    "CODEX_LB_IMAGE_INLINE_FETCH_ENABLED",
-    "CODEX_LB_IMAGE_INLINE_ALLOWED_HOSTS",
-    "CODEX_LB_IMAGES_DEFAULT_MODEL",
-    "CODEX_LB_OPENAI_PROMPT_CACHE_KEY_DERIVATION_ENABLED",
-    "CODEX_LB_PROXY_TOKEN_REFRESH_LIMIT",
-    "CODEX_LB_PROXY_UPSTREAM_WEBSOCKET_CONNECT_LIMIT",
-    "CODEX_LB_PROXY_COMPACT_RESPONSE_CREATE_LIMIT",
+    "CLAUDE_LB_UPSTREAM_COMPACT_TIMEOUT_SECONDS",
+    "CLAUDE_LB_MAX_SSE_EVENT_BYTES",
+    "CLAUDE_LB_UPSTREAM_RESPONSE_CREATE_MAX_BYTES",
+    "CLAUDE_LB_OAUTH_TIMEOUT_SECONDS",
+    "CLAUDE_LB_TOKEN_REFRESH_TIMEOUT_SECONDS",
+    "CLAUDE_LB_TOKEN_REFRESH_CLAIM_TTL_SECONDS",
+    "CLAUDE_LB_PROXY_REFRESH_FAILURE_COOLDOWN_SECONDS",
+    "CLAUDE_LB_PROXY_ADMISSION_WAIT_TIMEOUT_SECONDS",
+    "CLAUDE_LB_USAGE_FETCH_TIMEOUT_SECONDS",
+    "CLAUDE_LB_USAGE_FETCH_MAX_RETRIES",
+    "CLAUDE_LB_USAGE_REFRESH_ENABLED",
+    "CLAUDE_LB_USAGE_REFRESH_INTERVAL_SECONDS",
+    "CLAUDE_LB_USAGE_REFRESH_AUTH_FAILURE_COOLDOWN_SECONDS",
+    "CLAUDE_LB_LIVE_USAGE_INGESTION_ENABLED",
+    "CLAUDE_LB_RATE_LIMIT_RESET_CREDITS_REFRESH_INTERVAL_SECONDS",
+    "CLAUDE_LB_STICKY_SESSION_CLEANUP_ENABLED",
+    "CLAUDE_LB_QUOTA_PLANNER_SCHEDULER_ENABLED",
+    "CLAUDE_LB_MODEL_REGISTRY_ENABLED",
+    "CLAUDE_LB_MAX_DECOMPRESSED_BODY_BYTES",
+    "CLAUDE_LB_MAX_DECOMPRESSED_RESPONSES_BODY_BYTES",
+    "CLAUDE_LB_IMAGE_INLINE_FETCH_ENABLED",
+    "CLAUDE_LB_IMAGE_INLINE_ALLOWED_HOSTS",
+    "CLAUDE_LB_IMAGES_DEFAULT_MODEL",
+    "CLAUDE_LB_OPENAI_PROMPT_CACHE_KEY_DERIVATION_ENABLED",
+    "CLAUDE_LB_PROXY_TOKEN_REFRESH_LIMIT",
+    "CLAUDE_LB_PROXY_UPSTREAM_WEBSOCKET_CONNECT_LIMIT",
+    "CLAUDE_LB_PROXY_COMPACT_RESPONSE_CREATE_LIMIT",
 )
 
 
@@ -212,7 +214,7 @@ def test_constantized_core_tunables_are_listed_and_ignored(monkeypatch):
         monkeypatch.setenv(name, "not-a-number")
     settings = Settings()
     for name in CONSTANTIZED_CORE_TUNABLE_ENV_NAMES:
-        assert not hasattr(settings, name.removeprefix("CODEX_LB_").lower())
+        assert not hasattr(settings, name.removeprefix("CLAUDE_LB_").lower())
     # Kept on purpose: still a real setting (see the constantize-core-tunables change).
     assert settings.rate_limit_reset_credits_refresh_enabled is True
     assert settings.proxy_response_create_limit == 256
@@ -220,13 +222,13 @@ def test_constantized_core_tunables_are_listed_and_ignored(monkeypatch):
 
 # K2 bridge (constantize-session-bridge-tunables)
 _K2_BRIDGE_REMOVED_NAMES = (
-    "CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_IDLE_TTL_SECONDS",
-    "CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_CODEX_IDLE_TTL_SECONDS",
-    "CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_STUCK_GATE_RETIRE_AFTER_SECONDS",
-    "CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_ANCHOR_POISON_FAILURE_THRESHOLD",
-    "CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_SERVER_RECOVERY_MAX_ATTEMPTS",
-    "CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_CLEAN_CLOSE_RETRY_JITTER_MAX_SECONDS",
-    "CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_OPERATION_LEDGER_ENABLED",
+    "CLAUDE_LB_HTTP_RESPONSES_SESSION_BRIDGE_IDLE_TTL_SECONDS",
+    "CLAUDE_LB_HTTP_RESPONSES_SESSION_BRIDGE_CODEX_IDLE_TTL_SECONDS",
+    "CLAUDE_LB_HTTP_RESPONSES_SESSION_BRIDGE_STUCK_GATE_RETIRE_AFTER_SECONDS",
+    "CLAUDE_LB_HTTP_RESPONSES_SESSION_BRIDGE_ANCHOR_POISON_FAILURE_THRESHOLD",
+    "CLAUDE_LB_HTTP_RESPONSES_SESSION_BRIDGE_SERVER_RECOVERY_MAX_ATTEMPTS",
+    "CLAUDE_LB_HTTP_RESPONSES_SESSION_BRIDGE_CLEAN_CLOSE_RETRY_JITTER_MAX_SECONDS",
+    "CLAUDE_LB_HTTP_RESPONSES_SESSION_BRIDGE_OPERATION_LEDGER_ENABLED",
 )
 
 
@@ -237,7 +239,7 @@ def test_constantized_bridge_tunables_are_listed_and_ignored(monkeypatch, caplog
 
     settings = Settings()
     for name in _K2_BRIDGE_REMOVED_NAMES:
-        assert not hasattr(settings, name.removeprefix("CODEX_LB_").lower())
+        assert not hasattr(settings, name.removeprefix("CLAUDE_LB_").lower())
 
     with caplog.at_level(logging.WARNING, logger="app.core.config.settings"):
         found = warn_removed_settings({name: "1" for name in _K2_BRIDGE_REMOVED_NAMES})
@@ -248,7 +250,7 @@ def test_constantized_bridge_tunables_are_listed_and_ignored(monkeypatch, caplog
 # end K2 bridge
 
 
-_DROPPED_BRIDGE_RECOVERY_MODE_ENV_NAME = "CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_AMBIGUOUS_CONTINUATION_RECOVERY_MODE"
+_DROPPED_BRIDGE_RECOVERY_MODE_ENV_NAME = "CLAUDE_LB_HTTP_RESPONSES_SESSION_BRIDGE_AMBIGUOUS_CONTINUATION_RECOVERY_MODE"
 
 
 def test_dropped_bridge_recovery_mode_env_is_listed_and_ignored(monkeypatch, caplog):
@@ -266,7 +268,7 @@ def test_dropped_bridge_recovery_mode_env_is_listed_and_ignored(monkeypatch, cap
     assert found == [_DROPPED_BRIDGE_RECOVERY_MODE_ENV_NAME]
 
 
-_TOKEN_REFRESH_INTERVAL_ENV_NAME = "CODEX_LB_TOKEN_REFRESH_INTERVAL_DAYS"
+_TOKEN_REFRESH_INTERVAL_ENV_NAME = "CLAUDE_LB_TOKEN_REFRESH_INTERVAL_DAYS"
 
 
 def test_token_refresh_interval_env_is_listed_and_ignored(monkeypatch, caplog):

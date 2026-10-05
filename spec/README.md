@@ -1,4 +1,4 @@
-# codex-lb Core Ownership/Continuity/Timeout Model
+# claude-lb Core Ownership/Continuity/Timeout Model
 
 This directory contains a TLC-checked TLA+ model of the core concurrency
 protocol distilled from `spec/evidence/TAXONOMY.md` and
@@ -19,7 +19,7 @@ The owning account is either the served account or the opaque identity
 the turn. That single extra identity is enough to express cross-account anchor
 injection without paying for a second full account dimension.
 
-The turn lifecycle distinguishes three waiting phases, because live codex-lb
+The turn lifecycle distinguishes three waiting phases, because live claude-lb
 kills them under three different budgets:
 
 - `queued` - waiting at the admission gate (`gateDeadline`).
@@ -127,14 +127,14 @@ exemplar column carries PR numbers and the incident date instead of fix SHAs.
   `CompleteTurn`, and `ClaimCompletedDelivery` unreachable for that turn.
   Fixed live as PR `1638`, *never inject a cross-account previous_response_id
   anchor*. Session-level evidence for the resulting dead-anchor loops is in
-  `memory/codex-lb-formal/incidents/2026-08-06-keepalive-window/SESSIONS_TRACE.md`
+  `memory/claude-lb-formal/incidents/2026-08-06-keepalive-window/SESSIONS_TRACE.md`
   (sessions `a0eb3b03df19` and `33755fa72727`, durable rows `60732a9c...` and
   `8e04f345...`, retry circuits at 10 and 7 consecutive `stream_idle_timeout`
   failures). The `bridge_reconnect_account_swap` torn state proven in
-  `memory/codex-lb-formal/EVENT_BUGS.md` is the same account-identity hazard
+  `memory/claude-lb-formal/EVENT_BUGS.md` is the same account-identity hazard
   seen from the reconnect side.
 - **`weak-conflated-timers.cfg` -> `Inv11PreResponseBudget`.** The audit in
-  `memory/codex-lb-formal/MISCLASS.md` proved the `keepalive_count=6
+  `memory/claude-lb-formal/MISCLASS.md` proved the `keepalive_count=6
   max_keepalive_count=6` kill is a *pre-response-start* event-queue silence
   timer worth `6 * 10s = 60s`, not the configured `stream_idle_timeout_seconds
   = 7200s` it was reported as, and that it sat below the `300s` owner-side
@@ -160,7 +160,7 @@ exemplar column carries PR numbers and the incident date instead of fix SHAs.
   live counterpart on the recovery path: a thread-recovery stream that
   completed an output item for a response that was never created left stateful
   clients waiting and retrying instead of finishing. The unbounded
-  `event_queue.get()` proven in `memory/codex-lb-formal/EVENT_BUGS.md`
+  `event_queue.get()` proven in `memory/claude-lb-formal/EVENT_BUGS.md`
   (candidate 1, reachable when `sse_keepalive_interval_seconds <= 0`) is the
   server-side twin of the same "no bound, no recovery" shape, and is why
   `Inv11PreResponseBudget` requires the pre-response bound to exist and stay at
@@ -172,7 +172,7 @@ kills (`docker stop` grace `10s` against a committed `30s + 25s` app drain, so
 the bridge instance id, so the startup purge did not retire the previous
 process's rows. That is a deploy-side inequality and a durable-identity gap
 rather than a new core-protocol invariant; it is tracked in
-`memory/codex-lb-formal/incidents/2026-08-06-keepalive-window/INCIDENT.md` and
+`memory/claude-lb-formal/incidents/2026-08-06-keepalive-window/INCIDENT.md` and
 listed under Future Work below.
 
 ## Conformance Gap Modeled
@@ -207,14 +207,14 @@ space is much larger than a reviewer will sit through: a 12-worker run with a
 minutes, with 7.5M states left on the queue.
 
 So `check.sh` runs the full model under
-`CODEX_LB_TLC_FULL_TIMEOUT_SECONDS` (default 1800) and labels the outcome
+`CLAUDE_LB_TLC_FULL_TIMEOUT_SECONDS` (default 1800) and labels the outcome
 honestly:
 
 - `PASS full: ...` - the state space really was exhausted within the budget.
 - `PARTIAL full: no violation through depth N after Ts ...` - bounded search
   found no violation and the state space was **not** exhausted.
 
-Set `CODEX_LB_TLC_FULL_TIMEOUT_SECONDS=0` to remove the budget and run to
+Set `CLAUDE_LB_TLC_FULL_TIMEOUT_SECONDS=0` to remove the budget and run to
 exhaustion. A counterexample fails the run either way: the budget only bounds
 how long TLC looks, never whether a violation it did find is reported.
 

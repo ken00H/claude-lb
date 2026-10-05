@@ -109,7 +109,7 @@ The identity's group set SHALL be stored on the identity row (`groups_json`) and
 
 ### Requirement: The reverse proxy's group header is a deployment-topology setting
 
-`CODEX_LB_DASHBOARD_AUTH_PROXY_GROUPS_HEADER` SHALL name the header the trusted-header provider reads groups from, default `Remote-Groups`, optional, tier T1, validated by the same `normalize_dashboard_auth_proxy_header` as `CODEX_LB_DASHBOARD_AUTH_PROXY_HEADER` (reserved and authentication headers refused). It SHALL additionally refuse a value equal, case-insensitively, to the identity header, which would turn the username into a group claim. It lives in the environment, not in the dashboard, because it must match the reverse-proxy configuration; splitting it across two layers is how installs end up with a header nobody strips. The settings surface budget and `.env.example` SHALL be raised in the same change, and the generated settings reference SHALL name it.
+`CLAUDE_LB_DASHBOARD_AUTH_PROXY_GROUPS_HEADER` SHALL name the header the trusted-header provider reads groups from, default `Remote-Groups`, optional, tier T1, validated by the same `normalize_dashboard_auth_proxy_header` as `CLAUDE_LB_DASHBOARD_AUTH_PROXY_HEADER` (reserved and authentication headers refused). It SHALL additionally refuse a value equal, case-insensitively, to the identity header, which would turn the username into a group claim. It lives in the environment, not in the dashboard, because it must match the reverse-proxy configuration; splitting it across two layers is how installs end up with a header nobody strips. The settings surface budget and `.env.example` SHALL be raised in the same change, and the generated settings reference SHALL name it.
 
 #### Scenario: Default needs no configuration
 
@@ -118,7 +118,7 @@ The identity's group set SHALL be stored on the identity row (`groups_json`) and
 
 #### Scenario: A dangerous or duplicate header name is refused at startup
 
-- **WHEN** the setting is `Authorization`, or equal to `CODEX_LB_DASHBOARD_AUTH_PROXY_HEADER` in any casing
+- **WHEN** the setting is `Authorization`, or equal to `CLAUDE_LB_DASHBOARD_AUTH_PROXY_HEADER` in any casing
 - **THEN** the process fails to start with a configuration error naming the setting
 
 ### Requirement: The provider settings API names the headers it reads

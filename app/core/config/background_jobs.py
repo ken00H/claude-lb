@@ -2,7 +2,7 @@
 
 ``auth_guardian_enabled``, ``automations_scheduler_enabled`` and
 ``rate_limit_reset_credits_refresh_enabled`` are nullable ``dashboard_settings``
-columns that inherit the deprecated ``CODEX_LB_*`` environment alias and then
+columns that inherit the deprecated ``CLAUDE_LB_*`` environment alias and then
 the code default, resolved through :func:`resolve_inheritable`.
 
 The schedulers always start their loop; each cycle reads the ``SettingsCache``

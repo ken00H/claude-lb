@@ -99,10 +99,10 @@ def _error(response) -> str:
 def _trusted_header_mode(monkeypatch: pytest.MonkeyPatch) -> None:
     """The reverse-proxy topology, as the trusted-header suite sets it up."""
 
-    monkeypatch.setenv("CODEX_LB_DASHBOARD_AUTH_MODE", DashboardAuthMode.TRUSTED_HEADER.value)
-    monkeypatch.setenv("CODEX_LB_FIREWALL_TRUST_PROXY_HEADERS", "true")
-    monkeypatch.setenv("CODEX_LB_FIREWALL_TRUSTED_PROXY_CIDRS", "127.0.0.1/32")
-    monkeypatch.setenv("CODEX_LB_DASHBOARD_AUTH_PROXY_HEADER", "Remote-User")
+    monkeypatch.setenv("CLAUDE_LB_DASHBOARD_AUTH_MODE", DashboardAuthMode.TRUSTED_HEADER.value)
+    monkeypatch.setenv("CLAUDE_LB_FIREWALL_TRUST_PROXY_HEADERS", "true")
+    monkeypatch.setenv("CLAUDE_LB_FIREWALL_TRUSTED_PROXY_CIDRS", "127.0.0.1/32")
+    monkeypatch.setenv("CLAUDE_LB_DASHBOARD_AUTH_PROXY_HEADER", "Remote-User")
     get_settings.cache_clear()
 
 
@@ -224,7 +224,7 @@ async def test_the_provider_is_never_active_while_dashboard_auth_is_bypassed(
     async_client: AsyncClient, idp: FakeIdp, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     await _configure_provider()
-    monkeypatch.setenv("CODEX_LB_DASHBOARD_AUTH_MODE", DashboardAuthMode.DISABLED.value)
+    monkeypatch.setenv("CLAUDE_LB_DASHBOARD_AUTH_MODE", DashboardAuthMode.DISABLED.value)
     get_settings.cache_clear()
 
     refused = await async_client.get(START)
@@ -673,7 +673,9 @@ async def test_the_single_sign_on_session_is_capped_at_twelve_hours(
     completed = await _sign_in(async_client, idp)
 
     cookie = next(
-        header for header in completed.headers.get_list("set-cookie") if header.startswith("codex_lb_dashboard_session")
+        header
+        for header in completed.headers.get_list("set-cookie")
+        if header.startswith("claude_lb_dashboard_session")
     )
     assert f"Max-Age={expected}" in cookie
 

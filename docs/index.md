@@ -1,4 +1,4 @@
-# codex-lb
+# claude-lb
 
 Load balancer for ChatGPT accounts. Pool multiple accounts, track usage, manage API keys, view everything in a dashboard.
 
@@ -42,25 +42,25 @@ Load balancer for ChatGPT accounts. Pool multiple accounts, track usage, manage 
 ## Community companions
 
 These independent projects consume the existing dashboard API and are
-maintained outside codex-lb:
+maintained outside claude-lb:
 
-- [Codex LB Status Bar](https://github.com/sm1ee/codex-lb-statusbar) — a native
+- [Claude LB Status Bar](https://github.com/sm1ee/claude-lb-statusbar) — a native
   macOS app with account status, quota details, and authenticated account
   controls.
-- [codex-lb SwiftBar](https://github.com/joschi655/codex-lb-swiftbar) — a
+- [claude-lb SwiftBar](https://github.com/joschi655/claude-lb-swiftbar) — a
   read-only SwiftBar/Bun monitor for account-pool status and quota headroom.
-- [Codex LB Status](https://github.com/VictorStatko/codex-lb-status) — a
+- [Claude LB Status](https://github.com/VictorStatko/claude-lb-status) — a
   read-only Ubuntu tray monitor for pooled quota, account health, reset credits,
   and update state.
-- [Codex LB for Omarchy](https://github.com/janaki-sasidhar/omarchy-codex-lb) — a read-only Linux/Omarchy Quattro bar plugin with account quotas, usage totals, reset times, and optional desktop alerts. It supports guest sessions and dashboard password/TOTP login; see its authentication compatibility notes.
-- [Codex-LB Rates](https://github.com/uniskela/codex-lb-rates) — a
+- [Claude LB for Omarchy](https://github.com/janaki-sasidhar/omarchy-claude-lb) — a read-only Linux/Omarchy Quattro bar plugin with account quotas, usage totals, reset times, and optional desktop alerts. It supports guest sessions and dashboard password/TOTP login; see its authentication compatibility notes.
+- [Claude-LB Rates](https://github.com/uniskela/claude-lb-rates) — a
   Home Assistant integration for pool and per-account 5h / weekly / monthly
   remaining-% sensors (plus reset times and optional rich sensors). It supports
   guest sessions and dashboard password/TOTP login; see its README for setup.
 
 Prefer a guest dashboard session for monitoring-only access when the companion
 supports it, and grant admin access only for Status Bar account controls.
-codex-lb SwiftBar is read-only; consult its compatibility table for the
+claude-lb SwiftBar is read-only; consult its compatibility table for the
 authentication modes supported by the current release. Review each project's
 repository and release notes before connecting it.
 
@@ -70,4 +70,4 @@ defines the guest and admin access contracts.
 
 ---
 
-codex-lb is spec-driven: normative behavior lives in [OpenSpec capabilities](https://github.com/Soju06/codex-lb/tree/main/openspec/specs) in the repository. Docs pages describe how to use the project and link back to the specs that govern them.
+claude-lb is spec-driven: normative behavior lives in [OpenSpec capabilities](https://github.com/Soju06/codex-lb/tree/main/openspec/specs) in the repository. Docs pages describe how to use the project and link back to the specs that govern them.

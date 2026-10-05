@@ -24,7 +24,7 @@ PAYLOADS = [
 
 async def main() -> None:
     clients = {
-        mode: SubprocessNativeEgressClient(Path(os.environ["CODEX_LB_NATIVE_EGRESS_TEST_BINARY"]))
+        mode: SubprocessNativeEgressClient(Path(os.environ["CLAUDE_LB_NATIVE_EGRESS_TEST_BINARY"]))
         for mode in ("raw", "interpreted")
     }
 

@@ -330,7 +330,7 @@ def validate_runtime_timeout_invariants(settings: TimeoutSettings) -> list[Timeo
 def main(argv: Sequence[str] | None = None) -> int:
     from app.core.config.settings import get_settings
 
-    parser = argparse.ArgumentParser(description="Validate codex-lb timeout invariants.")
+    parser = argparse.ArgumentParser(description="Validate claude-lb timeout invariants.")
     parser.add_argument("--strict", action="store_true", help="exit nonzero when any invariant is violated")
     args = parser.parse_args(argv)
 

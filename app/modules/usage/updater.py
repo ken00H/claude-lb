@@ -155,7 +155,7 @@ _usage_refresh_auth_cooldowns: dict[str, float] = {}
 # Debounce window for request-triggered refreshes (a streamed
 # ``usage_limit_reached``): one immediate upstream fetch per account per
 # window collapses a 429 storm into a single call. Deliberately a constant
-# rather than a CODEX_LB_* setting (PRINCIPLES.md P2).
+# rather than a CLAUDE_LB_* setting (PRINCIPLES.md P2).
 _REQUEST_REFRESH_DEBOUNCE_SECONDS: Final[float] = 15.0
 # Accounts whose usage fetch failed with an ambiguous 401/403 are skipped for
 # this long before the next attempt (fixed; issue #1340 / PRINCIPLES.md P2).
@@ -173,7 +173,7 @@ _FALLBACK_PLAN_DOWNGRADE_OBSERVATIONS = InMemoryPlanDowngradeObservationStore()
 
 # Number of consecutive agreeing observations required before a workspace-less
 # paid -> free downgrade is persisted. Deliberately a constant rather than a
-# CODEX_LB_* setting: two observations is the minimum that distinguishes a real
+# CLAUDE_LB_* setting: two observations is the minimum that distinguishes a real
 # expiry from a single degraded response, and operators gain nothing from tuning
 # it (PRINCIPLES.md P2, settings-surface ratchet in issue #1340).
 _FREE_PLAN_DOWNGRADE_CONFIRMATIONS: Final[int] = 2

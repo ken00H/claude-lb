@@ -9,7 +9,7 @@ from starlette._utils import get_route_path
 from starlette.types import ASGIApp, Receive, Scope, Send
 
 from app.core.auth.dependencies import validate_required_proxy_api_key_authorization
-from app.core.clients.proxy import CODEX_LB_REQUIRED_CAPABILITY_HEADER
+from app.core.clients.proxy import CLAUDE_LB_REQUIRED_CAPABILITY_HEADER
 from app.core.errors import openai_error
 from app.core.exceptions import ProxyAuthError, ProxyRequiredCapabilityTransportError
 from app.core.runtime_logging import log_error_response
@@ -20,7 +20,7 @@ from app.modules.proxy.images_observability import (
 
 logger = logging.getLogger(__name__)
 
-_REQUIRED_CAPABILITY_HEADER_BYTES = CODEX_LB_REQUIRED_CAPABILITY_HEADER.lower().encode("latin-1")
+_REQUIRED_CAPABILITY_HEADER_BYTES = CLAUDE_LB_REQUIRED_CAPABILITY_HEADER.lower().encode("latin-1")
 
 _JSON_BODY_DENY_PATHS = frozenset(
     {

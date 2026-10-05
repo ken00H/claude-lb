@@ -87,7 +87,7 @@ async def test_random_uuid_v4_identity_is_persisted_and_regenerated_after_deleti
 @pytest.mark.asyncio
 async def test_disabled_scheduler_tick_makes_zero_sender_calls(db_setup, monkeypatch) -> None:
     del db_setup
-    monkeypatch.delenv("CODEX_LB_TELEMETRY_ENABLED", raising=False)
+    monkeypatch.delenv("CLAUDE_LB_TELEMETRY_ENABLED", raising=False)
     get_settings.cache_clear()
     async with SessionLocal() as session:
         store = TelemetryConsentStore(session)
@@ -103,7 +103,7 @@ async def test_disabled_scheduler_tick_makes_zero_sender_calls(db_setup, monkeyp
 @pytest.mark.asyncio
 async def test_enabled_scheduler_snapshot_declares_enabled_consent(db_setup, monkeypatch) -> None:
     del db_setup
-    monkeypatch.delenv("CODEX_LB_TELEMETRY_ENABLED", raising=False)
+    monkeypatch.delenv("CLAUDE_LB_TELEMETRY_ENABLED", raising=False)
     get_settings.cache_clear()
     async with SessionLocal() as session:
         store = TelemetryConsentStore(session)
@@ -158,7 +158,7 @@ async def test_scheduler_sends_startup_and_interval_snapshots_with_one_undecided
     caplog,
 ) -> None:
     del db_setup
-    monkeypatch.delenv("CODEX_LB_TELEMETRY_ENABLED", raising=False)
+    monkeypatch.delenv("CLAUDE_LB_TELEMETRY_ENABLED", raising=False)
     get_settings.cache_clear()
     assert TELEMETRY_INTERVAL_SECONDS == 24 * 60 * 60
 
@@ -178,6 +178,6 @@ async def test_scheduler_sends_startup_and_interval_snapshots_with_one_undecided
         record.getMessage() for record in caplog.records if "Anonymous telemetry is active" in record.getMessage()
     ]
     assert len(notices) == 1
-    assert "https://soju06.github.io/codex-lb/telemetry/" in notices[0]
-    assert "CODEX_LB_TELEMETRY_ENABLED=false" in notices[0]
+    assert "https://soju06.github.io/claude-lb/telemetry/" in notices[0]
+    assert "CLAUDE_LB_TELEMETRY_ENABLED=false" in notices[0]
     assert scheduler._task is None

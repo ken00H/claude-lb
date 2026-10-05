@@ -124,7 +124,7 @@ Fleet summary responses MUST NOT include OAuth token material, auth token status
 
 ### Requirement: Fleet refresh requests existing usage refresh policy
 
-The system SHALL expose `POST /api/fleet/refresh` for trusted local fleet consumers. The route MUST require a valid Bearer API key even when global proxy API-key authentication is disabled. The route MUST request a usage refresh through codex-lb's existing usage refresh machinery and MUST NOT refresh inside proxy account selection.
+The system SHALL expose `POST /api/fleet/refresh` for trusted local fleet consumers. The route MUST require a valid Bearer API key even when global proxy API-key authentication is disabled. The route MUST request a usage refresh through claude-lb's existing usage refresh machinery and MUST NOT refresh inside proxy account selection.
 
 The route MUST preserve existing usage-refresh rules for disabled refresh, fresh samples, auth cooldowns, paused accounts, reauth-required accounts, and deactivated accounts.
 

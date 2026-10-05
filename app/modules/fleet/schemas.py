@@ -114,6 +114,6 @@ class FleetStickyObservability(DashboardModel):
 class FleetObservabilityResponse(DashboardModel):
     available: bool = True
     generated_at: datetime
-    source: str = "codex-lb fleet observability"
+    source: str = "claude-lb fleet observability"
     pressure: FleetPressureObservability = Field(default_factory=FleetPressureObservability)
     sticky: FleetStickyObservability = Field(default_factory=FleetStickyObservability)

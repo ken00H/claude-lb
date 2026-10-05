@@ -29,7 +29,7 @@ RELEASE_MANAGED_FILES = (
     "pyproject.toml",
     "app/__init__.py",
     "frontend/package.json",
-    "deploy/helm/codex-lb/Chart.yaml",
+    "deploy/helm/claude-lb/Chart.yaml",
     "uv.lock",
 )
 
@@ -165,7 +165,7 @@ def _read_ref_text(root: Path, ref: str, path: str) -> str:
 
 def _read_project_versions_at_ref(root: Path, ref: str) -> dict[str, str]:
     package_data = json.loads(_read_ref_text(root, ref, "frontend/package.json"))
-    chart_text = _read_ref_text(root, ref, "deploy/helm/codex-lb/Chart.yaml")
+    chart_text = _read_ref_text(root, ref, "deploy/helm/claude-lb/Chart.yaml")
     uv_text = _read_ref_text(root, ref, "uv.lock")
 
     def find(pattern: str, text: str, name: str) -> str:
@@ -182,12 +182,12 @@ def _read_project_versions_at_ref(root: Path, ref: str) -> dict[str, str]:
             "app version",
         ),
         "frontend/package.json": package_data["version"],
-        "deploy/helm/codex-lb/Chart.yaml version": find(r"^version: (.+)$", chart_text, "chart version"),
-        "deploy/helm/codex-lb/Chart.yaml appVersion": find(r"^appVersion: (.+)$", chart_text, "chart appVersion"),
+        "deploy/helm/claude-lb/Chart.yaml version": find(r"^version: (.+)$", chart_text, "chart version"),
+        "deploy/helm/claude-lb/Chart.yaml appVersion": find(r"^appVersion: (.+)$", chart_text, "chart appVersion"),
         "uv.lock": find(
-            r'\[\[package\]\]\nname = "codex-lb"\nversion = "([^"]+)"\nsource = \{ editable = "\." \}',
+            r'\[\[package\]\]\nname = "claude-lb"\nversion = "([^"]+)"\nsource = \{ editable = "\." \}',
             uv_text,
-            "uv.lock codex-lb version",
+            "uv.lock claude-lb version",
         ),
     }
 

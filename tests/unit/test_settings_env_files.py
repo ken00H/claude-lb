@@ -1,4 +1,4 @@
-"""Pin env-file discovery: module root by default, explicit CODEX_LB_ENV_FILE override.
+"""Pin env-file discovery: module root by default, explicit CLAUDE_LB_ENV_FILE override.
 
 Settings resolves ``ENV_FILES`` at import time, so every case runs a fresh
 interpreter with a controlled environment instead of reloading modules
@@ -28,7 +28,7 @@ _DEFAULTS = ["text", True]
 
 
 def _probe_settings(cwd: Path, extra_env: dict[str, str] | None = None) -> list[object]:
-    environ = {name: value for name, value in os.environ.items() if not name.startswith("CODEX_LB_")}
+    environ = {name: value for name, value in os.environ.items() if not name.startswith("CLAUDE_LB_")}
     environ["PYTHONPATH"] = str(_REPO_ROOT)
     if extra_env:
         environ.update(extra_env)
@@ -53,39 +53,39 @@ def test_launch_directory_env_files_are_not_loaded(tmp_path: Path) -> None:
     """Launching from a directory with unrelated env files must not load them.
 
     Discovery is anchored at the module root; a ``Path.cwd()`` anchor would
-    silently apply another project's ``.env`` to e.g. ``uvx codex-lb`` run
+    silently apply another project's ``.env`` to e.g. ``uvx claude-lb`` run
     from that project's directory.
     """
     _skip_if_checkout_has_env_files()
-    (tmp_path / ".env").write_text("CODEX_LB_LOG_FORMAT=json\n", encoding="utf-8")
-    (tmp_path / ".env.local").write_text("CODEX_LB_LEADER_ELECTION_ENABLED=false\n", encoding="utf-8")
+    (tmp_path / ".env").write_text("CLAUDE_LB_LOG_FORMAT=json\n", encoding="utf-8")
+    (tmp_path / ".env.local").write_text("CLAUDE_LB_LEADER_ELECTION_ENABLED=false\n", encoding="utf-8")
 
     assert _probe_settings(tmp_path) == _DEFAULTS
 
 
 def test_env_file_override_loads_explicit_files(tmp_path: Path) -> None:
-    """CODEX_LB_ENV_FILE points relocated installs (the Nix wrapper) at env files."""
+    """CLAUDE_LB_ENV_FILE points relocated installs (the Nix wrapper) at env files."""
     env_dir = tmp_path / "config"
     env_dir.mkdir()
-    (env_dir / ".env").write_text("CODEX_LB_LOG_FORMAT=json\n", encoding="utf-8")
-    (env_dir / ".env.local").write_text("CODEX_LB_LEADER_ELECTION_ENABLED=false\n", encoding="utf-8")
+    (env_dir / ".env").write_text("CLAUDE_LB_LOG_FORMAT=json\n", encoding="utf-8")
+    (env_dir / ".env.local").write_text("CLAUDE_LB_LEADER_ELECTION_ENABLED=false\n", encoding="utf-8")
     launch_dir = tmp_path / "elsewhere"
     launch_dir.mkdir()
 
     override = os.pathsep.join([str(env_dir / ".env"), str(env_dir / ".env.local")])
 
-    assert _probe_settings(launch_dir, {"CODEX_LB_ENV_FILE": override}) == ["json", False]
+    assert _probe_settings(launch_dir, {"CLAUDE_LB_ENV_FILE": override}) == ["json", False]
 
 
 def test_env_file_override_tolerates_missing_files(tmp_path: Path) -> None:
     """The Nix wrapper always exports launch-dir paths; absent files are no-ops."""
     override = os.pathsep.join([str(tmp_path / ".env"), str(tmp_path / ".env.local")])
 
-    assert _probe_settings(tmp_path, {"CODEX_LB_ENV_FILE": override}) == _DEFAULTS
+    assert _probe_settings(tmp_path, {"CLAUDE_LB_ENV_FILE": override}) == _DEFAULTS
 
 
 def test_blank_env_file_override_falls_back_to_module_root(tmp_path: Path) -> None:
     _skip_if_checkout_has_env_files()
-    (tmp_path / ".env").write_text("CODEX_LB_LOG_FORMAT=json\n", encoding="utf-8")
+    (tmp_path / ".env").write_text("CLAUDE_LB_LOG_FORMAT=json\n", encoding="utf-8")
 
-    assert _probe_settings(tmp_path, {"CODEX_LB_ENV_FILE": "   "}) == _DEFAULTS
+    assert _probe_settings(tmp_path, {"CLAUDE_LB_ENV_FILE": "   "}) == _DEFAULTS

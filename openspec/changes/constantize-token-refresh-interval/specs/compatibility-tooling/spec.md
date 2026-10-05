@@ -27,7 +27,7 @@ run started from a stale isolated credential would otherwise exchange a real,
 single-use refresh token against the authorization host — which is a protocol
 constant unaffected by the fixture upstream override — rotating the credential
 into a database the suite deletes and leaving every later run with a dead
-file. The suite MUST NOT set a removed `CODEX_LB_*` variable in a runner's
+file. The suite MUST NOT set a removed `CLAUDE_LB_*` variable in a runner's
 environment to suppress refresh.
 
 #### Scenario: Codex version changes

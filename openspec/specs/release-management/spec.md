@@ -1,7 +1,7 @@
 # release-management Specification
 
 ## Purpose
-Governs the release channels of codex-lb: the stable path owned by release-please and the PR-driven beta channel layered on it. Beta releases must be prepared through release PRs, publish as GitHub prereleases on merge, never advance stable aliases or the stable manifest, and withdraw public release metadata when publishing fails, so stable promotion stays release-please owned and every release-managed version field is guarded.
+Governs the release channels of claude-lb: the stable path owned by release-please and the PR-driven beta channel layered on it. Beta releases must be prepared through release PRs, publish as GitHub prereleases on merge, never advance stable aliases or the stable manifest, and withdraw public release metadata when publishing fails, so stable promotion stays release-please owned and every release-managed version field is guarded.
 ## Requirements
 ### Requirement: Beta releases are prepared through release PRs
 
@@ -172,7 +172,7 @@ the train contains no data backfills.
 
 ### Requirement: Stable release promotions guard every release-managed version field
 
-Stable release promotion pull requests SHALL fail CI unless every release-managed version field agrees on the stable version and every field that previously held the prior release train version advances together. The guarded fields SHALL include `pyproject.toml`, `app/__init__.py`, `frontend/package.json`, both Helm chart version fields, and the editable `codex-lb` entry in `uv.lock`.
+Stable release promotion pull requests SHALL fail CI unless every release-managed version field agrees on the stable version and every field that previously held the prior release train version advances together. The guarded fields SHALL include `pyproject.toml`, `app/__init__.py`, `frontend/package.json`, both Helm chart version fields, and the editable `claude-lb` entry in `uv.lock`.
 
 #### Scenario: release-please stable PR misses uv.lock
 

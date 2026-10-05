@@ -171,7 +171,7 @@ def test_chat_unknown_message_keys_are_dropped():
 
     OpenAI's own /v1/chat/completions parses the known chat-message fields
     and ignores everything else on the message object — it never forwards
-    arbitrary client-supplied keys. codex-lb must match that: a Responses
+    arbitrary client-supplied keys. claude-lb must match that: a Responses
     API input message item only has `role` + `content`, and forwarding any
     other key makes the upstream Responses API reject the whole request
     with an `unknown_parameter` error (which then poisons every later

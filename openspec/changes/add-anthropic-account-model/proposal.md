@@ -55,7 +55,7 @@ increments 3–4 (proxy rewrite, usage/dashboard) build on Anthropic semantics.
 - `app/modules/oauth/` UI strings and dashboard account cards show Anthropic identity.
 - **Known constraint (accepted risk, documented in design.md):** Anthropic restricts
   consumer-plan OAuth to Claude Code/Claude.ai with server-side enforcement since
-  2026-01; the OAuth pool presents as Claude Code clients, mirroring how codex-lb
+  2026-01; the OAuth pool presents as Claude Code clients, mirroring how claude-lb
   presents as Codex CLI. Accounts may be revoked; API-key pool is the compliant
   fallback and must be first-class, not an afterthought.
 - Out of scope: proxy request path (`/v1/messages`), usage fetch endpoints, dashboard

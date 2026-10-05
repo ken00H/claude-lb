@@ -7,7 +7,7 @@ another account, it MUST record which proof refused it. The reason MUST come fro
 set `file_bound`, `no_durable_lookup`, `payload_not_full_resend`, `anchor_metadata_missing`,
 `prefix_fingerprint_mismatch`, `input_not_itemized`, `missing_prior_output`,
 `account_scoped_input`, and MUST be exposed both as the Prometheus counter
-`codex_lb_continuity_replay_rejected_total{surface, reason}` and as one bridge event log line
+`claude_lb_continuity_replay_rejected_total{surface, reason}` and as one bridge event log line
 `owner_unavailable_replay_rejected` at WARNING carrying the reason, the hashed bridge key, the
 affinity kind, the model, and the failed owner account id. Exactly one reason MUST be reported
 per refusal, and it MUST be the first proof that refused in evaluation order. Recording MUST

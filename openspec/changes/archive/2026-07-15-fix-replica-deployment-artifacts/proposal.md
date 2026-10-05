@@ -22,5 +22,5 @@ The shipped multi-replica deployment artifacts are broken in ways that either ta
 ## Impact
 
 - Affected specs: `deployment-networking`, `deployment-installation`
-- Affected code: `deploy/helm/codex-lb/**` (values overlays, ingress/deployment/NOTES templates, README), `scripts/helm-kind-smoke.sh`, `docker-compose.yml`, `docker-compose.prod.yml`, `tests/unit/test_helm_external_secrets.py`, new `tests/unit/test_helm_replica_artifacts.py`
+- Affected code: `deploy/helm/claude-lb/**` (values overlays, ingress/deployment/NOTES templates, README), `scripts/helm-kind-smoke.sh`, `docker-compose.yml`, `docker-compose.prod.yml`, `tests/unit/test_helm_external_secrets.py`, new `tests/unit/test_helm_replica_artifacts.py`
 - Behavior change for operators who set `ingress.enabled=true` on an nginx class without `ingress.nginx.enabled=true`: they previously received `upstream-hash-by` unconditionally and now receive no nginx annotations until they set the flag (session correctness is preserved by DB-backed bridge ring owner-forwarding; the cost is a forwarding hop). Called out in change notes.

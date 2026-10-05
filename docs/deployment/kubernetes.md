@@ -3,11 +3,11 @@
 Install with Helm:
 
 ```bash
-helm install codex-lb oci://ghcr.io/soju06/charts/codex-lb \
+helm install claude-lb oci://ghcr.io/soju06/charts/claude-lb \
   --set postgresql.auth.password=changeme \
   --set config.databaseMigrateOnStartup=true \
   --set migration.schemaGate.enabled=false
-kubectl port-forward svc/codex-lb 2455:2455
+kubectl port-forward svc/claude-lb 2455:2455
 ```
 
 Open [localhost:2455](http://localhost:2455) → Add account → Done.
@@ -23,8 +23,8 @@ it runs *before* the new pods roll and therefore before the old ones drain: an o
 
 ```bash
 # Scale to zero, upgrade, scale back up.
-kubectl scale deploy/codex-lb --replicas=0
-helm upgrade codex-lb oci://ghcr.io/soju06/charts/codex-lb
+kubectl scale deploy/claude-lb --replicas=0
+helm upgrade claude-lb oci://ghcr.io/soju06/charts/claude-lb
 ```
 
 or run the migration by hand after the old colour is stopped
@@ -80,15 +80,15 @@ In multi-replica setups, replicas must share the same encryption key (the Helm c
 
 ### Account concurrency caps are cluster-wide
 
-Under the default `CODEX_LB_PROXY_ACCOUNT_CAPS_SCOPE=partitioned`, `CODEX_LB_PROXY_ACCOUNT_STREAM_LIMIT` (default 8) and `CODEX_LB_PROXY_ACCOUNT_RESPONSE_CREATE_LIMIT` are cluster-wide targets. Each replica enforces its own deterministic share of a **positive** cap — `floor(cap / replicas)`, with the remainder distributed one slot at a time and every share floored at 1 — so with the default stream cap and three replicas, one account gets 3/3/2 slots per replica, not 8 each. A cap of `0` stays unlimited on every replica; it is never floored to one slot. Setting the scope to `replica` opts out of partitioning entirely: every replica then enforces the full configured cap.
+Under the default `CLAUDE_LB_PROXY_ACCOUNT_CAPS_SCOPE=partitioned`, `CLAUDE_LB_PROXY_ACCOUNT_STREAM_LIMIT` (default 8) and `CLAUDE_LB_PROXY_ACCOUNT_RESPONSE_CREATE_LIMIT` are cluster-wide targets. Each replica enforces its own deterministic share of a **positive** cap — `floor(cap / replicas)`, with the remainder distributed one slot at a time and every share floored at 1 — so with the default stream cap and three replicas, one account gets 3/3/2 slots per replica, not 8 each. A cap of `0` stays unlimited on every replica; it is never floored to one slot. Setting the scope to `replica` opts out of partitioning entirely: every replica then enforces the full configured cap.
 
 Practical consequences:
 
 - Size a positive cap for the total per-account concurrency you want across the cluster; adding replicas re-partitions it rather than raising it — except when the cap is smaller than the replica count, where the floor of 1 makes the aggregate equal the replica count and grow with each added replica. Disconnect-heavy or agent workloads typically want `~8 × replicas`.
-- The caps resolve as environment value < dashboard override. A fresh install stores no override, so `CODEX_LB_PROXY_ACCOUNT_*` is the effective value and raising it plus restarting pods takes effect. Once an operator stores a cap in **dashboard settings** (Settings → routing) — or on rows created before the NULL-seed change, which carry the seeded value as a stored override — the dashboard value wins and env changes do nothing until the override is cleared with the empty/`null` input, which returns the cap to inheriting the environment.
-- `CODEX_LB_PROXY_ACCOUNT_STREAM_RECOVERY_RESERVE` (default 1) is subtracted from each replica's share at selection time, so small shares feel it disproportionately: a share of 2 leaves 1 slot for new selection.
+- The caps resolve as environment value < dashboard override. A fresh install stores no override, so `CLAUDE_LB_PROXY_ACCOUNT_*` is the effective value and raising it plus restarting pods takes effect. Once an operator stores a cap in **dashboard settings** (Settings → routing) — or on rows created before the NULL-seed change, which carry the seeded value as a stored override — the dashboard value wins and env changes do nothing until the override is cleared with the empty/`null` input, which returns the cap to inheriting the environment.
+- `CLAUDE_LB_PROXY_ACCOUNT_STREAM_RECOVERY_RESERVE` (default 1) is subtracted from each replica's share at selection time, so small shares feel it disproportionately: a share of 2 leaves 1 slot for new selection.
 - Persistent `account_stream_cap` errors with idle replicas are the undersizing signature; raise the cap first.
-- Run one process per pod: shares are partitioned across ring members, and worker processes inside one pod would silently multiply the share. `CODEX_LB_WORKERS_PER_INSTANCE` is a startup guard, not a setting — any value other than `1` fails startup.
+- Run one process per pod: shares are partitioned across ring members, and worker processes inside one pod would silently multiply the share. `CLAUDE_LB_WORKERS_PER_INSTANCE` is a startup guard, not a setting — any value other than `1` fails startup.
 
 Semantics and sizing rationale: [proxy-admission-control](https://github.com/Soju06/codex-lb/tree/main/openspec/specs/proxy-admission-control).
 
@@ -134,7 +134,7 @@ operational context.
 
 Set `gatewayApi.rules` when different request paths need different Gateway API
 filters. The chart renders each rule's `matches` and `filters` in order and
-adds the codex-lb Service backend automatically. For example, this keeps API
+adds the claude-lb Service backend automatically. For example, this keeps API
 traffic direct while applying a Traefik forward-auth middleware to the
 dashboard catch-all:
 
@@ -145,7 +145,7 @@ gatewayApi:
     - name: gateway
       namespace: gateway-system
   hostnames:
-    - codex-lb.example.com
+    - claude-lb.example.com
   rules:
     - matches:
         - path:
@@ -200,7 +200,7 @@ gatewayApi:
     create: true
     gatewayClassName: envoy
   hostnames:
-    - codex-lb.example.com
+    - claude-lb.example.com
 ```
 
 `gatewayApi.gateway.gatewayClassName` is required when `create=true`. The
@@ -211,16 +211,16 @@ Gateway defaults to a single HTTP listener on port 80; override
 
 The chart can assign concise titles to its packaged dashboards without copying
 their JSON. When the Grafana sidecar maps annotation paths to filesystem-backed
-nested folders, the following values produce `Applications / Codex LB /
-Overview` and `Applications / Codex LB / TTFT Breakdown`:
+nested folders, the following values produce `Applications / Claude LB /
+Overview` and `Applications / Claude LB / TTFT Breakdown`:
 
 ```yaml
 metrics:
   grafanaDashboard:
     enabled: true
-    folder: Applications/Codex LB
+    folder: Applications/Claude LB
     titles:
-      codex-lb.json: Overview
+      claude-lb.json: Overview
       ttft-breakdown.json: TTFT Breakdown
 ```
 
@@ -230,7 +230,7 @@ preserves the default dashboard titles.
 ## Full chart reference
 
 For external database, production config, ingress, observability, and more see the
-[Helm chart README](https://github.com/Soju06/codex-lb/blob/main/deploy/helm/codex-lb/README.md).
+[Helm chart README](https://github.com/Soju06/codex-lb/blob/main/deploy/helm/claude-lb/README.md).
 
 ---
 

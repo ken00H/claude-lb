@@ -168,7 +168,7 @@ def test_cli_strict_flag_exits_one_and_reports_rule(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     get_settings.cache_clear()
-    monkeypatch.setenv("CODEX_LB_PROXY_REQUEST_BUDGET_SECONDS", "5")
+    monkeypatch.setenv("CLAUDE_LB_PROXY_REQUEST_BUDGET_SECONDS", "5")
     try:
         assert main(["--strict"]) == 1
     finally:
@@ -184,7 +184,7 @@ def test_cli_without_strict_exits_zero_and_reports_violation(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     get_settings.cache_clear()
-    monkeypatch.setenv("CODEX_LB_PROXY_REQUEST_BUDGET_SECONDS", "5")
+    monkeypatch.setenv("CLAUDE_LB_PROXY_REQUEST_BUDGET_SECONDS", "5")
     try:
         with caplog.at_level(logging.CRITICAL, logger="app.core.timeout_invariants"):
             assert main([]) == 0

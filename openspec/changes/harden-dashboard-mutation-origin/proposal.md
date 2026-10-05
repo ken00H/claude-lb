@@ -2,7 +2,7 @@
 
 Dashboard mutations are authenticated by a `SameSite=Lax` session cookie, or by nothing at all on a loopback deployment without a password. Neither stops a page on another site from making the operator's browser send a state-changing request to the dashboard: `SameSite=Lax` is a browser default that some clients relax, and the loopback no-password mode has no cookie to protect in the first place. There is no CSRF token, no origin check, and no CORS policy today, so `POST /api/dashboard-auth/logout`, `PUT /api/settings`, account deletion, and every other mutation are reachable cross-site.
 
-On the client side the auth store boots with `role: "admin"`, `permissions: ["read", "write"]`, `canWrite: true` and the gate renders the application before the session request has even started. Admins see a frame that later re-renders; guests briefly see admin-only controls; a session response that omits `role` or `permissions` is treated as an admin. The RBAC plan (`~/work/codex-lb/rbac-plan-0908/PLAN.md`, hardening items H3 and H4, Phase 0 PR-0b) requires both problems fixed before user accounts and finer roles ship.
+On the client side the auth store boots with `role: "admin"`, `permissions: ["read", "write"]`, `canWrite: true` and the gate renders the application before the session request has even started. Admins see a frame that later re-renders; guests briefly see admin-only controls; a session response that omits `role` or `permissions` is treated as an admin. The RBAC plan (`~/work/claude-lb/rbac-plan-0908/PLAN.md`, hardening items H3 and H4, Phase 0 PR-0b) requires both problems fixed before user accounts and finer roles ship.
 
 ## What Changes
 

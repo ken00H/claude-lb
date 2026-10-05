@@ -622,7 +622,7 @@ async def test_settings_data_resolves_conversation_archive_toggle_with_provenanc
 
 
 def test_conversation_archive_env_shadow_warning_names_the_variable(monkeypatch: pytest.MonkeyPatch) -> None:
-    """A set CODEX_LB_CONVERSATION_ARCHIVE_ENABLED that the dashboard column overrides is reported at startup."""
+    """A set CLAUDE_LB_CONVERSATION_ARCHIVE_ENABLED that the dashboard column overrides is reported at startup."""
     row = DashboardSettings()
     row.conversation_archive_enabled = False
     environment = Settings(conversation_archive_enabled=True)

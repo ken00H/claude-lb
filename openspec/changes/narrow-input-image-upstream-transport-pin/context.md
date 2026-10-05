@@ -44,7 +44,7 @@ matching its one in-core caller.
 that reaches the upstream WebSocket goes through
 `_prepare_websocket_response_create_payload`, whose slimmer is all-or-nothing:
 crossing the budget by one byte replaces *every* historical inline image with
-`[codex-lb omitted historical inline image to fit upstream websocket budget]`.
+`[claude-lb omitted historical inline image to fit upstream websocket budget]`.
 14 MiB, not the 15 MiB `upstream_response_create_max_bytes`, is deliberate:
 under `auto` the 14 MiB gate inside `_resolve_stream_transport` already fires
 first, so a 15 MiB clause would be unreachable there, and two thresholds for one

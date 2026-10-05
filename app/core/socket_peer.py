@@ -6,7 +6,7 @@ from starlette.requests import HTTPConnection
 from starlette.types import Scope
 
 _RawSocketPeer: TypeAlias = tuple[str, int] | None
-_RAW_SOCKET_PEER_SCOPE_KEY: Final = "_codex_lb_raw_socket_peer"
+_RAW_SOCKET_PEER_SCOPE_KEY: Final = "_claude_lb_raw_socket_peer"
 
 
 def _capture_raw_socket_peer(scope: Scope) -> None:

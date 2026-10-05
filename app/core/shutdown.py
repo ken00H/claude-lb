@@ -8,7 +8,7 @@ from typing import TypeVar
 
 _TaskResultT = TypeVar("_TaskResultT")
 
-DRAIN_DEADLINE_HEADER = "x-codex-lb-drain-deadline-monotonic"
+DRAIN_DEADLINE_HEADER = "x-claude-lb-drain-deadline-monotonic"
 
 _draining: bool = False
 _drain_deadline: float | None = None

@@ -22,7 +22,7 @@
 - [x] 1.4 Add `owner_unavailable_replay_rejected` to the WARNING event set in
   `app/modules/proxy/_service/http_bridge/helpers.py::_log_http_bridge_event`.
 - [x] 1.5 Register `continuity_replay_rejected_total`
-  (`codex_lb_continuity_replay_rejected_total{surface,reason}`) in
+  (`claude_lb_continuity_replay_rejected_total{surface,reason}`) in
   `app/core/metrics/prometheus.py` with the `None` fallback and the `__all__` entry, and add
   `_record_continuity_replay_rejected` to `app/modules/proxy/_service/observability.py`
   following `_record_continuity_owner_resolution`'s `_service_global` indirection.

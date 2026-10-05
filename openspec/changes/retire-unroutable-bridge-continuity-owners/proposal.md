@@ -61,7 +61,7 @@ is the same one that made the 2026-09-04 incident permanent.
   paired with a long inactivity grace — `REAUTH_REQUIRED` belongs there only under that pairing,
   since an unexpired token still makes it routable *now*.
 
-No new `CODEX_LB_*` setting, no `.env.example` change, no README growth, no dashboard change.
+No new `CLAUDE_LB_*` setting, no `.env.example` change, no README growth, no dashboard change.
 None of the four ceiling-guarded proxy files grows.
 
 ## Not in this change

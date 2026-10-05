@@ -128,14 +128,14 @@ def _http_downstream_request_is_sticky(payload: ResponsesRequest, headers: Mappi
     return http_continuation_signal(payload, headers) is not None
 
 
-_POST_REFRESH_TRANSIENT_EXHAUSTED_ATTR = "_codex_lb_post_refresh_transient_exhausted"
+_POST_REFRESH_TRANSIENT_EXHAUSTED_ATTR = "_claude_lb_post_refresh_transient_exhausted"
 # Set on a surfaced pre-visible ``ProxyResponseError`` whose account health was
 # already written where the failover decision was made, so the outer terminal
 # handler does not write it a second time. Exactly-once matters most for an
 # exhausted owner-bound burst 429 (its same-account retries engage only the
 # replica-local burst cooldown, never ``record_error``), but every surfaced
 # pre-visible failure is penalized once by construction.
-_STREAM_HEALTH_RECORDED_ATTR = "_codex_lb_stream_health_recorded"
+_STREAM_HEALTH_RECORDED_ATTR = "_claude_lb_stream_health_recorded"
 
 
 def _resolve_http_downstream_transport(policy: str, *, payload: ResponsesRequest, headers: Mapping[str, str]) -> str:

@@ -533,7 +533,7 @@ _WEBSOCKET_PINNED_REFRESH_UNAVAILABLE_MESSAGE = "Account refresh is temporarily 
 _WEBSOCKET_SCOPE_CLEANUP_TIMEOUT_SECONDS = 5.0
 _CAPABILITY_REQUIRED_NO_AUTHORIZED_ACCOUNTS_MESSAGE = (
     "This request requires Trusted Access for Cyber, but no eligible account is marked as "
-    "security-work-authorized. codex-lb did not fall back to an ordinary account."
+    "security-work-authorized. claude-lb did not fall back to an ordinary account."
 )
 _CAPABILITY_REQUIRED_NO_AUTHORIZED_ACCOUNTS_ACTION = "fail_closed_capability_routing"
 

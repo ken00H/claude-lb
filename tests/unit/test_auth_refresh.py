@@ -93,7 +93,7 @@ def test_should_refresh_within_interval():
 def test_should_refresh_reads_the_module_constant_at_call_time(monkeypatch):
     """The fixed window stays injectable: tests patch the module attribute.
 
-    ``CODEX_LB_TOKEN_REFRESH_INTERVAL_DAYS`` is gone (issue #1340 /
+    ``CLAUDE_LB_TOKEN_REFRESH_INTERVAL_DAYS`` is gone (issue #1340 /
     PRINCIPLES.md P2), so this attribute is the only seam left.
     """
     assert TOKEN_REFRESH_INTERVAL_DAYS == 8

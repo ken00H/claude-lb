@@ -2,7 +2,7 @@
 
 Normative owner: [Proxy architecture OpenSpec](https://github.com/Soju06/codex-lb/blob/main/openspec/specs/proxy-architecture/spec.md).
 
-codex-lb uses one virtual Cargo workspace at the repository root. Rust source
+claude-lb uses one virtual Cargo workspace at the repository root. Rust source
 lives under `crates/`; it is not nested under `rust/` or `native/`. This is the
 intended final layout, not a temporary helper layout: when the Python backend is
 fully retired, the root workspace and existing crate paths remain in place and
@@ -16,10 +16,10 @@ Cargo.lock                        one reproducible application lockfile
 rust-toolchain.toml               pinned compiler, rustfmt, and clippy
 deny.toml                         advisory, license, and source policy
 crates/
-  codex-lb-protocol/              versioned Python/Rust IPC data contract
-  codex-lb-responses/             synchronous Responses semantics and collection
-  codex-lb-egress/                reusable HTTP, TLS, and WebSocket transport
-  codex-lb-egress-worker/         stdio process lifecycle and binary target
+  claude-lb-protocol/              versioned Python/Rust IPC data contract
+  claude-lb-responses/             synchronous Responses semantics and collection
+  claude-lb-egress/                reusable HTTP, TLS, and WebSocket transport
+  claude-lb-egress-worker/         stdio process lifecycle and binary target
 app/core/clients/native_egress.py Python adapter and replay-safe ownership
 ```
 
@@ -124,7 +124,7 @@ capabilities needed by the current Python call sites. An installed but
 incompatible helper fails closed before dispatch; it is not treated as a
 missing helper and no ambiguous request is replayed through Python.
 
-`crates/codex-lb-protocol/tests/fixtures/handshake-v1.json` is the shared
+`crates/claude-lb-protocol/tests/fixtures/handshake-v1.json` is the shared
 cross-language handshake fixture. Wire changes must follow these rules:
 
 1. Add backward-compatible optional fields when possible.
@@ -154,7 +154,7 @@ For each slice:
 - Remove the Python implementation and IPC surface after the Rust owner is
   proven; do not preserve a permanent dual implementation.
 
-Likely future top-level crates are `codex-lb-domain`, `codex-lb-application`,
+Likely future top-level crates are `claude-lb-domain`, `claude-lb-application`,
 focused infrastructure adapters, and a server binary. Those names should be
 introduced when their boundaries exist rather than scaffolded empty today.
 

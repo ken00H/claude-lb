@@ -1041,7 +1041,7 @@ Background consumers derived from the stream budget (the quota warm-up claim lea
 - **AND** the reconnect does not fail solely because the generic 600-second budget elapsed
 
 #### Scenario: Dashboard value overrides startup environment
-- **GIVEN** `CODEX_LB_PROXY_REQUEST_BUDGET_SECONDS=600` in the process environment and an operator has stored `900` for `proxy_request_budget_seconds` through `PUT /api/settings`
+- **GIVEN** `CLAUDE_LB_PROXY_REQUEST_BUDGET_SECONDS=600` in the process environment and an operator has stored `900` for `proxy_request_budget_seconds` through `PUT /api/settings`
 - **WHEN** a new request computes its request deadline on any replica
 - **THEN** the deadline uses the 900 second dashboard value
 - **AND** `GET /api/settings` reports `proxyRequestBudgetSeconds: 900` with `provenance.proxy_request_budget_seconds.source = "dashboard"`
@@ -1058,7 +1058,7 @@ Background consumers derived from the stream budget (the quota warm-up claim lea
 - **AND** a request that raises every violated budget in the same `PUT` is accepted
 
 #### Scenario: Dashboard stream budget overrides startup environment
-- **GIVEN** `CODEX_LB_HTTP_RESPONSES_STREAM_REQUEST_BUDGET_SECONDS=7200` in the process environment and an operator has stored `3600` for `http_responses_stream_request_budget_seconds` through `PUT /api/settings`
+- **GIVEN** `CLAUDE_LB_HTTP_RESPONSES_STREAM_REQUEST_BUDGET_SECONDS=7200` in the process environment and an operator has stored `3600` for `http_responses_stream_request_budget_seconds` through `PUT /api/settings`
 - **WHEN** a new HTTP or WebSocket Responses stream computes its request deadline on any replica
 - **THEN** the stream budget is 3600 seconds
 - **AND** `GET /api/settings` reports `httpResponsesStreamRequestBudgetSeconds: 3600` with `provenance.http_responses_stream_request_budget_seconds.source = "dashboard"`
@@ -1118,7 +1118,7 @@ The proxy MUST configure direct and routed upstream Responses WebSocket transpor
 
 #### Scenario: Dashboard idle timeout controls new connections
 
-- **GIVEN** `CODEX_LB_PROXY_DOWNSTREAM_WEBSOCKET_IDLE_TIMEOUT_SECONDS=120` and an operator stores `45` through `PUT /api/settings`
+- **GIVEN** `CLAUDE_LB_PROXY_DOWNSTREAM_WEBSOCKET_IDLE_TIMEOUT_SECONDS=120` and an operator stores `45` through `PUT /api/settings`
 - **WHEN** a new downstream WebSocket connection is accepted on any replica
 - **THEN** its idle timeout and the derived upstream ping/pong liveness window use 45 seconds
 - **AND** connections accepted before the change keep the value they were bound with
@@ -1739,11 +1739,11 @@ The service SHALL allow upstream Responses SSE events and upstream websocket mes
 - **THEN** the proxy continues processing the event instead of closing the upstream websocket locally with `1009 message too big`
 
 #### Scenario: The event budget is not an environment setting
-- **WHEN** the process starts with `CODEX_LB_MAX_SSE_EVENT_BYTES` or `CODEX_LB_UPSTREAM_RESPONSE_CREATE_MAX_BYTES` set
+- **WHEN** the process starts with `CLAUDE_LB_MAX_SSE_EVENT_BYTES` or `CLAUDE_LB_UPSTREAM_RESPONSE_CREATE_MAX_BYTES` set
 - **THEN** the values are ignored, startup logs the removed-setting warning once, and the 16 MiB / 15 MiB budgets apply
 
 ### Requirement: Upstream Responses transport strategy
-For streaming Codex/Responses proxy requests, the system MUST let operators choose the upstream transport strategy through dashboard settings, and the dashboard setting MUST be the only source of that choice: there MUST NOT be an environment variable for it, and the service MUST warn at startup when the removed `CODEX_LB_UPSTREAM_STREAM_TRANSPORT` variable is still set. The persisted strategy MUST be one of `auto`, `http`, or `websocket`; the settings API MUST reject any other value. Runtime readers MUST resolve the strategy from the dashboard settings snapshot through one shared resolver, and a snapshot still carrying the legacy `default` sentinel MUST resolve to `auto`. Upgrading MUST migrate persisted `default` rows to `auto`.
+For streaming Codex/Responses proxy requests, the system MUST let operators choose the upstream transport strategy through dashboard settings, and the dashboard setting MUST be the only source of that choice: there MUST NOT be an environment variable for it, and the service MUST warn at startup when the removed `CLAUDE_LB_UPSTREAM_STREAM_TRANSPORT` variable is still set. The persisted strategy MUST be one of `auto`, `http`, or `websocket`; the settings API MUST reject any other value. Runtime readers MUST resolve the strategy from the dashboard settings snapshot through one shared resolver, and a snapshot still carrying the legacy `default` sentinel MUST resolve to `auto`. Upgrading MUST migrate persisted `default` rows to `auto`.
 
 #### Scenario: Dashboard forces websocket upstream transport
 - **WHEN** the dashboard setting `upstream_stream_transport` is set to `"websocket"`
@@ -1765,7 +1765,7 @@ For streaming Codex/Responses proxy requests, the system MUST let operators choo
 - **THEN** the stored value is `"auto"` and `GET /api/settings` reports `"auto"`
 
 #### Scenario: Environment variable no longer applies
-- **GIVEN** the process runs with `CODEX_LB_UPSTREAM_STREAM_TRANSPORT=http` and the dashboard setting is `"websocket"`
+- **GIVEN** the process runs with `CLAUDE_LB_UPSTREAM_STREAM_TRANSPORT=http` and the dashboard setting is `"websocket"`
 - **WHEN** a streaming Responses request is resolved
 - **THEN** the upstream websocket transport is used
 - **AND** startup logged a removed-setting warning naming the variable
@@ -2712,11 +2712,11 @@ When serving or consuming the Codex-native `/backend-api/codex/responses` WebSoc
 - **AND** the downstream signal uses `error.code = "previous_response_not_found"`, which an unmodified Codex client's built-in stale-anchor recovery retries once using full conversation history without `previous_response_id` before surfacing a turn-ending error
 - **AND** the downstream payload does not expose the raw upstream error envelope or the missing upstream response id
 
-#### Scenario: codex-lb sanitizes stale-anchor errors for client classification
+#### Scenario: claude-lb sanitizes stale-anchor errors for client classification
 - **WHEN** upstream emits a direct Codex-native WebSocket stale-anchor error
-- **THEN** codex-lb MUST surface it with the canonical `error.code = "previous_response_not_found"` so an unmodified Codex client recognizes stale-anchor continuity loss without proxy-specific knowledge
-- **AND** codex-lb MUST NOT forward the raw upstream error envelope or expose the missing upstream response id downstream
-- **AND** codex-lb MUST NOT substitute a proxy-specific classifier that standard Codex clients do not act on
+- **THEN** claude-lb MUST surface it with the canonical `error.code = "previous_response_not_found"` so an unmodified Codex client recognizes stale-anchor continuity loss without proxy-specific knowledge
+- **AND** claude-lb MUST NOT forward the raw upstream error envelope or expose the missing upstream response id downstream
+- **AND** claude-lb MUST NOT substitute a proxy-specific classifier that standard Codex clients do not act on
 - **AND** the signal MUST let a compatible Codex client distinguish stale-anchor continuity loss from quota, policy, auth, and generic invalid-request failures
 
 #### Scenario: Public /v1 responses keep generic continuity masking
@@ -2727,13 +2727,13 @@ When serving or consuming the Codex-native `/backend-api/codex/responses` WebSoc
 #### Scenario: Non-stale-anchor failures do not trigger full-context retry
 - **WHEN** the upstream failure is quota, policy, auth, context-window, or another non-continuity error
 - **THEN** the client MUST NOT convert it into a stale-anchor full-context retry
-- **AND** codex-lb MUST preserve the original error class as much as safely possible
+- **AND** claude-lb MUST preserve the original error class as much as safely possible
 
 #### Scenario: ChatGPT backend omits param on an invalid previous response id
 - **GIVEN** a request depends on a `previous_response_id`
 - **WHEN** upstream returns `code = "invalid_request_error"` with the message `Invalid previous_response_id.`
 - **AND** `param` is absent or equals `previous_response_id`
-- **THEN** codex-lb MUST classify the failure as stale-anchor continuity loss
+- **THEN** claude-lb MUST classify the failure as stale-anchor continuity loss
 - **AND** the existing one-shot replay or sanitized canonical client signal MUST run
 - **AND** the same generic error with another `param` MUST NOT trigger continuity recovery
 - **AND** unrelated `invalid_request_error` messages MUST NOT trigger continuity recovery
@@ -2742,7 +2742,7 @@ When serving or consuming the Codex-native `/backend-api/codex/responses` WebSoc
 - **GIVEN** an HTTP-bridge continuation carries a full input history that passes the existing durable full-resend and account-neutral projection checks
 - **AND** the projected request has no account-scoped file references
 - **WHEN** the continuity owner explicitly rejects its `previous_response_id` as not found before producing a response
-- **THEN** codex-lb MUST remove the rejected anchor and replay the verified full request at most once on a fresh account-neutral bridge
+- **THEN** claude-lb MUST remove the rejected anchor and replay the verified full request at most once on a fresh account-neutral bridge
 - **AND** the rejecting owner account MUST be excluded from that replay
 - **AND** stale session and turn-state affinity headers MUST NOT be forwarded to the replacement bridge
 - **AND** the durable operation identity and settlement contract MUST remain attached to the replacement attempt
@@ -2760,7 +2760,7 @@ When serving or consuming the Codex-native `/backend-api/codex/responses` WebSoc
 - **GIVEN** an HTTP-bridge continuation carries a prefix-verified, trim-safe full input history
 - **AND** the retained request is not account-neutral because it contains account-bound tool or file history
 - **WHEN** the continuity owner explicitly rejects its `previous_response_id` as not found before producing a response
-- **THEN** codex-lb MUST remove the rejected anchor and replay the retained full request at most once on the same owner
+- **THEN** claude-lb MUST remove the rejected anchor and replay the retained full request at most once on the same owner
 - **AND** the replacement upstream request MUST NOT contain the rejected `previous_response_id`
 - **AND** same-owner replay MUST use a unique owner-pinned internal key instead of bypassing the older hard-key retry circuit
 - **AND** account-neutral replay admission MUST atomically claim the authorized original hard-key circuit generation
@@ -3148,32 +3148,32 @@ upstream-transport precedence.
 
 ### Requirement: Security-work authorization errors can route to authorized accounts
 
-When an upstream Responses request fails because the work requires cybersecurity authorization, codex-lb MUST retry the request on an account marked as security-work-authorized when the request can be safely replayed on a different account. The retry MUST exclude the account that produced the authorization error.
+When an upstream Responses request fails because the work requires cybersecurity authorization, claude-lb MUST retry the request on an account marked as security-work-authorized when the request can be safely replayed on a different account. The retry MUST exclude the account that produced the authorization error.
 
 #### Scenario: Unpinned stream request retries on an authorized account
 
 - **WHEN** an unpinned streamed Responses request fails with a security-work authorization error on an account that is not security-work-authorized
 - **AND** at least one eligible security-work-authorized account is available
-- **THEN** codex-lb emits a non-terminal `codex_lb.warning` with `code="security_work_authorization_required"` and `action="retry_security_work_authorized"`
-- **AND** codex-lb retries the request with account selection restricted to security-work-authorized accounts
+- **THEN** claude-lb emits a non-terminal `claude_lb.warning` with `code="security_work_authorization_required"` and `action="retry_security_work_authorized"`
+- **AND** claude-lb retries the request with account selection restricted to security-work-authorized accounts
 
 #### Scenario: No authorized account is available
 
-- **WHEN** codex-lb attempts a security-work-authorized retry
+- **WHEN** claude-lb attempts a security-work-authorized retry
 - **AND** no security-work-authorized accounts are available
-- **THEN** codex-lb emits a non-terminal `codex_lb.warning` with `code="no_security_work_authorized_accounts"`
-- **AND** codex-lb either continues normal account failover when safe or returns the original security-work authorization error when normal failover is exhausted or unsafe
+- **THEN** claude-lb emits a non-terminal `claude_lb.warning` with `code="no_security_work_authorized_accounts"`
+- **AND** claude-lb either continues normal account failover when safe or returns the original security-work authorization error when normal failover is exhausted or unsafe
 
 #### Scenario: Pinned requests are not moved to another account
 
 - **WHEN** a security-work authorization error occurs for a request pinned by file ownership or previous-response ownership
-- **THEN** codex-lb MUST NOT replay the request on a different account
+- **THEN** claude-lb MUST NOT replay the request on a different account
 - **AND** the client receives the original security-work authorization failure.
 
 #### Scenario: WebSocket replay releases the response-create gate
 
 - **WHEN** a downstream websocket request is eligible for security-work replay
-- **THEN** codex-lb releases the request's response-create gate before scheduling the replay
+- **THEN** claude-lb releases the request's response-create gate before scheduling the replay
 - **AND** the replay can acquire the gate instead of blocking behind the failed first attempt
 
 ### Requirement: HTTP bridge security retries fail closed after an anchor or output
@@ -3237,13 +3237,13 @@ The system SHALL accept OpenAI-compatible Responses request controls that client
 #### Scenario: Truncation auto is accepted and stripped
 
 - **WHEN** a client sends a Responses request with `truncation: "auto"`
-- **THEN** codex-lb accepts the request
+- **THEN** claude-lb accepts the request
 - **AND** the upstream payload does not include `truncation`
 
 #### Scenario: Truncation disabled is accepted and stripped
 
 - **WHEN** a client sends a Responses request with `truncation: "disabled"`
-- **THEN** codex-lb accepts the request
+- **THEN** claude-lb accepts the request
 - **AND** the upstream payload does not include `truncation`
 
 ### Requirement: HTTP bridge stale-session cleanup is bounded
@@ -3373,7 +3373,7 @@ Codex compact flows SHALL send the upstream compact request to `POST /backend-ap
 
 For Codex-affinity standalone compact requests, `POST /backend-api/codex/responses/compact` SHALL remain available as a compatibility endpoint with its subscription-backed compact routing contract, and SHALL normalize an upstream remote-compaction-v2 response that includes historical message output plus a compaction summary into the single compact output item required by Codex clients. A valid upstream `cmp_` compaction item `id` and any non-empty `status` MUST be preserved in that normalized output item. An empty, non-string, or non-`cmp_` ID MUST be omitted rather than rewritten; encrypted content MUST remain unchanged.
 
-OpenAI-style `/v1/responses/compact` is otherwise unchanged by this requirement; when it receives duplicate top-level `compaction_trigger` items, codex-lb preserves the existing compatibility behavior and the forwarded compact input contains one terminal trigger.
+OpenAI-style `/v1/responses/compact` is otherwise unchanged by this requirement; when it receives duplicate top-level `compaction_trigger` items, claude-lb preserves the existing compatibility behavior and the forwarded compact input contains one terminal trigger.
 
 #### Scenario: terminal trigger emits a complete compact lifecycle
 
@@ -3432,7 +3432,7 @@ OpenAI-style `/v1/responses/compact` is otherwise unchanged by this requirement;
 #### Scenario: Standalone Codex compact remains a compatibility endpoint
 
 - **WHEN** a client calls `POST /backend-api/codex/responses/compact`
-- **THEN** codex-lb preserves the endpoint and its subscription-backed compact
+- **THEN** claude-lb preserves the endpoint and its subscription-backed compact
   routing contract
 - **AND** malformed duplicate or non-terminal top-level triggers are rejected
   locally before any upstream compact attempt
@@ -3448,7 +3448,7 @@ OpenAI-style `/v1/responses/compact` is otherwise unchanged by this requirement;
 
 - **WHEN** a client calls `POST /v1/responses/compact` with duplicate
   top-level `compaction_trigger` items
-- **THEN** codex-lb preserves the existing compatibility behavior and returns
+- **THEN** claude-lb preserves the existing compatibility behavior and returns
   HTTP 200 when the compact operation succeeds
 - **AND** the forwarded compact input contains one terminal trigger
 
@@ -3489,7 +3489,7 @@ Streaming Responses proxy requests MUST emit a low-cardinality Prometheus counte
 
 #### Scenario: transport decision counter labels are bounded
 - **WHEN** a streaming Responses request completes or terminates with an error
-- **THEN** `codex_lb_upstream_transport_decisions_total` is incremented once
+- **THEN** `claude_lb_upstream_transport_decisions_total` is incremented once
 - **AND** its labels include only `downstream_transport`, `upstream_transport`, `policy`, `sticky`, and `status`
 - **AND** `status` is `"success"` or `"error"`
 
@@ -4421,7 +4421,7 @@ emit no synthetic terminal frame, and close downstream with code 1011.
 #### Scenario: Sequenced response is interrupted before completion
 - **WHEN** a direct WebSocket model-generating request has emitted `response.created` or another frame with a finite integer `sequence_number`
 - **AND** upstream closes before a terminal response event
-- **THEN** codex-lb does not transparently replay that request under the existing downstream response id
+- **THEN** claude-lb does not transparently replay that request under the existing downstream response id
 - **AND** no lower replay sequence is emitted downstream
 - **AND** the downstream WebSocket closes with code 1011
 
@@ -4429,13 +4429,13 @@ emit no synthetic terminal frame, and close downstream with code 1011.
 - **WHEN** a direct WebSocket request claims `request_kind = "prewarm"`
 - **BUT** its normalized body does not contain the literal `generate = false`
 - **AND** a numeric sequence has been sent downstream
-- **THEN** codex-lb does not transparently replay the request
+- **THEN** claude-lb does not transparently replay the request
 
 #### Scenario: Progressed prewarm is not replayed
 - **WHEN** a verified no-generation prewarm has emitted `response.created` and
   any additional `response.*` progress event
 - **AND** upstream closes before completion
-- **THEN** codex-lb does not transparently replay the request
+- **THEN** claude-lb does not transparently replay the request
 - **AND** the downstream WebSocket closes with code 1011
 
 #### Scenario: Replayed prewarm sequence must advance
@@ -4443,7 +4443,7 @@ emit no synthetic terminal frame, and close downstream with code 1011.
   `response.created` at sequence `0`
 - **WHEN** a non-suppressed replay frame has a finite integer
   `sequence_number <= 0`
-- **THEN** codex-lb emits no frame from that replay generation downstream
+- **THEN** claude-lb emits no frame from that replay generation downstream
 - **AND** it settles the request as `stream_incomplete`
 - **AND** it closes the downstream WebSocket with code 1011
 
@@ -4455,16 +4455,16 @@ emit no synthetic terminal frame, and close downstream with code 1011.
 #### Scenario: Sequenced retryable terminal event is not replayed
 - **WHEN** a direct WebSocket request has successfully emitted a finite integer `sequence_number`
 - **AND** upstream emits a terminal error that would ordinarily trigger transparent quota, authentication, or security-work replay
-- **THEN** codex-lb does not reconnect or resend the request
+- **THEN** claude-lb does not reconnect or resend the request
 - **AND** the terminal error is finalized and remains client-visible under the existing error contract
 
 #### Scenario: Sequence-free startup remains replayable
 - **WHEN** upstream closes before any numeric sequence-bearing frame has been successfully sent downstream
 - **AND** the request otherwise satisfies the existing one-shot replay guard
-- **THEN** codex-lb MAY transparently replay the request on a fresh upstream connection
+- **THEN** claude-lb MAY transparently replay the request on a fresh upstream connection
 
 #### Scenario: Suppressed frame does not establish exposure
-- **WHEN** codex-lb suppresses an upstream frame before downstream emission
+- **WHEN** claude-lb suppresses an upstream frame before downstream emission
 - **AND** the suppressed frame contains a numeric `sequence_number`
 - **THEN** that frame does not establish the downstream sequence watermark
 
@@ -4832,7 +4832,7 @@ Flat legacy side-effect calls MAY continue to use argument-based replay identity
 
 ### Requirement: Compact requests preserve scoped turn-state ownership
 
-When a compact request contains a real client-supplied `x-codex-turn-state`, the system MUST resolve the token only in the requesting API key scope and select only that owner account. If the owner cannot be resolved or selected, the request MUST fail closed and MUST NOT fall back to a generic sticky or load-balanced account. Proxy-synthesized first-turn placeholders (the `turn_*` / `http_turn_*` values codex-lb injects when the client did not supply one) are not real continuity tokens until registered as bridge aliases; an unregistered placeholder MUST NOT block file-owner routing, but a registered placeholder MUST still resolve to its owner account.
+When a compact request contains a real client-supplied `x-codex-turn-state`, the system MUST resolve the token only in the requesting API key scope and select only that owner account. If the owner cannot be resolved or selected, the request MUST fail closed and MUST NOT fall back to a generic sticky or load-balanced account. Proxy-synthesized first-turn placeholders (the `turn_*` / `http_turn_*` values claude-lb injects when the client did not supply one) are not real continuity tokens until registered as bridge aliases; an unregistered placeholder MUST NOT block file-owner routing, but a registered placeholder MUST still resolve to its owner account.
 
 #### Scenario: Token belongs to the requesting API key
 
@@ -5323,7 +5323,7 @@ reuse the same canonical session key.
 
 - **GIVEN** a durable HTTP bridge session is ACTIVE under instance
   `container-74e8e7cda9fb` and process epoch `boot-a`
-- **WHEN** codex-lb starts again in the same container id with process epoch
+- **WHEN** claude-lb starts again in the same container id with process epoch
   `boot-b`
 - **THEN** startup closes the `boot-a` durable session row
 - **AND** request-target lookup for that session header, turn state, or
@@ -5678,7 +5678,7 @@ When a direct Responses WebSocket request fails closed because upstream rejects 
 - **AND** they include owner lookup and replay-availability metadata without raw response ids
 
 #### Scenario: proxy-injected stale anchor is classifiable
-- **GIVEN** codex-lb injects a session-continuity `previous_response_id` into a direct WebSocket request
+- **GIVEN** claude-lb injects a session-continuity `previous_response_id` into a direct WebSocket request
 - **AND** upstream rejects that anchor with `previous_response_not_found`
 - **THEN** the continuity failure log and request-log failure metadata identify `previous_response_source=proxy_injected`
 - **AND** they state whether a retry-safe fresh no-anchor replay body was available
@@ -5812,7 +5812,7 @@ repair MUST NOT change Codex-private backend stream shapes.
 ### Requirement: Direct WebSocket capability intent is trusted and private
 
 A direct Responses WebSocket MUST recognize the exact internal marker
-`X-Codex-LB-Required-Capability: trusted_cyber` only after successful existing
+`X-Claude-LB-Required-Capability: trusted_cyber` only after successful existing
 proxy API-key authentication. It MUST accept one marker from either the
 handshake headers or the current `response.create.client_metadata`. Duplicate,
 conflicting, non-string, unknown, malformed, or unauthenticated signals MUST
@@ -7075,7 +7075,7 @@ The Responses WebSocket relay MUST preserve ordered text and binary messages, se
 
 ### Requirement: Synthesized downstream turn state must remain provenance-scoped
 
-A turn-state value synthesized by codex-lb for downstream reconnect and
+A turn-state value synthesized by claude-lb for downstream reconnect and
 internal affinity MUST remain available to those consumers without being
 presented to the upstream server as a client-originated initial WebSocket
 handshake header. A nonblank turn-state explicitly supplied by the client or
@@ -7085,7 +7085,7 @@ path.
 #### Scenario: Initial WebSocket uses internal synthesized affinity only
 
 - **GIVEN** a client opens a Responses WebSocket without `x-codex-turn-state`
-- **WHEN** codex-lb accepts the downstream connection and opens upstream
+- **WHEN** claude-lb accepts the downstream connection and opens upstream
 - **THEN** the downstream accept MUST include a synthesized `x-codex-turn-state`
 - **AND** internal continuity MUST be able to use that synthesized value
 - **AND** the initial upstream handshake MUST NOT include that value as an `x-codex-turn-state` header.
@@ -7093,7 +7093,7 @@ path.
 #### Scenario: Explicit client turn state retains continuity semantics
 
 - **GIVEN** a client reconnects with a nonblank `x-codex-turn-state`
-- **WHEN** codex-lb opens the corresponding upstream connection
+- **WHEN** claude-lb opens the corresponding upstream connection
 - **THEN** the value MUST retain its explicit client continuity provenance
 - **AND** the synthesized-state omission rule MUST NOT silently reclassify it as LB-generated state.
 
@@ -7123,15 +7123,15 @@ streams.
 
 - **GIVEN** a client sends `POST /backend-api/codex/responses` with
   `stream: false`
-- **WHEN** codex-lb forwards the request to an HTTP-capable upstream
+- **WHEN** claude-lb forwards the request to an HTTP-capable upstream
 - **THEN** the upstream request body MUST contain `stream: false`
 - **AND** its request headers MUST advertise `Accept: application/json`
-- **AND** codex-lb MUST NOT open an upstream WebSocket for that request.
+- **AND** claude-lb MUST NOT open an upstream WebSocket for that request.
 
 #### Scenario: Backend non-streaming response remains JSON downstream
 
 - **GIVEN** the upstream returns a successful single Response JSON object
-- **WHEN** codex-lb completes the backend non-streaming request
+- **WHEN** claude-lb completes the backend non-streaming request
 - **THEN** the downstream response MUST have an `application/json` content type
 - **AND** its Response fields MUST preserve the upstream values.
 
@@ -7141,7 +7141,7 @@ streams.
 - **AND** upstream returns one valid Response object with status `queued` or
   `in_progress`
 - **AND** the object has a non-empty, unpadded ID and an empty output list
-- **WHEN** codex-lb finishes reading that HTTP response
+- **WHEN** claude-lb finishes reading that HTTP response
 - **THEN** the Response object is returned unchanged
 - **AND** the request log records success without `stream_incomplete`
 - **AND** the request log stores the returned response ID for later owner lookup
@@ -7152,7 +7152,7 @@ streams.
 - **GIVEN** a backend non-streaming response reports queued or in-progress
 - **BUT** its response object is missing canonical acknowledgement fields or
   contains malformed output items
-- **WHEN** codex-lb validates the response
+- **WHEN** claude-lb validates the response
 - **THEN** the external contract error is returned
 - **AND** request-log and account-health settlement MUST remain on the error
   path
@@ -7183,7 +7183,7 @@ on their dedicated WebSocket path.
 #### Scenario: Verified Codex HTTP fallback is retained during outage
 - **GIVEN** the existing recent upstream WS connect-failure marker is active
 - **WHEN** a native Codex HTTP request arrives
-- **THEN** codex-lb sends the attempt upstream over HTTP
+- **THEN** claude-lb sends the attempt upstream over HTTP
 - **AND** normal promotion eligibility returns when the marker clears or expires
 
 #### Scenario: Explicit WebSocket remains authoritative when healthy
@@ -7211,13 +7211,13 @@ clients MUST retain the existing stable terminal-error shaping.
 
 - **GIVEN** an OpenAI SDK or other non-native client receives the same upstream
   truncation
-- **WHEN** codex-lb normalizes the stream
+- **WHEN** claude-lb normalizes the stream
 - **THEN** the client receives the existing terminal `response.failed` shape
 
 ### Requirement: Propagated upstream rate limits preserve Retry-After
 
 When a Responses upstream HTTP rejection carries a valid `Retry-After` header
-and that rejection is propagated as a downstream HTTP response, codex-lb MUST
+and that rejection is propagated as a downstream HTTP response, claude-lb MUST
 copy the field value unchanged. The proxy MUST accept only a bounded value with
 no CR or LF and MUST NOT expose other upstream response headers through this
 rule. A missing or invalid value MUST remain absent.
@@ -7232,7 +7232,7 @@ rule. A missing or invalid value MUST remain absent.
 
 - **WHEN** an upstream retry hint contains a line break or exceeds the bounded
   field length
-- **THEN** codex-lb does not copy that value downstream
+- **THEN** claude-lb does not copy that value downstream
 
 ### Requirement: Routed native Responses streams consume Rust-framed SSE
 
@@ -7455,7 +7455,7 @@ The service MUST treat the `input`, `tools` and `text.format.schema` fields of `
 
 ### Requirement: Responses Lite signaling enforces all-turns reasoning context
 
-Every final upstream Responses payload that codex-lb advertises as Responses
+Every final upstream Responses payload that claude-lb advertises as Responses
 Lite—by the canonical HTTP header or the canonical per-request websocket
 client-metadata marker, whether body-derived, bridge-preserved, or
 continuity-trusted—MUST contain the exact JSON string
@@ -7685,7 +7685,7 @@ content block. It MUST preserve the prompt content and ordering and MUST
 continue forwarding a client-supplied `prompt_cache_key` unchanged.
 
 A successful HTTP response for such a request MUST include
-`X-Codex-LB-Prompt-Cache-Mode: subscription-implicit`, because subscription
+`X-Claude-LB-Prompt-Cache-Mode: subscription-implicit`, because subscription
 implicit caching and account affinity do not provide the exact explicit-prefix
 semantics requested by the client. The proxy MUST NOT include that downgrade
 header when the request is routed to an OpenAI-compatible model source, and the
@@ -7700,7 +7700,7 @@ model-source wire payload MUST preserve the explicit controls unchanged.
   the breakpoint
 - **AND** preserves the input text, input order, and `prompt_cache_key`
 - **AND** a successful response reports
-  `X-Codex-LB-Prompt-Cache-Mode: subscription-implicit`
+  `X-Claude-LB-Prompt-Cache-Mode: subscription-implicit`
 
 #### Scenario: Model source preserves public explicit-cache semantics
 
@@ -8159,7 +8159,7 @@ allowance MUST NOT extend process shutdown.
 - **AND** the normal-operation five-second budget does not extend shutdown
 
 ### Requirement: Direct-egress upstream websockets do not offer permessage-deflate
-When codex-lb opens a direct-egress upstream websocket (the Responses websocket or the
+When claude-lb opens a direct-egress upstream websocket (the Responses websocket or the
 realtime live sideband over the `websockets` transport, used when no upstream proxy route
 applies), it MUST NOT offer the `permessage-deflate` extension in the upstream handshake,
 matching the routed and raw-handshake upstream transports, which already run uncompressed.
@@ -8169,7 +8169,7 @@ downstream websocket ingress requirement.
 
 #### Scenario: Direct upstream handshake omits the compression extension offer
 
-- **WHEN** codex-lb connects an upstream websocket via the direct-egress `websockets` transport
+- **WHEN** claude-lb connects an upstream websocket via the direct-egress `websockets` transport
 - **THEN** the handshake does not offer `permessage-deflate` (the transport is invoked with compression disabled)
 - **AND** persona headers, subprotocols, open-timeout, ping-timeout, message-size cap, and proxy resolution are unchanged
 
@@ -10290,7 +10290,7 @@ The public Responses API SHALL preserve tool_search_output items, including thei
 
 ### Requirement: Codex exposes an explicit Daybreak Blue routing profile
 
-The published Codex client configuration MUST keep the ordinary `codex-lb` provider free of `X-Codex-LB-Required-Capability` and MUST define a separate `codex-lb-daybreak-blue` provider that sources its proxy API key from `CODEX_LB_API_KEY` and whose static headers contain exactly one `X-Codex-LB-Required-Capability: trusted_cyber` carrier. A machine-local `daybreak-blue` profile file MUST select that provider and the canonical `gpt-5.6-sol` model. Activating the Daybreak profile MUST be explicit and MUST NOT modify the default provider selection. Direct Responses WebSocket ingress MUST require a valid proxy API key whenever the capability header is present, even when deployment-wide API-key auth is disabled, and MUST preserve the existing authentication behavior when the header is absent. Any capability-bearing HTTP request on an external provider-bound route that can select or forward an upstream account, including Responses, compact, thread-goal, Codex-control, opportunistic admission, warmup, files, transcription, chat, Images, and reset-credit consume routes, MUST authenticate the carrier and MUST then fail with `400 required_capability_transport_unsupported` before routing or upstream dispatch. Typed JSON Responses, compact, Chat Completions, Images generations, and reset-credit consume routes MUST apply that authenticate-then-deny check before FastAPI decodes the request body. A capability-bearing non-Responses WebSocket MUST apply the same authenticate-then-deny contract before owner lookup or upstream connection. Authenticated model-catalog, local API-key usage, and reset-credit listing requests MAY remain available because they perform no upstream account routing. The separate WHAM namespace MUST retain ordinary forwarding after the shared capability-header authentication rule and MUST NOT apply the Responses transport denial. Headerless ingress MUST retain its existing behavior. A legitimately forwarded internal bridge request MUST strip the capability carrier. If a carrier is appended to an otherwise valid signed internal bridge request, the target MUST authenticate it and fail closed before legacy-anchor validation, account selection, or upstream dispatch.
+The published Codex client configuration MUST keep the ordinary `claude-lb` provider free of `X-Claude-LB-Required-Capability` and MUST define a separate `claude-lb-daybreak-blue` provider that sources its proxy API key from `CLAUDE_LB_API_KEY` and whose static headers contain exactly one `X-Claude-LB-Required-Capability: trusted_cyber` carrier. A machine-local `daybreak-blue` profile file MUST select that provider and the canonical `gpt-5.6-sol` model. Activating the Daybreak profile MUST be explicit and MUST NOT modify the default provider selection. Direct Responses WebSocket ingress MUST require a valid proxy API key whenever the capability header is present, even when deployment-wide API-key auth is disabled, and MUST preserve the existing authentication behavior when the header is absent. Any capability-bearing HTTP request on an external provider-bound route that can select or forward an upstream account, including Responses, compact, thread-goal, Codex-control, opportunistic admission, warmup, files, transcription, chat, Images, and reset-credit consume routes, MUST authenticate the carrier and MUST then fail with `400 required_capability_transport_unsupported` before routing or upstream dispatch. Typed JSON Responses, compact, Chat Completions, Images generations, and reset-credit consume routes MUST apply that authenticate-then-deny check before FastAPI decodes the request body. A capability-bearing non-Responses WebSocket MUST apply the same authenticate-then-deny contract before owner lookup or upstream connection. Authenticated model-catalog, local API-key usage, and reset-credit listing requests MAY remain available because they perform no upstream account routing. The separate WHAM namespace MUST retain ordinary forwarding after the shared capability-header authentication rule and MUST NOT apply the Responses transport denial. Headerless ingress MUST retain its existing behavior. A legitimately forwarded internal bridge request MUST strip the capability carrier. If a carrier is appended to an otherwise valid signed internal bridge request, the target MUST authenticate it and fail closed before legacy-anchor validation, account selection, or upstream dispatch.
 
 #### Scenario: Daybreak profile constrains the first attempt
 
@@ -10303,7 +10303,7 @@ The published Codex client configuration MUST keep the ordinary `codex-lb` provi
 
 #### Scenario: Ordinary provider remains unchanged
 
-- **WHEN** an authenticated direct Responses WebSocket turn starts through the published ordinary `codex-lb` provider
+- **WHEN** an authenticated direct Responses WebSocket turn starts through the published ordinary `claude-lb` provider
 - **THEN** the request contains no required-capability carrier
 - **AND** capability ingress does not impose a new per-request API-key requirement
 - **AND** the first account-selection call remains unconstrained by trusted-cyber routing

@@ -41,7 +41,7 @@ class TelemetryIdentity:
 def resolve_consent(telemetry_enabled: bool | None, persisted_state: str) -> ResolvedConsent:
     """Resolve effective telemetry consent: dashboard decision > env > default.
 
-    A persisted dashboard decision is authoritative. ``CODEX_LB_TELEMETRY_ENABLED``
+    A persisted dashboard decision is authoritative. ``CLAUDE_LB_TELEMETRY_ENABLED``
     only decides while no decision has been saved (``undecided``), so a headless
     opt-out set before first boot still works and a later dashboard decision is
     never silently overridden by the environment.

@@ -67,7 +67,7 @@ THREAD_CACHE_IDENTITY_MODE_DEFAULT: Final = THREAD_CACHE_IDENTITY_MODE_SHARED
 # fingerprint was the alternative): rotating the encryption key would otherwise
 # flush every account's prefix at once. Bumping the literal is the explicit,
 # reviewable way to invalidate every scope token.
-_SCOPE_SALT: Final = b"codex-lb-cache-scope-v1"
+_SCOPE_SALT: Final = b"claude-lb-cache-scope-v1"
 _SCOPE_TOKEN_HEX_LEN: Final = 16
 # Fixed v5 namespace so a UUID-shaped session header stays UUID-shaped.
 _SCOPE_UUID_NAMESPACE: Final = uuid.UUID("6f2f0f3a-9f1b-5c0e-8d4a-1c7b2e5a9d31")
@@ -75,7 +75,7 @@ _SCOPE_UUID_NAMESPACE: Final = uuid.UUID("6f2f0f3a-9f1b-5c0e-8d4a-1c7b2e5a9d31")
 # Marker is namespaced metadata with no imperative verb, so there is nothing in
 # it for a model to obey, and it is identical on every turn so it never reads as
 # a salient change.
-_SCOPE_LINE_PREFIX: Final = "codex-lb-cache-scope: "
+_SCOPE_LINE_PREFIX: Final = "claude-lb-cache-scope: "
 
 # Upstream bounds ``prompt_cache_key`` length, so the scoped key cannot simply
 # grow: a client key already at the limit plus a 17-character suffix would be

@@ -103,20 +103,20 @@ def test_groups_header_defaults_to_remote_groups() -> None:
 
 
 def test_groups_header_is_trimmed(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("CODEX_LB_DASHBOARD_AUTH_PROXY_GROUPS_HEADER", "  X-Groups ")
+    monkeypatch.setenv("CLAUDE_LB_DASHBOARD_AUTH_PROXY_GROUPS_HEADER", "  X-Groups ")
     assert Settings().dashboard_auth_proxy_groups_header == "X-Groups"
 
 
 @pytest.mark.parametrize("value", ["Authorization", "cookie", "X-Forwarded-For", "", "not a header"])
 def test_a_dangerous_groups_header_name_is_refused(monkeypatch: pytest.MonkeyPatch, value: str) -> None:
-    monkeypatch.setenv("CODEX_LB_DASHBOARD_AUTH_PROXY_GROUPS_HEADER", value)
+    monkeypatch.setenv("CLAUDE_LB_DASHBOARD_AUTH_PROXY_GROUPS_HEADER", value)
     with pytest.raises(ValidationError, match="dashboard_auth_proxy_groups_header"):
         Settings()
 
 
 @pytest.mark.parametrize("value", ["Remote-User", "remote-user", "REMOTE-USER"])
 def test_the_groups_header_may_not_be_the_identity_header(monkeypatch: pytest.MonkeyPatch, value: str) -> None:
-    monkeypatch.setenv("CODEX_LB_DASHBOARD_AUTH_PROXY_HEADER", "Remote-User")
-    monkeypatch.setenv("CODEX_LB_DASHBOARD_AUTH_PROXY_GROUPS_HEADER", value)
+    monkeypatch.setenv("CLAUDE_LB_DASHBOARD_AUTH_PROXY_HEADER", "Remote-User")
+    monkeypatch.setenv("CLAUDE_LB_DASHBOARD_AUTH_PROXY_GROUPS_HEADER", value)
     with pytest.raises(ValidationError, match="must not equal dashboard_auth_proxy_header"):
         Settings()

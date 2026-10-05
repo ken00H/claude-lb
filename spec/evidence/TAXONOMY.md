@@ -1,4 +1,4 @@
-# codex-lb concurrency bug taxonomy
+# claude-lb concurrency bug taxonomy
 
 Evidence base: I mined the full local `origin/main` history in this worktree after `git fetch origin`. As of this run `git log --oneline origin/main | wc -l` reports 1063 commits, not the approximate 1600 in the prompt; the taxonomy below is therefore scoped to the complete fetched `origin/main` visible here. I used keyword unions over fix/test/deflake subjects and read representative diffs for the strongest chains, especially reservation leaks, bridge continuity, timeout budgets, drain/shutdown, and cross-replica ownership.
 
@@ -22,7 +22,7 @@ Mechanism: one timeout budget is applied to the wrong phase, or a phase has no e
 
 Affected components: `app/core/clients/proxy.py`, `app/core/clients/http.py`, `app/core/utils/sse.py`, `app/modules/proxy/_service/streaming/*`, `app/modules/proxy/_service/websocket/*`, and HTTP bridge prewarm/keepalive code.
 
-Why it recurs: codex-lb has at least four clocks: connect timeout, upstream idle timeout, total request budget, and client-facing keepalive. They guard different resources, but patches repeatedly collapsed them into one number or forgot to carry the effective deadline across reconnect/retry paths.
+Why it recurs: claude-lb has at least four clocks: connect timeout, upstream idle timeout, total request budget, and client-facing keepalive. They guard different resources, but patches repeatedly collapsed them into one number or forgot to carry the effective deadline across reconnect/retry paths.
 
 Evidence: `aa65e97d` decoupled stream duration from request budget; `de2c5fc0` extended WebSocket stream budget after the same long-turn class returned; `af5051f8` bounded upstream connections that never sent response headers; `66302c3e` added SSE keepalives; `17e8abc0` preserves timeout classification under jitter.
 

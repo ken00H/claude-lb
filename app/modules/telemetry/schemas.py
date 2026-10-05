@@ -114,7 +114,7 @@ class TelemetrySnapshot(TelemetryModel):
 
 
 class TelemetryRegistration(TelemetryModel):
-    app_name: Literal["codex-lb"] = "codex-lb"
+    app_name: Literal["claude-lb"] = "claude-lb"
     app_version: str
     deployment_mode: DeploymentMethod
     environment: str = ""

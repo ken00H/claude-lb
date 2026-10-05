@@ -89,7 +89,7 @@ class ResponseFailedResponse(TypedDict):
 class ResponseFailedEvent(TypedDict):
     type: Literal["response.failed"]
     response: ResponseFailedResponse
-    _codex_lb_synthetic_transport_failure: NotRequired[bool]
+    _claude_lb_synthetic_transport_failure: NotRequired[bool]
 
 
 PREVIOUS_RESPONSE_STREAM_INCOMPLETE_MESSAGE = "Upstream websocket closed before response.completed"
@@ -116,7 +116,7 @@ HTTP_BRIDGE_EVENTLESS_TIMEOUT_CODE = "bridge_eventless_timeout"
 PREVIOUS_RESPONSE_NOT_FOUND_CODE = "previous_response_not_found"
 PREVIOUS_RESPONSE_NOT_FOUND_MESSAGE = "Previous response was not found; retry without previous_response_id."
 PREVIOUS_RESPONSE_MALFORMED_PARAM_REASON = "previous_response_not_found_malformed_param"
-SYNTHETIC_TRANSPORT_FAILURE_MARKER = "_codex_lb_synthetic_transport_failure"
+SYNTHETIC_TRANSPORT_FAILURE_MARKER = "_claude_lb_synthetic_transport_failure"
 SYNTHETIC_TRANSPORT_FAILURE_CODES = frozenset(
     {"stream_incomplete", "stream_idle_timeout", "upstream_request_timeout", "upstream_unavailable"}
 )
@@ -351,7 +351,7 @@ def synthetic_stream_failure_event(
     resets_at: int | float | None = None,
     incomplete_details: dict[str, str] | None = None,
 ) -> ResponseFailedEvent:
-    """Build a failed event and mark transport codes manufactured by codex-lb."""
+    """Build a failed event and mark transport codes manufactured by claude-lb."""
     event = response_failed_event(
         code,
         message,

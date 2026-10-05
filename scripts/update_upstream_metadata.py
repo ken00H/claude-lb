@@ -28,7 +28,7 @@ from app.core.usage.pricing_catalog import (  # noqa: E402
 
 
 def fetch(url: str) -> JsonValue:
-    request = Request(url, headers={"User-Agent": "codex-lb", "Accept": "application/json"})
+    request = Request(url, headers={"User-Agent": "claude-lb", "Accept": "application/json"})
     with urlopen(request, timeout=30) as response:
         body = response.read(MAX_CATALOG_BYTES + 1)
         if len(body) > MAX_CATALOG_BYTES:

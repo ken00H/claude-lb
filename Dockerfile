@@ -9,8 +9,8 @@ COPY Cargo.toml Cargo.lock ./
 COPY crates ./crates
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/src/target \
-    cargo build --release --locked --package codex-lb-egress-worker --bin codex-lb-native-egress \
-    && cp target/release/codex-lb-native-egress /tmp/codex-lb-native-egress
+    cargo build --release --locked --package claude-lb-egress-worker --bin claude-lb-native-egress \
+    && cp target/release/claude-lb-native-egress /tmp/claude-lb-native-egress
 
 FROM oven/bun:1.4.2-alpine AS frontend-build
 
@@ -65,11 +65,11 @@ RUN python -m pip uninstall -y pip setuptools wheel || true \
         /usr/local/lib/python*/site-packages/wheel*
 
 RUN adduser --disabled-password --gecos "" app \
-    && mkdir -p /var/lib/codex-lb \
-    && chown -R app:app /var/lib/codex-lb
+    && mkdir -p /var/lib/claude-lb \
+    && chown -R app:app /var/lib/claude-lb
 
 COPY --from=python-build /opt/venv /opt/venv
-COPY --from=native-egress-build /tmp/codex-lb-native-egress /usr/local/bin/codex-lb-native-egress
+COPY --from=native-egress-build /tmp/claude-lb-native-egress /usr/local/bin/claude-lb-native-egress
 COPY --chown=app:app app app
 COPY --chown=app:app config config
 COPY --chown=app:app scripts scripts
@@ -78,9 +78,9 @@ COPY --chown=app:app --from=frontend-build /app/app/static app/static
 # The runtime image copies source files instead of installing the project, so
 # recreate the console-script entry point that pyproject would normally install.
 RUN chmod +x /app/scripts/docker-entrypoint.sh \
-    && chmod +x /usr/local/bin/codex-lb-native-egress \
-    && printf '%s\n' '#!/bin/sh' 'exec python -m app.cli "$@"' > /usr/local/bin/codex-lb \
-    && chmod +x /usr/local/bin/codex-lb
+    && chmod +x /usr/local/bin/claude-lb-native-egress \
+    && printf '%s\n' '#!/bin/sh' 'exec python -m app.cli "$@"' > /usr/local/bin/claude-lb \
+    && chmod +x /usr/local/bin/claude-lb
 
 USER app
 RUN test -z "$(find /app/app /app/config /app/scripts -type f ! -readable -print -quit)"

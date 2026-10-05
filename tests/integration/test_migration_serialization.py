@@ -65,7 +65,7 @@ def _run_migration_cli(
     database_url: str,
 ) -> subprocess.CompletedProcess[str]:
     env = os.environ.copy()
-    env["CODEX_LB_DATABASE_URL"] = database_url
+    env["CLAUDE_LB_DATABASE_URL"] = database_url
     return subprocess.run(
         [sys.executable, "-m", "app.db.migrate", *arguments],
         capture_output=True,

@@ -202,7 +202,7 @@ def test_source_models_to_upstream_models_skips_disabled_sources_and_models() ->
     assert source_models_to_upstream_models([disabled_source, enabled_source]) == []
 
 
-def test_source_models_force_codex_lb_provider_metadata() -> None:
+def test_source_models_force_claude_lb_provider_metadata() -> None:
     source = ModelSource(
         id="src_deepseek",
         name="DeepSeek",
@@ -221,7 +221,7 @@ def test_source_models_force_codex_lb_provider_metadata() -> None:
     models = source_models_to_upstream_models([source])
 
     assert len(models) == 1
-    assert models[0].raw["model_provider"] == "codex-lb"
+    assert models[0].raw["model_provider"] == "claude-lb"
 
 
 def _reasoning_source(raw_metadata_json: str | None) -> ModelSource:

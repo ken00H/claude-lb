@@ -126,9 +126,9 @@ def test_suite_writes_marker_only_after_cleanup_and_privacy_scan(
     assert not (config.run_dir / "raw-h2" / "data").exists()
     assert not (config.run_dir / "failure-matrix" / "success" / "logs").exists()
     assert seen_failure_environment["PATH"].startswith(str(config.repo / "target/release"))
-    # The removed CODEX_LB_TOKEN_REFRESH_INTERVAL_DAYS field is not resurrected
+    # The removed CLAUDE_LB_TOKEN_REFRESH_INTERVAL_DAYS field is not resurrected
     # as an env pin: proactive refresh is suppressed by the credential stamp.
-    assert "CODEX_LB_TOKEN_REFRESH_INTERVAL_DAYS" not in seen_failure_environment
+    assert "CLAUDE_LB_TOKEN_REFRESH_INTERVAL_DAYS" not in seen_failure_environment
     stamped = parse_auth_json(config.auth_json.read_bytes())
     assert stamped.last_refresh_at is not None
     assert should_refresh(to_utc_naive(stamped.last_refresh_at)) is False
@@ -225,7 +225,7 @@ def test_auth_stamp_keeps_a_stale_canary_credential_inside_the_refresh_window(tm
 
     The imported account inherits ``last_refresh`` from this file, and the
     proactive-refresh window is the fixed ``TOKEN_REFRESH_INTERVAL_DAYS``
-    constant now that ``CODEX_LB_TOKEN_REFRESH_INTERVAL_DAYS`` is gone.
+    constant now that ``CLAUDE_LB_TOKEN_REFRESH_INTERVAL_DAYS`` is gone.
     """
     config = _config(tmp_path)
     stale = parse_auth_json(config.auth_json.read_bytes())

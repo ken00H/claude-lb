@@ -32,7 +32,7 @@ DEFAULT_PROVIDER_KEY = "default"
 def auth_provider_id(kind: AuthProviderKind, provider_key: str = DEFAULT_PROVIDER_KEY) -> str:
     """Deterministic id of a built-in provider row (UUIDv5 of kind and key)."""
 
-    return str(uuid.uuid5(_PROVIDER_ID_NAMESPACE, f"codex-lb:auth-provider:{kind.value}:{provider_key}"))
+    return str(uuid.uuid5(_PROVIDER_ID_NAMESPACE, f"claude-lb:auth-provider:{kind.value}:{provider_key}"))
 
 
 def default_auth_provider_rows() -> list[dict[str, object]]:

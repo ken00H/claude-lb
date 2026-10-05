@@ -275,10 +275,10 @@ async def test_conversation_archive_toggle_audit_names_the_actor_under_trusted_h
     from app.core.conversation_archive import CONVERSATION_ARCHIVE_TOGGLED_ACTION
     from app.modules.dashboard_users.identity_resolver import slugify_subject
 
-    monkeypatch.setenv("CODEX_LB_DASHBOARD_AUTH_MODE", DashboardAuthMode.TRUSTED_HEADER)
-    monkeypatch.setenv("CODEX_LB_FIREWALL_TRUST_PROXY_HEADERS", "true")
-    monkeypatch.setenv("CODEX_LB_FIREWALL_TRUSTED_PROXY_CIDRS", "127.0.0.1/32")
-    monkeypatch.setenv("CODEX_LB_DASHBOARD_AUTH_PROXY_HEADER", "Remote-User")
+    monkeypatch.setenv("CLAUDE_LB_DASHBOARD_AUTH_MODE", DashboardAuthMode.TRUSTED_HEADER)
+    monkeypatch.setenv("CLAUDE_LB_FIREWALL_TRUST_PROXY_HEADERS", "true")
+    monkeypatch.setenv("CLAUDE_LB_FIREWALL_TRUSTED_PROXY_CIDRS", "127.0.0.1/32")
+    monkeypatch.setenv("CLAUDE_LB_DASHBOARD_AUTH_PROXY_HEADER", "Remote-User")
     get_settings.cache_clear()
 
     subject = "alice@example.com"

@@ -87,7 +87,7 @@ class BulkheadMiddleware:
                 logger.warning("Memory warning threshold exceeded")
 
         if is_memory_pressure():
-            message = "codex-lb is temporarily unavailable due to local memory pressure"
+            message = "claude-lb is temporarily unavailable due to local memory pressure"
             await self._log_rejection(
                 path=diagnostic_path,
                 scope_type=scope["type"],
@@ -119,7 +119,7 @@ class BulkheadMiddleware:
             return
 
         if sem.locked():
-            message = f"codex-lb is temporarily overloaded in the {lane} lane"
+            message = f"claude-lb is temporarily overloaded in the {lane} lane"
             await self._log_rejection(
                 path=diagnostic_path,
                 scope_type=scope["type"],

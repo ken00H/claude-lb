@@ -125,7 +125,7 @@ from version control.
 
 ### Requirement: Server-observable parity keeps identity and transport dimensions separate
 
-The traffic parity toolkit MUST compare direct Codex and codex-lb observations separately for HTTP protocol/ALPN, TLS handshake profile, HTTP identity headers, SSE framing, and WebSocket handshake/extension behavior. It MUST NOT report header parity as TLS or full traffic indistinguishability, and SHOULD identify dimensions that cannot be controlled without a shared egress origin.
+The traffic parity toolkit MUST compare direct Codex and claude-lb observations separately for HTTP protocol/ALPN, TLS handshake profile, HTTP identity headers, SSE framing, and WebSocket handshake/extension behavior. It MUST NOT report header parity as TLS or full traffic indistinguishability, and SHOULD identify dimensions that cannot be controlled without a shared egress origin.
 
 #### Scenario: Header alignment does not conceal TLS mismatch
 
@@ -264,7 +264,7 @@ reported as unobserved rather than pass.
 
 - **GIVEN** two sufficiently sampled direct cohorts have the same stable TLS
   profile and randomized extension orders
-- **AND** the codex-lb cohort has the same stable profile and an order distance
+- **AND** the claude-lb cohort has the same stable profile and an order distance
   within the direct-derived 95% limit
 - **WHEN** TLS randomization parity is analyzed
 - **THEN** the transport cohort passes
@@ -273,7 +273,7 @@ reported as unobserved rather than pass.
 #### Scenario: Load balancer emits a fixed or shifted order profile
 
 - **GIVEN** the direct cohorts demonstrate randomized extension ordering
-- **AND** the codex-lb cohort emits an order distribution beyond the
+- **AND** the claude-lb cohort emits an order distribution beyond the
   direct-derived 95% limit
 - **WHEN** TLS randomization parity is analyzed
 - **THEN** that transport cohort fails
@@ -281,7 +281,7 @@ reported as unobserved rather than pass.
 
 #### Scenario: A cohort has too few independent handshakes
 
-- **GIVEN** any direct or codex-lb cohort has fewer than the configured minimum
+- **GIVEN** any direct or claude-lb cohort has fewer than the configured minimum
   deduplicated ClientHello samples
 - **WHEN** TLS randomization parity is analyzed
 - **THEN** that transport cohort is reported as unobserved
@@ -429,8 +429,8 @@ into a strict parity pass.
 ### Requirement: Failure analysis covers end-to-end and egress legs
 
 When Path A, Path B, and Path C captures are supplied, the analyzer MUST report
-failure outcomes for both A/B (direct Codex versus Codex through codex-lb) and
-B/C (codex-lb egress versus controlled origin). Each comparison MUST expose
+failure outcomes for both A/B (direct Codex versus Codex through claude-lb) and
+B/C (claude-lb egress versus controlled origin). Each comparison MUST expose
 status, normalized `Retry-After`, terminal class, completeness, incomplete
 reason, and bounded network-error category for both sides. A differing
 `Retry-After` value on corresponding HTTP failure turns MUST fail strict

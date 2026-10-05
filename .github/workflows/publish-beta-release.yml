@@ -90,9 +90,9 @@ jobs:
 
           ## Install / Run
           \`\`\`bash
-          uvx --from "codex-lb==${PYPI_VERSION}" codex-lb
+          uvx --from "claude-lb==${PYPI_VERSION}" claude-lb
           docker pull ghcr.io/${GITHUB_REPOSITORY}:${VERSION}
-          helm install codex-lb oci://ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/charts/codex-lb --version ${VERSION} --devel
+          helm install claude-lb oci://ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/charts/claude-lb --version ${VERSION} --devel
           \`\`\`
 
           Promote this train by merging the normal release-please PR for ${VERSION%-beta.*}.

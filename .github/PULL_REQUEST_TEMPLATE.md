@@ -1,5 +1,5 @@
 <!--
-Thanks for contributing to codex-lb! 🙏
+Thanks for contributing to claude-lb! 🙏
 Fill in the sections below. Delete sections that don't apply.
 -->
 
@@ -24,7 +24,7 @@ Linked issue: <!-- e.g. Closes #123, Fixes #456 -->
 ## OpenSpec
 
 <!--
-codex-lb is OpenSpec-first. If this PR changes observable behavior, requirements,
+claude-lb is OpenSpec-first. If this PR changes observable behavior, requirements,
 contracts, or schema, it needs an OpenSpec change under openspec/changes/<change>/.
 
 If this PR touches an upstream-mimicking code path (Codex CLI / ChatGPT request

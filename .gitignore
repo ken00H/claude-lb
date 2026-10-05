@@ -46,7 +46,7 @@ frontend/coverage/
 .worktrees/
 certs/
 
-.codex-lb/
+.claude-lb/
 .sisyphus/
 
 .specstory/

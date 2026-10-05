@@ -38,7 +38,7 @@ An account's badge (`Active`, `Paused`, `Limited`, …) is its **displayed statu
 These are two different mechanisms:
 
 - **Soft sticky routing** (the `Sticky threads` toggle and session/thread locality) is a *preference*: keep requests for the same session on the same account when possible, mostly to preserve warm upstream prompt caches. When the preferred account is unavailable or over the sticky thresholds, traffic can move.
-- **Hard Codex continuation affinity** binds a request to the account that owns its continuation state — an explicit Codex turn state, a stored `previous_response_id`/conversation, or uploaded file ids. This binding is **not controlled by `Sticky threads`**: turning the toggle off does not make owner-bound requests portable. codex-lb releases the binding only when it can prove the request is a safe, account-neutral replay (or the continuation is migrated).
+- **Hard Codex continuation affinity** binds a request to the account that owns its continuation state — an explicit Codex turn state, a stored `previous_response_id`/conversation, or uploaded file ids. This binding is **not controlled by `Sticky threads`**: turning the toggle off does not make owner-bound requests portable. claude-lb releases the binding only when it can prove the request is a safe, account-neutral replay (or the continuation is migrated).
 
 If a thread's owner account becomes unavailable, requests that still require that owner can fail with `No available accounts` even though the rest of the pool is healthy. Starting a fresh thread (no continuation state) routes normally.
 
@@ -95,10 +95,10 @@ scoped to the API key. It remains a connection preference: the full history is
 preserved, and an inferred key never authorizes response-anchor injection.
 
 The dashboard's HTTP badge describes client-to-LB transport; the upstream field
-shows the LB-to-provider transport. `codex_lb_http_bridge_routing_total` separates
+shows the LB-to-provider transport. `claude_lb_http_bridge_routing_total` separates
 `admission` from `bypass` with bounded reasons such as `smart_history`,
 `smart_tool_result`, `smart_single_turn`, `recent_ws_failure`, `payload_size` and
 `image`. Structured `http_bridge_routing` logs include the request ID.
-`codex_lb_http_bridge_connections_total{event="reuse"}` measures actual connection
+`claude_lb_http_bridge_connections_total{event="reuse"}` measures actual connection
 reuse; admission counts are not successful-connection counts. Existing TTFT and
 queue latency metrics should be compared alongside reuse when measuring benefits.

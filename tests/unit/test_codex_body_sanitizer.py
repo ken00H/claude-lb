@@ -1234,7 +1234,7 @@ def test_mutation_an_operator_workspace_path_fails_the_privacy_gate(tmp_path: Pa
 
     root, _provenance = _corpus(tmp_path)
     body = json.loads((root / CAPTURED_STANDARD).read_text(encoding="utf-8"))
-    body["instructions"] = f"Working in /home/{getpass.getuser()}/work/codex-lb on the parser."
+    body["instructions"] = f"Working in /home/{getpass.getuser()}/work/claude-lb on the parser."
     (root / CAPTURED_STANDARD).write_text(json.dumps(body), encoding="utf-8")
 
     report = _scan(root)

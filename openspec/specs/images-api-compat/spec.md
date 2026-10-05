@@ -35,13 +35,13 @@ The system SHALL expose `POST /v1/images/generations` and accept the OpenAI Imag
 
 - **WHEN** a client sends `/v1/images/generations` or `/v1/images/edits` with `n > 1`
 - **THEN** the service returns 400 with OpenAI `invalid_request_error` and `param: n`, with a message that explains the upstream `image_generation` tool does not yet support multi-image responses
-- **AND** no settings override SHALL raise the accepted request `n` above 1 until codex-lb implements client-side fan-out or upstream exposes first-class multi-image support
+- **AND** no settings override SHALL raise the accepted request `n` above 1 until claude-lb implements client-side fan-out or upstream exposes first-class multi-image support
 
 #### Scenario: Missing model defaults to images_default_model
 
 - **WHEN** a client sends `/v1/images/generations` or `/v1/images/edits` without `model`
 - **THEN** the service uses `gpt-image-2` as the publicly-effective model for validation, request log accounting, and the internal `image_generation` tool config
-- **AND** a `CODEX_LB_IMAGES_DEFAULT_MODEL` value in the environment does not change that default (startup logs the removed-setting warning once)
+- **AND** a `CLAUDE_LB_IMAGES_DEFAULT_MODEL` value in the environment does not change that default (startup logs the removed-setting warning once)
 
 ### Requirement: OpenAI-compatible image edit endpoint
 
@@ -132,7 +132,7 @@ The system SHALL emit structured route-completion logs and Prometheus metrics fo
 
 - **WHEN** an `/v1/images/generations` or `/v1/images/edits` request completes successfully
 - **THEN** the service emits an `images_route_complete` log line with the public image route, public model, stream flag, status, outcome, and duration
-- **AND** increments `codex_lb_image_requests_total` and observes `codex_lb_image_request_duration_seconds` with the same bounded labels
+- **AND** increments `claude_lb_image_requests_total` and observes `claude_lb_image_request_duration_seconds` with the same bounded labels
 
 #### Scenario: Failed image request records completion telemetry
 
@@ -253,7 +253,7 @@ Byte-limit failures MUST return HTTP 413 with OpenAI error `code = payload_too_l
 
 ### Requirement: Daybreak capability intent fails closed on Images HTTP routes
 
-The Codex-base and `/v1` image generation and edit routes MUST require a valid proxy API key whenever `X-Codex-LB-Required-Capability` is present, even when deployment-wide API-key authentication is disabled. After authentication they MUST return HTTP 400 with `error.code = "required_capability_transport_unsupported"` before request-body parsing that is not already required by framework validation, model-source lookup, usage reservation, account selection, internal Responses construction, or upstream dispatch. The rejection MUST emit exactly one bounded `images_route_complete` observation. Headerless Images requests MUST preserve their existing behavior.
+The Codex-base and `/v1` image generation and edit routes MUST require a valid proxy API key whenever `X-Claude-LB-Required-Capability` is present, even when deployment-wide API-key authentication is disabled. After authentication they MUST return HTTP 400 with `error.code = "required_capability_transport_unsupported"` before request-body parsing that is not already required by framework validation, model-source lookup, usage reservation, account selection, internal Responses construction, or upstream dispatch. The rejection MUST emit exactly one bounded `images_route_complete` observation. Headerless Images requests MUST preserve their existing behavior.
 
 #### Scenario: Authenticated Daybreak image request fails closed
 

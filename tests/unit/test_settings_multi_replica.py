@@ -37,27 +37,27 @@ def test_settings_multi_replica_defaults():
 
 
 def test_settings_metrics_enabled_from_env(monkeypatch):
-    monkeypatch.setenv("CODEX_LB_METRICS_ENABLED", "true")
+    monkeypatch.setenv("CLAUDE_LB_METRICS_ENABLED", "true")
     settings = Settings()
     assert settings.metrics_enabled is True
 
 
 @pytest.mark.parametrize("port", [1, 65535])
 def test_settings_metrics_port_from_env(monkeypatch, port: int):
-    monkeypatch.setenv("CODEX_LB_METRICS_PORT", str(port))
+    monkeypatch.setenv("CLAUDE_LB_METRICS_PORT", str(port))
     settings = Settings()
     assert settings.metrics_port == port
 
 
 @pytest.mark.parametrize("port", [0, -1, 65536, 70000])
 def test_settings_rejects_out_of_range_metrics_port(monkeypatch, port: int):
-    monkeypatch.setenv("CODEX_LB_METRICS_PORT", str(port))
+    monkeypatch.setenv("CLAUDE_LB_METRICS_PORT", str(port))
     with pytest.raises(ValidationError, match="metrics_port"):
         Settings()
 
 
 def test_settings_rejects_metrics_port_2455(monkeypatch):
-    monkeypatch.setenv("CODEX_LB_METRICS_PORT", "2455")
+    monkeypatch.setenv("CLAUDE_LB_METRICS_PORT", "2455")
     with pytest.raises(ValidationError) as exc_info:
         Settings()
     assert "metrics_port must not match the main application port (2455)" in str(exc_info.value)
@@ -65,43 +65,43 @@ def test_settings_rejects_metrics_port_2455(monkeypatch):
 
 @pytest.mark.parametrize("log_format", ["text", "json"])
 def test_settings_log_format_from_env(monkeypatch, log_format: str):
-    monkeypatch.setenv("CODEX_LB_LOG_FORMAT", log_format)
+    monkeypatch.setenv("CLAUDE_LB_LOG_FORMAT", log_format)
     settings = Settings()
     assert settings.log_format == log_format
 
 
 def test_settings_rejects_unknown_log_format(monkeypatch):
-    monkeypatch.setenv("CODEX_LB_LOG_FORMAT", "jsoon")
+    monkeypatch.setenv("CLAUDE_LB_LOG_FORMAT", "jsoon")
     with pytest.raises(ValidationError, match="log_format"):
         Settings()
 
 
 def test_settings_conversation_archive_queue_max_bytes_from_env(monkeypatch):
-    monkeypatch.setenv("CODEX_LB_CONVERSATION_ARCHIVE_QUEUE_MAX_BYTES", "16777216")
+    monkeypatch.setenv("CLAUDE_LB_CONVERSATION_ARCHIVE_QUEUE_MAX_BYTES", "16777216")
     settings = Settings()
     assert settings.conversation_archive_queue_max_bytes == 16 * 1024 * 1024
 
 
 def test_settings_leader_election_enabled_from_env(monkeypatch):
-    monkeypatch.setenv("CODEX_LB_LEADER_ELECTION_ENABLED", "false")
+    monkeypatch.setenv("CLAUDE_LB_LEADER_ELECTION_ENABLED", "false")
     settings = Settings()
     assert settings.leader_election_enabled is False
 
 
 def test_settings_leader_election_ttl_from_env(monkeypatch):
-    monkeypatch.setenv("CODEX_LB_LEADER_ELECTION_TTL_SECONDS", "90")
+    monkeypatch.setenv("CLAUDE_LB_LEADER_ELECTION_TTL_SECONDS", "90")
     settings = Settings()
     assert settings.leader_election_ttl_seconds == 90
 
 
 def test_settings_leader_election_ttl_rejects_below_minimum(monkeypatch):
-    monkeypatch.setenv("CODEX_LB_LEADER_ELECTION_TTL_SECONDS", "2")
+    monkeypatch.setenv("CLAUDE_LB_LEADER_ELECTION_TTL_SECONDS", "2")
     with pytest.raises(ValidationError):
         Settings()
 
 
 def test_settings_circuit_breaker_enabled_from_env(monkeypatch):
-    monkeypatch.setenv("CODEX_LB_CIRCUIT_BREAKER_ENABLED", "true")
+    monkeypatch.setenv("CLAUDE_LB_CIRCUIT_BREAKER_ENABLED", "true")
     settings = Settings()
     assert settings.circuit_breaker_enabled is True
 
@@ -110,15 +110,15 @@ def test_settings_circuit_breaker_tuning_env_overrides_are_removed(monkeypatch):
     # Failure threshold and recovery timeout became fixed constants in
     # app/core/resilience/circuit_breaker.py (issue #1340 phase 2); the env
     # vars are ignored and the fields no longer exist.
-    monkeypatch.setenv("CODEX_LB_CIRCUIT_BREAKER_FAILURE_THRESHOLD", "10")
-    monkeypatch.setenv("CODEX_LB_CIRCUIT_BREAKER_RECOVERY_TIMEOUT_SECONDS", "120")
+    monkeypatch.setenv("CLAUDE_LB_CIRCUIT_BREAKER_FAILURE_THRESHOLD", "10")
+    monkeypatch.setenv("CLAUDE_LB_CIRCUIT_BREAKER_RECOVERY_TIMEOUT_SECONDS", "120")
     settings = Settings()
     assert not hasattr(settings, "circuit_breaker_failure_threshold")
     assert not hasattr(settings, "circuit_breaker_recovery_timeout_seconds")
 
 
 def test_settings_backpressure_max_concurrent_requests_from_env(monkeypatch):
-    monkeypatch.setenv("CODEX_LB_BACKPRESSURE_MAX_CONCURRENT_REQUESTS", "50")
+    monkeypatch.setenv("CLAUDE_LB_BACKPRESSURE_MAX_CONCURRENT_REQUESTS", "50")
     settings = Settings()
     assert settings.backpressure_max_concurrent_requests == 50
 
@@ -127,9 +127,9 @@ def test_settings_split_bulkhead_env_overrides_are_removed(monkeypatch):
     # Per-class bulkhead overrides were removed (issue #1340); the env vars
     # are ignored and the per-class limits always derive from
     # bulkhead_proxy_limit inside BulkheadSemaphore.
-    monkeypatch.setenv("CODEX_LB_BULKHEAD_PROXY_HTTP_LIMIT", "40")
-    monkeypatch.setenv("CODEX_LB_BULKHEAD_PROXY_WEBSOCKET_LIMIT", "25")
-    monkeypatch.setenv("CODEX_LB_BULKHEAD_PROXY_COMPACT_LIMIT", "8")
+    monkeypatch.setenv("CLAUDE_LB_BULKHEAD_PROXY_HTTP_LIMIT", "40")
+    monkeypatch.setenv("CLAUDE_LB_BULKHEAD_PROXY_WEBSOCKET_LIMIT", "25")
+    monkeypatch.setenv("CLAUDE_LB_BULKHEAD_PROXY_COMPACT_LIMIT", "8")
     settings = Settings()
     assert not hasattr(settings, "bulkhead_proxy_http_limit")
     assert not hasattr(settings, "bulkhead_proxy_websocket_limit")
@@ -138,43 +138,43 @@ def test_settings_split_bulkhead_env_overrides_are_removed(monkeypatch):
 
 
 def test_settings_work_admission_limits_from_env(monkeypatch):
-    monkeypatch.setenv("CODEX_LB_PROXY_RESPONSE_CREATE_LIMIT", "11")
+    monkeypatch.setenv("CLAUDE_LB_PROXY_RESPONSE_CREATE_LIMIT", "11")
     settings = Settings()
     assert settings.proxy_response_create_limit == 11
 
 
 def test_settings_proxy_downstream_websocket_idle_timeout_from_env(monkeypatch):
-    monkeypatch.setenv("CODEX_LB_PROXY_DOWNSTREAM_WEBSOCKET_IDLE_TIMEOUT_SECONDS", "45")
+    monkeypatch.setenv("CLAUDE_LB_PROXY_DOWNSTREAM_WEBSOCKET_IDLE_TIMEOUT_SECONDS", "45")
     settings = Settings()
     assert settings.proxy_downstream_websocket_idle_timeout_seconds == 45.0
 
 
 def test_settings_otel_enabled_from_env(monkeypatch):
-    monkeypatch.setenv("CODEX_LB_OTEL_ENABLED", "true")
+    monkeypatch.setenv("CLAUDE_LB_OTEL_ENABLED", "true")
     settings = Settings()
     assert settings.otel_enabled is True
 
 
 def test_settings_otel_exporter_endpoint_from_env(monkeypatch):
-    monkeypatch.setenv("CODEX_LB_OTEL_EXPORTER_ENDPOINT", "http://localhost:4317")
+    monkeypatch.setenv("CLAUDE_LB_OTEL_EXPORTER_ENDPOINT", "http://localhost:4317")
     settings = Settings()
     assert settings.otel_exporter_endpoint == "http://localhost:4317"
 
 
 def test_settings_shutdown_drain_timeout_from_env(monkeypatch):
-    monkeypatch.setenv("CODEX_LB_SHUTDOWN_DRAIN_TIMEOUT_SECONDS", "60")
+    monkeypatch.setenv("CLAUDE_LB_SHUTDOWN_DRAIN_TIMEOUT_SECONDS", "60")
     settings = Settings()
     assert settings.shutdown_drain_timeout_seconds == 60
 
 
 def test_settings_http_connector_limit_from_env(monkeypatch):
-    monkeypatch.setenv("CODEX_LB_HTTP_CONNECTOR_LIMIT", "200")
+    monkeypatch.setenv("CLAUDE_LB_HTTP_CONNECTOR_LIMIT", "200")
     settings = Settings()
     assert settings.http_connector_limit == 200
 
 
 def test_settings_http_connector_limit_per_host_from_env(monkeypatch):
-    monkeypatch.setenv("CODEX_LB_HTTP_CONNECTOR_LIMIT_PER_HOST", "75")
+    monkeypatch.setenv("CLAUDE_LB_HTTP_CONNECTOR_LIMIT_PER_HOST", "75")
     settings = Settings()
     assert settings.http_connector_limit_per_host == 75
 
@@ -195,7 +195,7 @@ def test_settings_upstream_websocket_proxy_env_defaults_to_direct_when_unset(mon
         "ALL_PROXY",
     ):
         monkeypatch.delenv(name, raising=False)
-    monkeypatch.delenv("CODEX_LB_UPSTREAM_WEBSOCKET_TRUST_ENV", raising=False)
+    monkeypatch.delenv("CLAUDE_LB_UPSTREAM_WEBSOCKET_TRUST_ENV", raising=False)
 
     settings = Settings()
 
@@ -220,7 +220,7 @@ def test_settings_upstream_websocket_proxy_env_ignores_os_proxy_settings(monkeyp
         "ALL_PROXY",
     ):
         monkeypatch.delenv(name, raising=False)
-    monkeypatch.delenv("CODEX_LB_UPSTREAM_WEBSOCKET_TRUST_ENV", raising=False)
+    monkeypatch.delenv("CLAUDE_LB_UPSTREAM_WEBSOCKET_TRUST_ENV", raising=False)
     monkeypatch.setattr(
         proxy_env_module.urllib.request,
         "getproxies",
@@ -234,7 +234,7 @@ def test_settings_upstream_websocket_proxy_env_ignores_os_proxy_settings(monkeyp
 
 def test_settings_upstream_websocket_proxy_env_auto_enables_when_proxy_is_present(monkeypatch):
     monkeypatch.setenv("https_proxy", "http://127.0.0.1:7890")
-    monkeypatch.delenv("CODEX_LB_UPSTREAM_WEBSOCKET_TRUST_ENV", raising=False)
+    monkeypatch.delenv("CLAUDE_LB_UPSTREAM_WEBSOCKET_TRUST_ENV", raising=False)
 
     settings = Settings()
 
@@ -243,7 +243,7 @@ def test_settings_upstream_websocket_proxy_env_auto_enables_when_proxy_is_presen
 
 def test_settings_upstream_websocket_proxy_env_auto_enables_when_socks_proxy_is_present(monkeypatch):
     monkeypatch.setenv("socks_proxy", "socks5://127.0.0.1:7890")
-    monkeypatch.delenv("CODEX_LB_UPSTREAM_WEBSOCKET_TRUST_ENV", raising=False)
+    monkeypatch.delenv("CLAUDE_LB_UPSTREAM_WEBSOCKET_TRUST_ENV", raising=False)
 
     settings = Settings()
 
@@ -259,7 +259,7 @@ def test_settings_upstream_websocket_proxy_env_auto_enables_when_dotenv_proxy_is
     for name in (
         "https_proxy",
         "HTTPS_PROXY",
-        "CODEX_LB_UPSTREAM_WEBSOCKET_TRUST_ENV",
+        "CLAUDE_LB_UPSTREAM_WEBSOCKET_TRUST_ENV",
     ):
         monkeypatch.delenv(name, raising=False)
 
@@ -270,7 +270,7 @@ def test_settings_upstream_websocket_proxy_env_auto_enables_when_dotenv_proxy_is
 
 def test_settings_upstream_websocket_proxy_env_can_be_explicitly_disabled(monkeypatch):
     monkeypatch.setenv("https_proxy", "http://127.0.0.1:7890")
-    monkeypatch.setenv("CODEX_LB_UPSTREAM_WEBSOCKET_TRUST_ENV", "false")
+    monkeypatch.setenv("CLAUDE_LB_UPSTREAM_WEBSOCKET_TRUST_ENV", "false")
 
     settings = Settings()
 
@@ -280,8 +280,8 @@ def test_settings_upstream_websocket_proxy_env_can_be_explicitly_disabled(monkey
 def test_settings_workers_per_instance_unset_is_accepted(monkeypatch):
     # The default (one worker per instance) requires no operator action and is
     # accepted exactly as before: caps are partitioned per replica via the ring.
-    # CODEX_LB_WORKERS_PER_INSTANCE is a startup guard, not a Settings field.
-    monkeypatch.delenv("CODEX_LB_WORKERS_PER_INSTANCE", raising=False)
+    # CLAUDE_LB_WORKERS_PER_INSTANCE is a startup guard, not a Settings field.
+    monkeypatch.delenv("CLAUDE_LB_WORKERS_PER_INSTANCE", raising=False)
 
     settings = Settings()
 
@@ -291,7 +291,7 @@ def test_settings_workers_per_instance_unset_is_accepted(monkeypatch):
 
 @pytest.mark.parametrize("declared", ["1", " 1 "])
 def test_settings_workers_per_instance_explicit_one_is_accepted(monkeypatch, declared: str):
-    monkeypatch.setenv("CODEX_LB_WORKERS_PER_INSTANCE", declared)
+    monkeypatch.setenv("CLAUDE_LB_WORKERS_PER_INSTANCE", declared)
 
     Settings()
 
@@ -300,13 +300,13 @@ def test_settings_rejects_multiple_workers_per_instance(monkeypatch):
     # Multi-worker per instance is unsupported for shared per-account caps and
     # MUST fail fast: intra-pod worker cap partitioning cannot be made reliable,
     # so operators run one worker per pod/container and scale via replicas.
-    monkeypatch.setenv("CODEX_LB_WORKERS_PER_INSTANCE", "2")
+    monkeypatch.setenv("CLAUDE_LB_WORKERS_PER_INSTANCE", "2")
 
     with pytest.raises(ValidationError) as exc_info:
         Settings()
 
     message = str(exc_info.value)
-    assert "CODEX_LB_WORKERS_PER_INSTANCE" in message
+    assert "CLAUDE_LB_WORKERS_PER_INSTANCE" in message
     assert "not supported" in message
     assert "scale horizontally via replicas" in message
 
@@ -315,23 +315,23 @@ def test_settings_rejects_multiple_workers_per_instance_declared_in_lowercase(mo
     # pydantic-settings matched the former field case-insensitively
     # (case_sensitive=False); the guard must not let a lowercase declaration
     # slip past what the field used to reject.
-    monkeypatch.delenv("CODEX_LB_WORKERS_PER_INSTANCE", raising=False)
-    monkeypatch.setenv("codex_lb_workers_per_instance", "2")
+    monkeypatch.delenv("CLAUDE_LB_WORKERS_PER_INSTANCE", raising=False)
+    monkeypatch.setenv("claude_lb_workers_per_instance", "2")
 
     with pytest.raises(ValidationError) as exc_info:
         Settings()
 
-    assert "CODEX_LB_WORKERS_PER_INSTANCE" in str(exc_info.value)
+    assert "CLAUDE_LB_WORKERS_PER_INSTANCE" in str(exc_info.value)
     assert "not supported" in str(exc_info.value)
 
 
 @pytest.mark.parametrize("declared", ["0", "-1", "two"])
 def test_settings_rejects_non_positive_workers_per_instance(monkeypatch, declared: str):
-    monkeypatch.setenv("CODEX_LB_WORKERS_PER_INSTANCE", declared)
+    monkeypatch.setenv("CLAUDE_LB_WORKERS_PER_INSTANCE", declared)
 
     with pytest.raises(ValidationError) as exc_info:
         Settings()
 
     message = str(exc_info.value)
-    assert "CODEX_LB_WORKERS_PER_INSTANCE" in message
-    assert "only CODEX_LB_WORKERS_PER_INSTANCE=1 (the default) is supported" in message
+    assert "CLAUDE_LB_WORKERS_PER_INSTANCE" in message
+    assert "only CLAUDE_LB_WORKERS_PER_INSTANCE=1 (the default) is supported" in message

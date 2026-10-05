@@ -657,7 +657,7 @@ async def test_null_dashboard_value_disables_retention_despite_removed_env_alias
 
     # Force row creation so the dashboard columns exist and stay NULL.
     await _set_retention(request_logs=None, usage_history=None)
-    monkeypatch.setenv("CODEX_LB_USAGE_HISTORY_RETENTION_DAYS", "45")
+    monkeypatch.setenv("CLAUDE_LB_USAGE_HISTORY_RETENTION_DAYS", "45")
 
     retention = await retention_job.get_effective_retention()
     assert retention.enabled is False

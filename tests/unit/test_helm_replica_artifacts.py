@@ -27,7 +27,7 @@ from app.db.session import _POSTGRES_POOLED_ENGINES_PER_WORKER
 pytestmark = pytest.mark.unit
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
-_CHART_DIR = _REPO_ROOT / "deploy" / "helm" / "codex-lb"
+_CHART_DIR = _REPO_ROOT / "deploy" / "helm" / "claude-lb"
 _CHART_README = _CHART_DIR / "README.md"
 _SMOKE_SCRIPT = _REPO_ROOT / "scripts" / "helm-kind-smoke.sh"
 _ENV_EXAMPLE = _REPO_ROOT / ".env.example"
@@ -61,7 +61,7 @@ def _ensure_chart_dependencies() -> None:
 def _helm_template(*args: str) -> str:
     _ensure_chart_dependencies()
     completed = subprocess.run(
-        ["helm", "template", "codex-lb", str(_CHART_DIR), *args],
+        ["helm", "template", "claude-lb", str(_CHART_DIR), *args],
         cwd=_REPO_ROOT,
         check=True,
         capture_output=True,
@@ -73,7 +73,7 @@ def _helm_template(*args: str) -> str:
 def _helm_template_error(*args: str) -> str:
     _ensure_chart_dependencies()
     completed = subprocess.run(
-        ["helm", "template", "codex-lb", str(_CHART_DIR), *args],
+        ["helm", "template", "claude-lb", str(_CHART_DIR), *args],
         cwd=_REPO_ROOT,
         check=False,
         capture_output=True,
@@ -89,7 +89,7 @@ kind: ConfigMap
 metadata:
   name: rendered-notes
 data:
-  notes: {{ include "codex-lb/templates/NOTES.txt" . | toJson }}
+  notes: {{ include "claude-lb/templates/NOTES.txt" . | toJson }}
 """
 
 
@@ -104,14 +104,14 @@ def _helm_notes(*args: str) -> str:
     """
     _ensure_chart_dependencies()
     with tempfile.TemporaryDirectory() as tmp_dir:
-        chart_copy = Path(tmp_dir) / "codex-lb"
+        chart_copy = Path(tmp_dir) / "claude-lb"
         shutil.copytree(_CHART_DIR, chart_copy)
         (chart_copy / "templates" / "zz-rendered-notes.yaml").write_text(_NOTES_WRAPPER_TEMPLATE)
         completed = subprocess.run(
             [
                 "helm",
                 "template",
-                "codex-lb",
+                "claude-lb",
                 str(chart_copy),
                 "--show-only",
                 "templates/zz-rendered-notes.yaml",
@@ -140,7 +140,7 @@ def test_grafana_dashboard_titles_can_be_overridden() -> None:
     default_config = next(
         document
         for document in _helm_documents(default_rendered)
-        if document["kind"] == "ConfigMap" and document["metadata"]["name"] == "codex-lb-dashboard"
+        if document["kind"] == "ConfigMap" and document["metadata"]["name"] == "claude-lb-dashboard"
     )
     raw_dashboard_values = {
         dashboard_path.name: "\n" + dashboard_path.read_text().removesuffix("\n")
@@ -152,15 +152,15 @@ def test_grafana_dashboard_titles_can_be_overridden() -> None:
         "--set",
         "metrics.grafanaDashboard.enabled=true",
         "--set-string",
-        r"metrics.grafanaDashboard.titles.codex-lb\.json=Overview",
+        r"metrics.grafanaDashboard.titles.claude-lb\.json=Overview",
     )
     dashboard_config = next(
         document
         for document in _helm_documents(rendered)
-        if document["kind"] == "ConfigMap" and document["metadata"]["name"] == "codex-lb-dashboard"
+        if document["kind"] == "ConfigMap" and document["metadata"]["name"] == "claude-lb-dashboard"
     )
 
-    assert json.loads(dashboard_config["data"]["codex-lb.json"])["title"] == "Overview"
+    assert json.loads(dashboard_config["data"]["claude-lb.json"])["title"] == "Overview"
     assert dashboard_config["data"]["ttft-breakdown.json"] == raw_dashboard_values["ttft-breakdown.json"]
 
 
@@ -249,7 +249,7 @@ def test_helm_codex_prewarm_defaults_off_like_settings() -> None:
     assert defaults["config"]["sessionBridgeCodexPrewarmEnabled"] is False
     assert bundled["config"]["sessionBridgeCodexPrewarmEnabled"] is False
     assert (
-        "CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_CODEX_PREWARM_ENABLED: "
+        "CLAUDE_LB_HTTP_RESPONSES_SESSION_BRIDGE_CODEX_PREWARM_ENABLED: "
         "{{ .Values.config.sessionBridgeCodexPrewarmEnabled | toString | quote }}"
     ) in configmap
 
@@ -269,9 +269,9 @@ def test_helm_chart_does_not_render_constantized_bridge_tunables() -> None:
 def test_helm_pod_identity_env_is_injected_even_with_the_bridge_kill_switch_off() -> None:
     rendered = _helm_template("--set", "config.sessionBridgeEnabled=false", "--show-only", "templates/deployment.yaml")
     (deployment,) = _helm_documents(rendered)
-    (container,) = [c for c in deployment["spec"]["template"]["spec"]["containers"] if c["name"] == "codex-lb"]
+    (container,) = [c for c in deployment["spec"]["template"]["spec"]["containers"] if c["name"] == "claude-lb"]
     env_names = {entry["name"] for entry in container["env"]}
-    assert {"POD_NAME", "POD_NAMESPACE", "POD_IP", "CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_INSTANCE_ID"} <= env_names
+    assert {"POD_NAME", "POD_NAMESPACE", "POD_IP", "CLAUDE_LB_HTTP_RESPONSES_SESSION_BRIDGE_INSTANCE_ID"} <= env_names
 
 
 def test_helm_default_disables_global_backpressure_and_honors_override() -> None:
@@ -285,12 +285,12 @@ def test_helm_default_disables_global_backpressure_and_honors_override() -> None
     (default_configmap,) = _helm_documents(default_rendered)
     (override_configmap,) = _helm_documents(override_rendered)
 
-    assert default_configmap["data"]["CODEX_LB_BACKPRESSURE_MAX_CONCURRENT_REQUESTS"] == "0"
-    assert override_configmap["data"]["CODEX_LB_BACKPRESSURE_MAX_CONCURRENT_REQUESTS"] == "37"
+    assert default_configmap["data"]["CLAUDE_LB_BACKPRESSURE_MAX_CONCURRENT_REQUESTS"] == "0"
+    assert override_configmap["data"]["CLAUDE_LB_BACKPRESSURE_MAX_CONCURRENT_REQUESTS"] == "37"
     # constantize-core-tunables: removed settings must not be rendered, or every
     # default install would trip its own removed-settings startup warning.
-    assert "CODEX_LB_STICKY_SESSION_CLEANUP_ENABLED" not in default_configmap["data"]
-    assert "CODEX_LB_OPENAI_PROMPT_CACHE_KEY_DERIVATION_ENABLED" not in default_configmap["data"]
+    assert "CLAUDE_LB_STICKY_SESSION_CLEANUP_ENABLED" not in default_configmap["data"]
+    assert "CLAUDE_LB_OPENAI_PROMPT_CACHE_KEY_DERIVATION_ENABLED" not in default_configmap["data"]
 
 
 def test_helm_pool_budget_values_flow_to_runtime_and_hpa_templates() -> None:
@@ -298,8 +298,8 @@ def test_helm_pool_budget_values_flow_to_runtime_and_hpa_templates() -> None:
     deployment = (_CHART_DIR / "templates" / "deployment.yaml").read_text()
     hpa = (_CHART_DIR / "templates" / "hpa.yaml").read_text()
 
-    assert "CODEX_LB_DATABASE_POOL_SIZE: {{ .Values.config.databasePoolSize" in configmap
-    assert "CODEX_LB_DATABASE_MAX_OVERFLOW: {{ .Values.config.databaseMaxOverflow" in configmap
+    assert "CLAUDE_LB_DATABASE_POOL_SIZE: {{ .Values.config.databasePoolSize" in configmap
+    assert "CLAUDE_LB_DATABASE_MAX_OVERFLOW: {{ .Values.config.databaseMaxOverflow" in configmap
     assert re.search(r"command:\s+- python\s+- -m\s+- app\.cli", deployment)
     assert "maxReplicas: {{ .Values.autoscaling.maxReplicas }}" in hpa
 
@@ -329,8 +329,8 @@ def test_default_profile_renders_budgeted_pool_values_and_hpa_ceiling() -> None:
     (configmap,) = _helm_documents(configmap_rendered)
     (hpa,) = _helm_documents(hpa_rendered)
 
-    assert configmap["data"]["CODEX_LB_DATABASE_POOL_SIZE"] == "3"
-    assert configmap["data"]["CODEX_LB_DATABASE_MAX_OVERFLOW"] == "1"
+    assert configmap["data"]["CLAUDE_LB_DATABASE_POOL_SIZE"] == "3"
+    assert configmap["data"]["CLAUDE_LB_DATABASE_MAX_OVERFLOW"] == "1"
     assert hpa["spec"]["maxReplicas"] == 10
 
 
@@ -350,11 +350,11 @@ def test_prod_overlay_renders_budgeted_pool_values_and_hpa_ceiling() -> None:
     (application_container,) = (
         container
         for container in deployment["spec"]["template"]["spec"]["containers"]
-        if container["name"] == "codex-lb"
+        if container["name"] == "claude-lb"
     )
 
-    assert configmap["data"]["CODEX_LB_DATABASE_POOL_SIZE"] == "1"
-    assert configmap["data"]["CODEX_LB_DATABASE_MAX_OVERFLOW"] == "1"
+    assert configmap["data"]["CLAUDE_LB_DATABASE_POOL_SIZE"] == "1"
+    assert configmap["data"]["CLAUDE_LB_DATABASE_MAX_OVERFLOW"] == "1"
     assert application_container["command"][:3] == ["python", "-m", "app.cli"]
     assert hpa["spec"]["maxReplicas"] == 20
 
@@ -487,7 +487,7 @@ def test_static_ring_with_autoscaling_fails_at_render_time() -> None:
         "--set",
         "postgresql.auth.password=test-password",
         "--set-string",
-        "config.sessionBridgeInstanceRing=codex-lb-workload-0\\,codex-lb-workload-1",
+        "config.sessionBridgeInstanceRing=claude-lb-workload-0\\,claude-lb-workload-1",
         "--set",
         "autoscaling.enabled=true",
     )
@@ -500,12 +500,12 @@ def test_static_ring_smaller_than_replica_count_fails_at_render_time() -> None:
         "--set",
         "postgresql.auth.password=test-password",
         "--set-string",
-        "config.sessionBridgeInstanceRing=codex-lb-workload-0\\,codex-lb-workload-1",
+        "config.sessionBridgeInstanceRing=claude-lb-workload-0\\,claude-lb-workload-1",
         "--set",
         "replicaCount=3",
     )
 
-    assert 'missing pod name(s) "codex-lb-workload-2"' in stderr
+    assert 'missing pod name(s) "claude-lb-workload-2"' in stderr
 
 
 def test_static_ring_with_wrong_pod_names_fails_at_render_time() -> None:
@@ -514,18 +514,18 @@ def test_static_ring_with_wrong_pod_names_fails_at_render_time() -> None:
         "--set",
         "postgresql.auth.password=test-password",
         "--set-string",
-        "config.sessionBridgeInstanceRing=codex-lb-0\\,codex-lb-1",
+        "config.sessionBridgeInstanceRing=claude-lb-0\\,claude-lb-1",
         "--set",
         "replicaCount=2",
     )
 
-    assert 'missing pod name(s) "codex-lb-workload-0,codex-lb-workload-1"' in stderr
-    assert 'must list exactly "codex-lb-workload-0,codex-lb-workload-1"' in stderr
+    assert 'missing pod name(s) "claude-lb-workload-0,claude-lb-workload-1"' in stderr
+    assert 'must list exactly "claude-lb-workload-0,claude-lb-workload-1"' in stderr
 
 
 def test_static_ring_with_fqdn_entries_fails_at_render_time() -> None:
     fqdn_ring = "\\,".join(
-        f"codex-lb-workload-{ordinal}.codex-lb-bridge.default.svc.cluster.local" for ordinal in range(2)
+        f"claude-lb-workload-{ordinal}.claude-lb-bridge.default.svc.cluster.local" for ordinal in range(2)
     )
     stderr = _helm_template_error(
         "--set",
@@ -544,12 +544,12 @@ def test_static_ring_with_extra_unknown_entry_fails_at_render_time() -> None:
         "--set",
         "postgresql.auth.password=test-password",
         "--set-string",
-        "config.sessionBridgeInstanceRing=codex-lb-workload-0\\,codex-lb-workload-1\\,codex-lb-workload-9",
+        "config.sessionBridgeInstanceRing=claude-lb-workload-0\\,claude-lb-workload-1\\,claude-lb-workload-9",
         "--set",
         "replicaCount=2",
     )
 
-    assert 'entry(ies) "codex-lb-workload-9" do not match any StatefulSet pod name' in stderr
+    assert 'entry(ies) "claude-lb-workload-9" do not match any StatefulSet pod name' in stderr
 
 
 def test_static_ring_covering_every_replica_renders() -> None:
@@ -557,7 +557,7 @@ def test_static_ring_covering_every_replica_renders() -> None:
         "--set",
         "postgresql.auth.password=test-password",
         "--set-string",
-        "config.sessionBridgeInstanceRing=codex-lb-workload-0\\,codex-lb-workload-1",
+        "config.sessionBridgeInstanceRing=claude-lb-workload-0\\,claude-lb-workload-1",
         "--set",
         "replicaCount=2",
         "--show-only",
@@ -580,8 +580,8 @@ def _readme_config_examples() -> list[dict]:
 def _clear_pod_identity_env(monkeypatch: pytest.MonkeyPatch) -> None:
     for name in ("POD_NAME", "POD_NAMESPACE", "POD_IP", "HOSTNAME"):
         monkeypatch.delenv(name, raising=False)
-    monkeypatch.delenv("CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_INSTANCE_RING", raising=False)
-    monkeypatch.delenv("CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_ADVERTISE_BASE_URL", raising=False)
+    monkeypatch.delenv("CLAUDE_LB_HTTP_RESPONSES_SESSION_BRIDGE_INSTANCE_RING", raising=False)
+    monkeypatch.delenv("CLAUDE_LB_HTTP_RESPONSES_SESSION_BRIDGE_ADVERTISE_BASE_URL", raising=False)
 
 
 def test_readme_advertise_base_url_example_passes_settings_validation(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -592,16 +592,16 @@ def test_readme_advertise_base_url_example_passes_settings_validation(monkeypatc
     ]
     assert examples, "README no longer documents a sessionBridgeAdvertiseBaseUrl example"
 
-    pod_name = "codex-lb-workload-0"
+    pod_name = "claude-lb-workload-0"
     _clear_pod_identity_env(monkeypatch)
-    monkeypatch.setenv("CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_INSTANCE_ID", pod_name)
+    monkeypatch.setenv("CLAUDE_LB_HTTP_RESPONSES_SESSION_BRIDGE_INSTANCE_ID", pod_name)
 
     for example in examples:
         # The chart injects the value through the container env list after POD_NAME,
         # so the kubelet expands $(POD_NAME) per pod before the app reads it.
         assert "$(POD_NAME)" in example, f"README advertise example is not per-pod: {example}"
         expanded = example.replace("$(POD_NAME)", pod_name)
-        monkeypatch.setenv("CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_ADVERTISE_BASE_URL", expanded)
+        monkeypatch.setenv("CLAUDE_LB_HTTP_RESPONSES_SESSION_BRIDGE_ADVERTISE_BASE_URL", expanded)
 
         settings = Settings()
 
@@ -625,8 +625,8 @@ def test_readme_manual_ring_example_passes_settings_validation(monkeypatch: pyte
             # Instance ids are bare $(POD_NAME) values; FQDN entries never match them.
             assert "." not in entry, f"README ring example uses a non-pod-name entry: {entry}"
 
-        monkeypatch.setenv("CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_INSTANCE_ID", entries[0])
-        monkeypatch.setenv("CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_INSTANCE_RING", example)
+        monkeypatch.setenv("CLAUDE_LB_HTTP_RESPONSES_SESSION_BRIDGE_INSTANCE_ID", entries[0])
+        monkeypatch.setenv("CLAUDE_LB_HTTP_RESPONSES_SESSION_BRIDGE_INSTANCE_RING", example)
 
         settings = Settings()
 
@@ -665,13 +665,13 @@ def test_env_example_does_not_force_leader_election_off() -> None:
     """A fresh copy-the-sample deployment must inherit the hardened default (enabled).
 
     The runtime default for ``leader_election_enabled`` is True, so the sample env
-    must not export ``CODEX_LB_LEADER_ELECTION_ENABLED=false`` as an active line;
+    must not export ``CLAUDE_LB_LEADER_ELECTION_ENABLED=false`` as an active line;
     otherwise multi-replica/multi-worker installs that copy .env.example silently
     run every singleton scheduler instead of gating on the lease.
     """
     assignments = _env_example_active_assignments()
 
-    assert assignments.get("CODEX_LB_LEADER_ELECTION_ENABLED") != "false"
+    assert assignments.get("CLAUDE_LB_LEADER_ELECTION_ENABLED") != "false"
 
     # A default-loaded Settings (with the sample's active assignments applied)
     # keeps leader election enabled.
@@ -679,7 +679,7 @@ def test_env_example_does_not_force_leader_election_off() -> None:
 
     # The opt-out is still documented as a commented single-instance escape hatch.
     text = _ENV_EXAMPLE.read_text()
-    assert "# CODEX_LB_LEADER_ELECTION_ENABLED=false" in text
+    assert "# CLAUDE_LB_LEADER_ELECTION_ENABLED=false" in text
 
 
 def test_helm_configmap_enables_leader_election_by_default() -> None:
@@ -691,7 +691,7 @@ def test_helm_configmap_enables_leader_election_by_default() -> None:
     )
     (configmap,) = _helm_documents(rendered)
 
-    assert configmap["data"]["CODEX_LB_LEADER_ELECTION_ENABLED"] == "true"
+    assert configmap["data"]["CLAUDE_LB_LEADER_ELECTION_ENABLED"] == "true"
 
 
 def test_compose_files_declare_single_replica_topology() -> None:
@@ -699,4 +699,4 @@ def test_compose_files_declare_single_replica_topology() -> None:
         content = compose_path.read_text()
         assert "SINGLE-REPLICA topology" in content, compose_path.name
         assert "--scale server=N" in content, compose_path.name
-        assert "deploy/helm/codex-lb" in content, compose_path.name
+        assert "deploy/helm/claude-lb" in content, compose_path.name

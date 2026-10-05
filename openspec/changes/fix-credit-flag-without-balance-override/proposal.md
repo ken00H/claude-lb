@@ -1,6 +1,6 @@
 ## Why
 
-Some paid accounts report `credits.has_credits = true` after the applicable long quota window is exhausted while also reporting no spendable balance. codex-lb currently treats that bare flag as enough to keep the account `active`, so an exhausted account can stay routable and fail repeated proxy requests.
+Some paid accounts report `credits.has_credits = true` after the applicable long quota window is exhausted while also reporting no spendable balance. claude-lb currently treats that bare flag as enough to keep the account `active`, so an exhausted account can stay routable and fail repeated proxy requests.
 
 ## What Changes
 

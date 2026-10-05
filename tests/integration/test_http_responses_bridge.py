@@ -17426,7 +17426,7 @@ async def test_native_codex_http_bridge_denied_anchor_refusal_emits_terminal_aft
         failed[0]["response"]["error"]["message"]
         == "The previous response anchor was rejected upstream; retry the request."
     )
-    assert "_codex_lb_synthetic_transport_failure" not in second.text
+    assert "_claude_lb_synthetic_transport_failure" not in second.text
     assert second.text.rstrip().endswith("data: [DONE]")
     assert not [
         record.getMessage()

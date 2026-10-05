@@ -26,10 +26,10 @@ async def test_duplicate_trusted_identity_is_rejected(
     headers: list[tuple[str, str]],
 ) -> None:
     # Given trusted-header auth behind an allowlisted raw proxy peer
-    monkeypatch.setenv("CODEX_LB_DASHBOARD_AUTH_MODE", DashboardAuthMode.TRUSTED_HEADER)
-    monkeypatch.setenv("CODEX_LB_FIREWALL_TRUST_PROXY_HEADERS", "true")
-    monkeypatch.setenv("CODEX_LB_FIREWALL_TRUSTED_PROXY_CIDRS", "127.0.0.1/32")
-    monkeypatch.setenv("CODEX_LB_DASHBOARD_AUTH_PROXY_HEADER", "Remote-User")
+    monkeypatch.setenv("CLAUDE_LB_DASHBOARD_AUTH_MODE", DashboardAuthMode.TRUSTED_HEADER)
+    monkeypatch.setenv("CLAUDE_LB_FIREWALL_TRUST_PROXY_HEADERS", "true")
+    monkeypatch.setenv("CLAUDE_LB_FIREWALL_TRUSTED_PROXY_CIDRS", "127.0.0.1/32")
+    monkeypatch.setenv("CLAUDE_LB_DASHBOARD_AUTH_PROXY_HEADER", "Remote-User")
     get_settings.cache_clear()
 
     # When the peer forwards ambiguous identity evidence

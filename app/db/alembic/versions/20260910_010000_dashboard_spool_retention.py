@@ -4,7 +4,7 @@ One nullable ``dashboard_settings`` FLOAT column named after the ``Settings``
 field it takes over:
 ``http_responses_session_bridge_operation_spool_retention_seconds``. NULL means
 "inherit": the deprecated
-``CODEX_LB_HTTP_RESPONSES_SESSION_BRIDGE_OPERATION_SPOOL_RETENTION_SECONDS``
+``CLAUDE_LB_HTTP_RESPONSES_SESSION_BRIDGE_OPERATION_SPOOL_RETENTION_SECONDS``
 environment alias, then the code default (7 days), keep applying until an
 operator sets a value in the dashboard's data retention card. The environment
 value is never copied into the column (configuration-tiers; slop-removal

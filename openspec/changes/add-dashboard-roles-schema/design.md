@@ -27,7 +27,7 @@ Preset ids are UUIDv5 of the slug under a fixed namespace (`PRESET_ROLE_IDS`). M
 
 ### Seeding is shared and idempotent
 
-`seed_preset_dashboard_roles(connection)` uses dialect-specific "insert … on conflict do nothing" (PostgreSQL, SQLite) with a select-then-insert fallback. The migration calls it outside its table-existence guard (re-run safe) with a revision-pinned table definition, and the test schema reset calls it after `create_all` because tests do not run Alembic. There is deliberately no startup hook: it would run outside `migration_lock` and outside `init_db`'s fail-fast policy (a schema-less process with `CODEX_LB_DATABASE_MIGRATIONS_FAIL_FAST=false` would crash on the INSERT), and the migration already guarantees the rows on every supported path.
+`seed_preset_dashboard_roles(connection)` uses dialect-specific "insert … on conflict do nothing" (PostgreSQL, SQLite) with a select-then-insert fallback. The migration calls it outside its table-existence guard (re-run safe) with a revision-pinned table definition, and the test schema reset calls it after `create_all` because tests do not run Alembic. There is deliberately no startup hook: it would run outside `migration_lock` and outside `init_db`'s fail-fast policy (a schema-less process with `CLAUDE_LB_DATABASE_MIGRATIONS_FAIL_FAST=false` would crash on the INSERT), and the migration already guarantees the rows on every supported path.
 
 ### Plain string columns, application-validated
 

@@ -1,6 +1,6 @@
-# codex-lb Founding Principles
+# claude-lb Founding Principles
 
-codex-lb exists to be a proxy you can run in one command, with a dashboard
+claude-lb exists to be a proxy you can run in one command, with a dashboard
 you can read in one glance. Every feature the project has gained since then
 is welcome — but none of them may tax the first five minutes of a new
 user's experience.
@@ -17,12 +17,12 @@ and this file is its human-readable rendering.
   external account, manual file edit) to the base install path. If a change
   genuinely cannot avoid one, it needs explicit maintainer approval recorded
   on the PR via the `simplicity-budget-approved` label.
-- `docker run` / `uvx codex-lb` with no env file MUST keep producing a
+- `docker run` / `uvx claude-lb` with no env file MUST keep producing a
   working proxy and dashboard.
 
 ## P2 — Every new setting must justify not being a default
 
-- A PR that adds a `CODEX_LB_*` setting or an `.env.example` line MUST
+- A PR that adds a `CLAUDE_LB_*` setting or an `.env.example` line MUST
   answer "why can't this be a hardcoded default?" in the PR body (the PR
   template has a slot for it).
 - Settings that only tune internals SHOULD stay out of `.env.example`.

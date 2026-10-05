@@ -17,7 +17,7 @@ from app.core.clients.files import finalize_file as core_finalize_file  # noqa: 
 from app.core.clients.http import lease_http_session as lease_http_session  # noqa: F401
 from app.core.clients.native_egress import NativeWebSocketRoutingMetadata
 from app.core.clients.proxy import (  # noqa: F401  # noqa: F401
-    CODEX_LB_REQUIRED_CAPABILITY_HEADER,
+    CLAUDE_LB_REQUIRED_CAPABILITY_HEADER,
     ImageFetchSession,
     ProxyResponseError,
     UpstreamProxyRouteTrace,
@@ -2230,7 +2230,7 @@ def _parse_websocket_payload(text: str) -> dict[str, JsonValue] | None:
 
 
 def _websocket_capability_metadata_values(payload: dict[str, JsonValue]) -> tuple[JsonValue, ...] | None:
-    normalized_name = CODEX_LB_REQUIRED_CAPABILITY_HEADER.lower()
+    normalized_name = CLAUDE_LB_REQUIRED_CAPABILITY_HEADER.lower()
     payload_pairs = payload.raw_pairs if isinstance(payload, _WebSocketJsonObject) else tuple(payload.items())
     misplaced_values = [value for key, value in payload_pairs if key.lower() == normalized_name]
     if misplaced_values:
