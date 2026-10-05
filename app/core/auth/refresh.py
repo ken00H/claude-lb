@@ -38,7 +38,7 @@ from app.core.resilience.network_recovery import (
 from app.core.types import JsonObject
 from app.core.upstream_proxy import ResolvedUpstreamRoute
 from app.core.utils.request_id import get_request_id
-from app.core.utils.time import to_utc_naive, utcnow
+from app.core.utils.time import naive_utc_to_epoch, to_utc_naive, utcnow
 
 # Maximum age of an account's last successful refresh before the next request
 # proactively exchanges its refresh token (fixed; issue #1340 / PRINCIPLES.md
@@ -46,6 +46,11 @@ from app.core.utils.time import to_utc_naive, utcnow
 # monkeypatch it, and the traffic-parity canary suppresses proactive refresh by
 # stamping its isolated credential inside the window rather than widening it.
 TOKEN_REFRESH_INTERVAL_DAYS: Final[int] = 8
+# Anthropic OAuth seats carry opaque (non-JWT) access tokens that live hours,
+# not days, so the age heuristic above would send expired tokens upstream.
+# An oauth_seat refreshes when its stored ``token_expires_at`` epoch is within
+# this margin (fixed; openspec change anthropic-proxy-core).
+OAUTH_SEAT_EXPIRY_REFRESH_MARGIN_SECONDS: Final[int] = 600
 # Total timeout of one refresh-token exchange (fixed; issue #1340 / PRINCIPLES.md
 # P2). Per-request budgets may only clamp it lower through the override below.
 TOKEN_REFRESH_TIMEOUT_SECONDS: Final[float] = 8.0
@@ -206,6 +211,24 @@ def should_refresh(last_refresh: datetime, now: datetime | None = None) -> bool:
     current = to_utc_naive(now) if now is not None else utcnow()
     last = to_utc_naive(last_refresh)
     return current - last > timedelta(days=TOKEN_REFRESH_INTERVAL_DAYS)
+
+
+def oauth_seat_token_near_expiry(account: object, now: datetime | None = None) -> bool:
+    """Whether an oauth_seat's stored access token is at/near its known expiry.
+
+    Anthropic access tokens (``sk-ant-oat01-…``) are opaque — JWT claim parsing
+    finds nothing — so expiry comes from the ``token_expires_at`` column. The
+    ChatGPT age heuristic (``should_refresh``) cannot see an approaching expiry
+    on tokens that live hours. Non-oauth-seat accounts and rows without a known
+    expiry return False.
+    """
+    if getattr(account, "pool_class", None) != "oauth_seat":
+        return False
+    expires_at = getattr(account, "token_expires_at", None)
+    if not expires_at:
+        return False
+    current = to_utc_naive(now) if now is not None else utcnow()
+    return naive_utc_to_epoch(current) >= expires_at - OAUTH_SEAT_EXPIRY_REFRESH_MARGIN_SECONDS
 
 
 def classify_refresh_error(code: str | None) -> bool:

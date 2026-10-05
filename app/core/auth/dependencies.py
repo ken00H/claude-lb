@@ -93,6 +93,16 @@ def set_openai_error_format(request: Request) -> None:
     request.state.error_format = "openai"
 
 
+def set_anthropic_error_format(request: Request) -> None:
+    """Mark the request so refusals answer the Anthropic error envelope.
+
+    Router-level marker like the two above, used by the ``/v1/messages``
+    Messages API surface (openspec change anthropic-proxy-core).
+    """
+
+    request.state.error_format = "anthropic"
+
+
 def set_dashboard_error_format(request: Request) -> None:
     request.state.error_format = "dashboard"
 

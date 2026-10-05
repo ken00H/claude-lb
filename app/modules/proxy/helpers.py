@@ -38,7 +38,7 @@ PLAN_TYPE_PRIORITY = (
 )
 
 _USAGE_LIMIT_CODE = "usage_limit_reached"
-_RATE_LIMIT_CODES = frozenset({"rate_limit_exceeded", _USAGE_LIMIT_CODE})
+_RATE_LIMIT_CODES = frozenset({"rate_limit_exceeded", _USAGE_LIMIT_CODE, "rate_limit_error"})
 _QUOTA_CODES = frozenset({"insufficient_quota", "usage_not_included", "quota_exceeded"})
 # The one normalized code that carries no classification decision of its own:
 # ``upstream_error`` is what a *missing* code normalizes to, which is exactly
@@ -56,7 +56,16 @@ _QUOTA_CODES = frozenset({"insufficient_quota", "usage_not_included", "quota_exc
 # which is a worse failure than the one this predicate exists to fix.
 _MESSAGE_CLASSIFIED_CODES = frozenset({"upstream_error"})
 _TRANSIENT_CODES = frozenset(
-    {"server_error", "upstream_error", "stream_incomplete", "overloaded_error", "server_is_overloaded"}
+    {
+        "server_error",
+        "upstream_error",
+        "stream_incomplete",
+        "overloaded_error",
+        "server_is_overloaded",
+        # Anthropic's generic 5xx error type (Messages API) rides the same
+        # retryable-transient path as codex's server_error.
+        "api_error",
+    }
 )
 _MODEL_CAPACITY_MESSAGE_MARKERS = ("selected model is at capacity",)
 _SAFETY_BLOCK_MESSAGE_PREFIX = "This request was blocked by our safety systems."

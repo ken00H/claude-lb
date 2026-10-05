@@ -25,12 +25,19 @@
 
 ## 3. Proxy core rewrite
 
-- [ ] 3.1 `/v1/messages` route: validation, request-id handling, streaming (SSE) and non-streaming
-- [ ] 3.2 Wire existing balancer/eligibility to Anthropic account pool; keep file-pinned/ownership invariants
-- [ ] 3.3 Rate-limit windows: 5-hour + weekly caps for subscription seats; `anthropic-ratelimit-*` headers for API keys
-- [ ] 3.4 Failover/retry: account exclusion on the documented degradation path only; reservations settle before error-health writes
-- [ ] 3.5 Remove Codex proxy core + OpenAI-compat layer + dormant `app/core/clients/native_egress.py` once parity reached
-- [ ] 3.6 Tests at the route layer: streaming, partial-failure fan-out, failover, compat paths
+> Working slice landed as the `anthropic-proxy-core` change: `/v1/messages` route
+> (streaming + non-streaming), balancer wiring with ownership/settlement invariants,
+> Anthropic failure classification, oauth-seat expiry-driven refresh, route-layer
+> tests with mocked upstream. Rate-limit window CONSTANTS (3.3) and Codex-core
+> removal (3.5) remain open; 3.3 recording-only pieces (retry-after threading,
+> header evidence logging) landed in the slice.
+
+- [x] 3.1 `/v1/messages` route: validation, request-id handling, streaming (SSE) and non-streaming
+- [x] 3.2 Wire existing balancer/eligibility to Anthropic account pool; keep file-pinned/ownership invariants *(no new affinity sources — Messages API is stateless; failover pre-first-token is ownership-safe)*
+- [ ] 3.3 Rate-limit windows: 5-hour + weekly caps for subscription seats; `anthropic-ratelimit-*` headers for API keys *(window capacities still blocked on live Pro/Max evidence, parked item 1.2; the slice records observed headers + threads `retry-after` through the existing 429 machinery)*
+- [x] 3.4 Failover/retry: account exclusion on the documented degradation path only; reservations settle before error-health writes
+- [ ] 3.5 Remove Codex proxy core + OpenAI-compat layer + dormant `app/core/clients/native_egress.py` once parity reached *(note: `tests/integration/test_native_sse_egress.py` + `test_native_usage_egress.py` fail at collection on this branch — they read the deleted `crates/**` fixtures; 3.5 should remove them)*
+- [x] 3.6 Tests at the route layer: streaming, partial-failure fan-out, failover, compat paths *(compat paths = Anthropic-native envelopes; OpenAI-compat layer untouched pending 3.5)*
 
 ## 4. Usage + dashboard
 

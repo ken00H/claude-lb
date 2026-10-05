@@ -47,7 +47,15 @@ def stored_access_token_expires_at(
 
 
 def account_access_token_expires_at(account: Account, encryptor: TokenEncryptor) -> float | None:
-    """Return an account snapshot's known access-token expiry."""
+    """Return an account snapshot's known access-token expiry.
+
+    Anthropic OAuth seats carry opaque tokens (no parseable claims), so their
+    expiry comes from the ``token_expires_at`` column written at login/refresh.
+    Other pool classes keep the JWT-claim fallback.
+    """
+    if getattr(account, "pool_class", None) == "oauth_seat":
+        stored = getattr(account, "token_expires_at", None)
+        return float(stored) if stored else None
     encrypted_access_token = getattr(account, "access_token_encrypted", None)
     return stored_access_token_expires_at(encrypted_access_token, encryptor)
 

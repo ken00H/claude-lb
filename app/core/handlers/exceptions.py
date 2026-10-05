@@ -15,6 +15,7 @@ from starlette._utils import get_route_path
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.types import ASGIApp, Receive, Scope, Send
 
+from app.core.anthropic.models import anthropic_error
 from app.core.errors import SCIM_CONTENT_TYPE, dashboard_error, openai_error, scim_error
 from app.core.exceptions import (
     AppError,
@@ -251,6 +252,21 @@ def add_exception_handlers(app: FastAPI) -> None:
         @app.exception_handler(exc_cls)
         async def _openai_domain_handler(request: Request, exc: AppError) -> JSONResponse:
             error_type = getattr(exc, "error_type", "server_error")
+            if _error_format(request) == "anthropic":
+                # The /v1/messages surface must never answer with an OpenAI
+                # envelope, even for errors raised before the handler runs.
+                log_error_response(
+                    logger,
+                    request,
+                    exc.status_code,
+                    exc.code,
+                    exc.message,
+                    category="proxy_error_response",
+                )
+                return JSONResponse(
+                    status_code=exc.status_code,
+                    content=anthropic_error(exc.code, exc.message),
+                )
             log_error_response(
                 logger,
                 request,
@@ -342,6 +358,19 @@ def add_exception_handlers(app: FastAPI) -> None:
             return JSONResponse(
                 status_code=422,
                 content=dashboard_error("validation_error", "Invalid request payload"),
+            )
+        if fmt == "anthropic":
+            log_error_response(
+                logger,
+                request,
+                400,
+                "invalid_request_error",
+                first_message or "Invalid request payload",
+                category="proxy_error_response",
+            )
+            return JSONResponse(
+                status_code=400,
+                content=anthropic_error("invalid_request_error", "Invalid request payload"),
             )
         if fmt == "openai":
             error = openai_error("invalid_request_error", "Invalid request payload", error_type="invalid_request_error")
@@ -438,6 +467,28 @@ def add_exception_handlers(app: FastAPI) -> None:
                 category="openai_error_response",
             )
             return JSONResponse(status_code=exc.status_code, content=openai_error(code, detail, error_type=error_type))
+        if fmt == "anthropic":
+            if exc.status_code == 401:
+                error_type = "authentication_error"
+            elif exc.status_code == 403:
+                error_type = "permission_error"
+            elif exc.status_code == 404:
+                error_type = "not_found_error"
+            elif exc.status_code == 429:
+                error_type = "rate_limit_error"
+            elif exc.status_code >= 500:
+                error_type = "api_error"
+            else:
+                error_type = "invalid_request_error"
+            log_error_response(
+                logger,
+                request,
+                exc.status_code,
+                error_type,
+                detail,
+                category="proxy_error_response",
+            )
+            return JSONResponse(status_code=exc.status_code, content=anthropic_error(error_type, detail))
         if fmt == "scim":
             log_error_response(
                 logger,
@@ -472,6 +523,11 @@ def add_exception_handlers(app: FastAPI) -> None:
             return JSONResponse(
                 status_code=500,
                 content=openai_error("server_error", "Internal server error", error_type="server_error"),
+            )
+        if fmt == "anthropic":
+            return JSONResponse(
+                status_code=500,
+                content=anthropic_error("api_error", "Internal server error"),
             )
         if fmt == "scim":
             return _scim_response(500, "The request could not be completed.")

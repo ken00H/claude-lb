@@ -67,6 +67,21 @@ OAUTH_SCOPE = "user:inference user:profile"
 OAUTH_REDIRECT_URI = "https://console.anthropic.com/oauth/code/callback"
 OAUTH_CALLBACK_PORT = 1455  # Unused by the Anthropic copy/paste flow; kept for the callback-server shim.
 
+# Anthropic Messages API protocol constants (openspec change anthropic-proxy-core).
+# Like the OAuth block above these identify claude-lb to the Anthropic upstream
+# exactly as its first-party clients do; they are not deployment tunables
+# (PRINCIPLES.md P2). The Claude Code impersonation set is best-effort evidence
+# until the first live probe flips it in one place (add-anthropic-account-model
+# design.md "Accepted risk": present upstream traffic as the official client).
+ANTHROPIC_API_BASE_URL = "https://api.anthropic.com"
+ANTHROPIC_MESSAGES_PATH = "/v1/messages"
+ANTHROPIC_VERSION = "2023-06-01"
+# OAuth seats authenticate as the Claude Code CLI: bearer token plus the OAuth
+# beta header and CLI user-agent. API keys use x-api-key + anthropic-version.
+CLAUDE_CODE_OAUTH_BETA = "oauth-2025-04-20"
+CLAUDE_CODE_USER_AGENT = "claude-cli/2.0.14 (external, cli)"
+CLAUDE_CODE_APP_HEADER = "cli"
+
 # Env names of settings removed from the Settings surface (issue #1340,
 # PRINCIPLES.md P2). ``extra="ignore"`` already makes them harmless; startup
 # emits one WARN for one release as a courtesy to operators who still set them.

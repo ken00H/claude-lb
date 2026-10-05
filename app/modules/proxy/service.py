@@ -149,6 +149,7 @@ from app.modules.api_keys.service import (
 from app.modules.api_keys.service import (
     ApiKeysService as ApiKeysService,
 )
+from app.modules.proxy._service.anthropic import _AnthropicMixin
 from app.modules.proxy._service.api_key_usage import (
     _API_KEY_RESERVATION_HEARTBEAT_SECONDS as _API_KEY_RESERVATION_HEARTBEAT_SECONDS,
 )
@@ -621,9 +622,7 @@ from app.modules.proxy._service.support import (
 from app.modules.proxy._service.support import (
     raise_proxy_unavailable_for_claim_contention as raise_proxy_unavailable_for_claim_contention,
 )
-from app.modules.proxy._service.transcribe import (
-    _TranscribeMixin,
-)
+from app.modules.proxy._service.transcribe import _TranscribeMixin
 from app.modules.proxy._service.warmup import (
     WarmupExecutionData as WarmupExecutionData,
 )
@@ -923,6 +922,7 @@ class ProxyService(
     _WarmupMixin,
     _FileOpsMixin,
     _TranscribeMixin,
+    _AnthropicMixin,
     _CodexControlMixin,
     _RealtimeLiveMixin,
     _CompactMixin,

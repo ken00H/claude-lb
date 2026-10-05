@@ -35,7 +35,13 @@ from starlette.datastructures import Headers
 from starlette.websockets import WebSocketState
 
 from app.core import usage as usage_core
+from app.core.anthropic import (
+    MessagesRequest,
+    anthropic_validation_error,
+    as_anthropic_error_envelope,
+)
 from app.core.auth.dependencies import (
+    set_anthropic_error_format,
     set_openai_error_format,
     validate_codex_provider_usage_identity,
     validate_proxy_api_key,
@@ -476,6 +482,187 @@ internal_router = APIRouter(
     tags=["proxy"],
     dependencies=[Depends(set_openai_error_format)],
 )
+messages_router = APIRouter(
+    prefix="/v1",
+    tags=["proxy"],
+    dependencies=[Security(validate_proxy_api_key), Depends(set_anthropic_error_format)],
+)
+
+
+def _logged_anthropic_error_response(
+    request: Request,
+    status_code: int,
+    content: Mapping[str, JsonValue],
+    *,
+    headers: Mapping[str, str] | None = None,
+) -> JSONResponse:
+    error_type, message = _error_details_from_anthropic_content(content)
+    log_error_response(
+        logger,
+        request,
+        status_code,
+        error_type,
+        message,
+        category="proxy_error_response",
+    )
+    return JSONResponse(status_code=status_code, content=dict(content), headers=dict(headers) if headers else None)
+
+
+def _error_details_from_anthropic_content(content: Mapping[str, JsonValue]) -> tuple[str | None, str | None]:
+    error = content.get("error")
+    if not is_json_mapping(error):
+        return None, None
+    error_type = error.get("type")
+    message = error.get("message")
+    return (
+        error_type if isinstance(error_type, str) else None,
+        message if isinstance(message, str) else None,
+    )
+
+
+def _anthropic_error_headers(
+    exc: ProxyResponseError,
+    base: Mapping[str, str] | None,
+) -> dict[str, str]:
+    headers = dict(base or {})
+    if exc.retry_after_seconds is not None:
+        headers.setdefault("retry-after", str(exc.retry_after_seconds))
+    return headers
+
+
+@messages_router.post(
+    "/messages",
+    responses={
+        200: {
+            "content": {
+                "application/json": {"schema": {"type": "object"}},
+                "text/event-stream": {"schema": {"type": "string"}},
+            }
+        }
+    },
+)
+async def v1_messages(
+    request: Request,
+    payload: MessagesRequest = Body(...),
+    context: ProxyContext = Depends(get_proxy_context),
+    api_key: ApiKeyData | None = Security(validate_proxy_api_key),
+) -> Response:
+    """Anthropic Messages API surface (openspec change anthropic-proxy-core).
+
+    Anthropic-native passthrough: no request translation, Anthropic error
+    envelopes, and account selection via the shared balancer.
+    """
+    capability_transport_denial = await _required_capability_http_transport_denial(request, api_key)
+    if capability_transport_denial is not None:
+        return capability_transport_denial
+    try:
+        payload.to_payload()
+    except ValidationError as exc:
+        return _logged_anthropic_error_response(request, 400, anthropic_validation_error(exc))
+    validate_model_access(api_key, payload.model)
+    admission_denial = await _opportunistic_admission_denial(request, context, api_key, model=payload.model)
+    if admission_denial is not None:
+        try:
+            denial_payload = json.loads(bytes(admission_denial.body or b"{}"))
+        except (ValueError, TypeError):
+            denial_payload = {}
+        denial_content = as_anthropic_error_envelope(denial_payload if isinstance(denial_payload, dict) else {})
+        return _logged_anthropic_error_response(
+            request,
+            admission_denial.status_code,
+            denial_content,
+            headers=dict(admission_denial.headers) if admission_denial.headers else None,
+        )
+    reservation = await _enforce_request_limits(
+        api_key,
+        request_model=payload.model,
+        request_service_tier=None,
+    )
+    request_id = get_request_id()
+    response_headers = {"request-id": request_id} if request_id else None
+    if payload.stream:
+        return await _messages_streaming_response(
+            request,
+            context,
+            payload,
+            api_key,
+            reservation,
+            response_headers,
+        )
+    try:
+        body, status = await context.service.messages_unary(
+            payload=payload,
+            api_key=api_key,
+            api_key_reservation=reservation,
+            headers=request.headers,
+        )
+    except ProxyResponseError as exc:
+        return _logged_anthropic_error_response(
+            request,
+            exc.status_code,
+            as_anthropic_error_envelope(exc.payload),
+            headers=_anthropic_error_headers(exc, response_headers),
+        )
+    return JSONResponse(content=body, status_code=status, headers=response_headers)
+
+
+async def _messages_streaming_response(
+    request: Request,
+    context: ProxyContext,
+    payload: MessagesRequest,
+    api_key: ApiKeyData | None,
+    reservation: ApiKeyUsageReservationData | None,
+    response_headers: Mapping[str, str] | None,
+) -> Response:
+    """Startup-probe the stream: pre-first-event failures become HTTP errors."""
+    stream = context.service.stream_messages_request(
+        payload=payload,
+        api_key=api_key,
+        api_key_reservation=reservation,
+        headers=request.headers,
+    )
+    try:
+        first_block = await stream.__anext__()
+    except StopAsyncIteration:
+        return _logged_anthropic_error_response(
+            request,
+            502,
+            as_anthropic_error_envelope({"error": {"type": "api_error", "message": "Upstream stream closed empty"}}),
+        )
+    except ProxyResponseError as exc:
+        return _logged_anthropic_error_response(
+            request,
+            exc.status_code,
+            as_anthropic_error_envelope(exc.payload),
+            headers=_anthropic_error_headers(exc, response_headers),
+        )
+
+    async def _relay() -> AsyncIterator[str]:
+        try:
+            block = first_block
+            while True:
+                yield block
+                block = await stream.__anext__()
+        except StopAsyncIteration:
+            return
+        except ProxyResponseError:
+            # Mid-stream upstream death after at least one event: the SSE
+            # contract forbids re-emitting buffered frames, so terminate with
+            # an Anthropic error event in-stream.
+            error_event = json.dumps(
+                {"type": "error", "error": {"type": "api_error", "message": "Upstream stream failed"}}
+            )
+            yield f"event: error\ndata: {error_event}\n\n"
+        finally:
+            await stream.aclose()
+
+    return StreamingResponse(
+        _relay(),
+        status_code=200,
+        media_type="text/event-stream",
+        headers=dict(response_headers) if response_headers else None,
+    )
+
 
 _TRANSCRIPTION_MODEL = "gpt-4o-transcribe"
 _OPENAPI_VALIDATION_ERROR_RESPONSE: Final[dict[str, Any]] = {
