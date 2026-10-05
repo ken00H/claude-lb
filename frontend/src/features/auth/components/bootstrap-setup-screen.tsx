@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 
-import { CodexLogo } from "@/components/brand/codex-logo";
+import { ClaudeLogo } from "@/components/brand/claude-logo";
 import { AlertMessage } from "@/components/alert-message";
 import { PasswordSettings } from "@/features/settings/components/password-settings";
 import { useAuthStore } from "@/features/auth/hooks/use-auth";
@@ -20,7 +20,7 @@ export function BootstrapSetupScreen() {
       <div className="relative w-full max-w-2xl space-y-6 animate-fade-in-up">
         <div className="flex flex-col items-center gap-3 text-center">
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 shadow-sm ring-2 ring-primary/10 ring-offset-2 ring-offset-background">
-            <CodexLogo size={28} className="text-primary" />
+            <ClaudeLogo size={28} className="text-primary" />
           </div>
           <div>
             <h1 className="text-xl font-semibold tracking-tight">{t("auth.bootstrap.title")}</h1>

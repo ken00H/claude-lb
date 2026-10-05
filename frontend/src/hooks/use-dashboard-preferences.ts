@@ -2,10 +2,10 @@ import { create } from "zustand";
 
 import type { AccountListSort, AccountListSortKey } from "@/features/dashboard/components/account-list";
 
-const ACCOUNT_BURNRATE_STORAGE_KEY = "codex-lb-account-burnrate-enabled";
-const ACCOUNT_VIEW_MODE_STORAGE_KEY = "codex-lb-dashboard-account-view-mode";
-const ACCOUNT_LIST_SORT_STORAGE_KEY = "codex-lb-dashboard-account-list-sort";
-const DASHBOARD_REFRESH_STORAGE_KEY = "codex-lb-dashboard-refresh-seconds";
+const ACCOUNT_BURNRATE_STORAGE_KEY = "claude-lb-account-burnrate-enabled";
+const ACCOUNT_VIEW_MODE_STORAGE_KEY = "claude-lb-dashboard-account-view-mode";
+const ACCOUNT_LIST_SORT_STORAGE_KEY = "claude-lb-dashboard-account-list-sort";
+const DASHBOARD_REFRESH_STORAGE_KEY = "claude-lb-dashboard-refresh-seconds";
 
 export type DashboardRefreshSeconds = 5 | 15 | 30 | 60;
 

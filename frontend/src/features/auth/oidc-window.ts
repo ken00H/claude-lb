@@ -13,10 +13,10 @@ import { ORGANISATION_SETTINGS_RETURN_URL } from "@/features/settings/advanced-s
  * is a flow window rather than an ordinary tab somebody opened from a link, and
  * it is set by `window.open` in the activation handler.
  */
-export const OIDC_FLOW_WINDOW_NAME = "codex-lb-oidc-flow";
+export const OIDC_FLOW_WINDOW_NAME = "claude-lb-oidc-flow";
 
 /** The message the returning window posts to its opener. It carries no verdict. */
-export const OIDC_FLOW_RETURN_MESSAGE = "codex-lb.oidc-flow-return";
+export const OIDC_FLOW_RETURN_MESSAGE = "claude-lb.oidc-flow-return";
 
 /**
  * The same-origin channel the returning window announces itself on, alongside
@@ -35,12 +35,12 @@ export const OIDC_FLOW_RETURN_MESSAGE = "codex-lb.oidc-flow-return";
  * — and the window is back on this origin by the time it sends one. Like the
  * message to the opener it is a nudge to ask the server again, never an answer.
  */
-export const OIDC_FLOW_RETURN_CHANNEL = "codex-lb.oidc-flow-window";
+export const OIDC_FLOW_RETURN_CHANNEL = "claude-lb.oidc-flow-window";
 
 /** The two in-app paths the server returns a flow to (its settings and failure destinations). */
 const FLOW_RETURN_PATHS = new Set(["/settings", "/login"]);
 
-const MARKER_KEY = "codex-lb.oidc-flow";
+const MARKER_KEY = "claude-lb.oidc-flow";
 const CLOSED_POLL_MS = 500;
 /**
  * How long one flow is watched for. It is the server's own flow lifetime

@@ -179,7 +179,7 @@ describe("StatusBar", () => {
 
     const link = screen.getByRole("link", { name: "Open official GitHub repository" });
 
-    expect(link).toHaveAttribute("href", "https://github.com/soju06/codex-lb");
+    expect(link).toHaveAttribute("href", "https://github.com/ken00H/claude-lb");
     expect(link).toHaveAttribute("target", "_blank");
     expect(link).toHaveAttribute("rel", "noreferrer");
   });

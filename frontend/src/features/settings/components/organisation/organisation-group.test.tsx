@@ -736,8 +736,8 @@ describe("OrganisationSettingsGroup", () => {
       await screen.findByRole("heading", { name: "Reverse-proxy sign-in" });
       expect(screen.getByText("Remote-User")).toBeInTheDocument();
       expect(screen.getByText("Remote-Groups")).toBeInTheDocument();
-      expect(screen.getByText("Set with CODEX_LB_DASHBOARD_AUTH_PROXY_HEADER")).toBeInTheDocument();
-      expect(screen.getByText("Set with CODEX_LB_DASHBOARD_AUTH_PROXY_GROUPS_HEADER")).toBeInTheDocument();
+      expect(screen.getByText("Set with CLAUDE_LB_DASHBOARD_AUTH_PROXY_HEADER")).toBeInTheDocument();
+      expect(screen.getByText("Set with CLAUDE_LB_DASHBOARD_AUTH_PROXY_GROUPS_HEADER")).toBeInTheDocument();
       // Read-only means no textbox offers to change them.
       expect(screen.queryByDisplayValue("Remote-User")).not.toBeInTheDocument();
     });

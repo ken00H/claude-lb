@@ -9,7 +9,7 @@ import zhCN from "./locales/zh-CN.json";
 export const SUPPORTED_LANGUAGES = ["en", "zh-CN", "ko"] as const;
 export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number];
 
-export const LANGUAGE_STORAGE_KEY = "codex-lb-language";
+export const LANGUAGE_STORAGE_KEY = "claude-lb-language";
 
 const resources = {
   en: { translation: en },

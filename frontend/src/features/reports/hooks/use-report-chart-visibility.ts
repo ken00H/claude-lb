@@ -12,7 +12,7 @@ export const REPORT_CHART_DEFINITIONS = [
 export type ReportChartId = (typeof REPORT_CHART_DEFINITIONS)[number]["id"];
 
 export const REPORT_CHART_VISIBILITY_STORAGE_KEY =
-  "codex-lb-reports-visible-charts";
+  "claude-lb-reports-visible-charts";
 
 const REPORT_CHART_IDS = REPORT_CHART_DEFINITIONS.map(({ id }) => id);
 

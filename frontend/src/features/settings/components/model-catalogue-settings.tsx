@@ -42,7 +42,7 @@ function parseContextWindow(value: string): number | null {
  *
  * Each row is a slug and the context window the catalog reports for it,
  * clamped to the upstream `max_context_window`. A dashboard row wins for its
- * slug; a row inherited from `CODEX_LB_MODEL_CONTEXT_WINDOW_OVERRIDES` is shown
+ * slug; a row inherited from `CLAUDE_LB_MODEL_CONTEXT_WINDOW_OVERRIDES` is shown
  * read-only with an "Override" action that stores a dashboard row, and removing
  * a dashboard row returns the slug to the environment entry (or to no override).
  */

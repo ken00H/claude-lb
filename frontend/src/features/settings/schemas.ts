@@ -497,7 +497,7 @@ export const UpstreamProxyAdminSchema = z.object({
 
 // M4 model catalogue: per-model context window overrides. `source` is
 // "dashboard" when a dashboard row exists for the slug and "env" when only the
-// CODEX_LB_MODEL_CONTEXT_WINDOW_OVERRIDES entry applies; `envValue` is that
+// CLAUDE_LB_MODEL_CONTEXT_WINDOW_OVERRIDES entry applies; `envValue` is that
 // entry (null when the environment has none).
 export const ModelContextWindowOverrideSchema = z.object({
   slug: z.string().min(1),

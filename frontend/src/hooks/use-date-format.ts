@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-export const DATE_DISPLAY_FORMAT_STORAGE_KEY = "codex-lb-date-display-format";
+export const DATE_DISPLAY_FORMAT_STORAGE_KEY = "claude-lb-date-display-format";
 
 export type DateDisplayFormat = "default" | "iso8601";
 

@@ -2241,7 +2241,7 @@ export const handlers = [
   http.post("/api/dashboard-auth/totp/setup/start", () => {
     return HttpResponse.json({
       secret: "JBSWY3DPEHPK3PXP",
-      otpauthUri: "otpauth://totp/codex-lb?secret=JBSWY3DPEHPK3PXP",
+      otpauthUri: "otpauth://totp/claude-lb?secret=JBSWY3DPEHPK3PXP",
       qrSvgDataUri: "data:image/svg+xml;base64,PHN2Zy8+",
     });
   }),

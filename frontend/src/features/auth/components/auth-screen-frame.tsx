@@ -1,7 +1,7 @@
 import type { PropsWithChildren } from "react";
 import { useTranslation } from "react-i18next";
 
-import { CodexLogo } from "@/components/brand/codex-logo";
+import { ClaudeLogo } from "@/components/brand/claude-logo";
 import { cn } from "@/lib/utils";
 
 export type AuthScreenFrameProps = PropsWithChildren<{
@@ -25,7 +25,7 @@ export function AuthScreenFrame({ title, subtitle, className, children }: AuthSc
       <div className={cn("relative w-full max-w-sm animate-fade-in-up", className)}>
         <div className="mb-8 flex flex-col items-center gap-3 text-center">
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 shadow-sm ring-2 ring-primary/10 ring-offset-2 ring-offset-background">
-            <CodexLogo size={28} className="text-primary" />
+            <ClaudeLogo size={28} className="text-primary" />
           </div>
           <div>
             <h1 className="text-xl font-semibold tracking-tight">{title ?? t("auth.appTitle")}</h1>

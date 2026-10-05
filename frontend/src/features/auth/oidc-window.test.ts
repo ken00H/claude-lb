@@ -28,7 +28,7 @@ describe("the sign-in flow window", () => {
   it("carries an id and two timestamps across a same-tab round trip, and nothing else", () => {
     rememberFlow({ providerId: PROVIDER_ID, purpose: "test-login", verifiedAt: null });
 
-    const raw = window.sessionStorage.getItem("codex-lb.oidc-flow") ?? "";
+    const raw = window.sessionStorage.getItem("claude-lb.oidc-flow") ?? "";
     expect(JSON.parse(raw)).toEqual({ providerId: PROVIDER_ID, purpose: "test-login", verifiedAt: null });
     expect(raw).not.toMatch(/secret|client|issuer/i);
   });
@@ -45,9 +45,9 @@ describe("the sign-in flow window", () => {
   });
 
   it("refuses a marker that is not one", () => {
-    window.sessionStorage.setItem("codex-lb.oidc-flow", "{not json");
+    window.sessionStorage.setItem("claude-lb.oidc-flow", "{not json");
     expect(takeFlow()).toBeNull();
-    window.sessionStorage.setItem("codex-lb.oidc-flow", JSON.stringify({ providerId: PROVIDER_ID }));
+    window.sessionStorage.setItem("claude-lb.oidc-flow", JSON.stringify({ providerId: PROVIDER_ID }));
     expect(takeFlow()).toBeNull();
   });
 
@@ -155,7 +155,7 @@ describe("the sign-in flow window", () => {
     expect(signedInLoginDestination()).toBe("/dashboard");
 
     // Only a marker this module wrote counts; leftovers under the same key do not.
-    window.sessionStorage.setItem("codex-lb.oidc-flow", JSON.stringify({ providerId: PROVIDER_ID }));
+    window.sessionStorage.setItem("claude-lb.oidc-flow", JSON.stringify({ providerId: PROVIDER_ID }));
     expect(signedInLoginDestination()).toBe("/dashboard");
 
     rememberFlow({ providerId: PROVIDER_ID, purpose: "test-login", verifiedAt: null });

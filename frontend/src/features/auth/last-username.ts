@@ -1,7 +1,7 @@
 // The login form remembers the last username that signed in so a team-tier
 // install prefills it, and so the field stays visible after the second account
 // is removed again (anti-flapping, PLAN §4.4). Never holds a password.
-export const LAST_USERNAME_STORAGE_KEY = "codex-lb.last-username";
+export const LAST_USERNAME_STORAGE_KEY = "claude-lb.last-username";
 
 export function readLastUsername(): string {
   try {

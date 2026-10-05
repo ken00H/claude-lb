@@ -108,7 +108,7 @@ const listAccountsMock = vi.mocked(listAccounts);
 const getRequestLogOptionsMock = vi.mocked(getRequestLogOptions);
 const getBrowserReportsTimeZoneMock = vi.mocked(getBrowserReportsTimeZone);
 type UseReportsMockResult = ReturnType<typeof useReports>;
-const REPORTS_TIMEZONE_STORAGE_KEY = "codex-lb-reports-timezone";
+const REPORTS_TIMEZONE_STORAGE_KEY = "claude-lb-reports-timezone";
 // Derived so adding a card to REPORT_CHART_DEFINITIONS does not leave these
 // assertions checking a stale count.
 const ALL_CHARTS_BUTTON = `Charts (${REPORT_CHART_DEFINITIONS.length})`;

@@ -37,6 +37,6 @@ describe("useAccountQuotaDisplayStore", () => {
     useAccountQuotaDisplayStore.getState().setQuotaDisplay("weekly");
 
     expect(useAccountQuotaDisplayStore.getState().quotaDisplay).toBe("weekly");
-    expect(window.localStorage.getItem("codex-lb-account-quota-display")).toBe("weekly");
+    expect(window.localStorage.getItem("claude-lb-account-quota-display")).toBe("weekly");
   });
 });

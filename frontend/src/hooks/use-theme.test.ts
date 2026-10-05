@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useThemeStore } from "@/hooks/use-theme";
 
-const THEME_STORAGE_KEY = "codex-lb-theme";
+const THEME_STORAGE_KEY = "claude-lb-theme";
 const localStorageMock = createLocalStorageMock();
 
 function createLocalStorageMock(): Storage {

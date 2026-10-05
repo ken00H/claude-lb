@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-const QUOTA_DISPLAY_STORAGE_KEY = "codex-lb-account-quota-display";
+const QUOTA_DISPLAY_STORAGE_KEY = "claude-lb-account-quota-display";
 
 export type AccountQuotaDisplayPreference = "5h" | "weekly" | "both";
 

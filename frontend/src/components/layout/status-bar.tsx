@@ -12,7 +12,7 @@ import { getSettings } from "@/features/settings/api";
 import { useDateDisplayFormatStore } from "@/hooks/use-date-format";
 import { formatTimeLong } from "@/utils/formatters";
 
-const GITHUB_REPOSITORY_URL = "https://github.com/soju06/codex-lb";
+const GITHUB_REPOSITORY_URL = "https://github.com/ken00H/claude-lb";
 const STATUS_REFRESH_INTERVAL_MS = 60_000;
 const USAGE_FRESHNESS_THRESHOLD_MS = 60_000;
 export const STATUS_BAR_DEFAULT_HEIGHT_PX = 40;

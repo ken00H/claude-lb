@@ -1,11 +1,11 @@
 import { cn } from "@/lib/utils";
 
-export type CodexLogoProps = {
+export type ClaudeLogoProps = {
   className?: string;
   size?: number;
 };
 
-export function CodexLogo({ className, size = 32 }: CodexLogoProps) {
+export function ClaudeLogo({ className, size = 32 }: ClaudeLogoProps) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"

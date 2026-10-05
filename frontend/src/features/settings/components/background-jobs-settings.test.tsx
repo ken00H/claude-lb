@@ -47,7 +47,7 @@ describe("BackgroundJobsSettings", () => {
 
     expect(screen.getByRole("switch", { name: "Auth Guardian" })).toBeChecked();
     expect(screen.getByRole("note")).toHaveTextContent(/Blocked by topology/);
-    expect(screen.getByRole("note")).toHaveTextContent("CODEX_LB_LEADER_ELECTION_ENABLED=true");
+    expect(screen.getByRole("note")).toHaveTextContent("CLAUDE_LB_LEADER_ELECTION_ENABLED=true");
   });
 
   it("stores a dashboard value when a switch is flipped", async () => {

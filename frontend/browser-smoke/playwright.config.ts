@@ -1,7 +1,7 @@
 import { defineConfig } from "@playwright/test";
 
-const baseURL = process.env.CODEX_LB_BROWSER_SMOKE_BASE_URL;
-const outputDir = process.env.CODEX_LB_BROWSER_SMOKE_OUTPUT_DIR;
+const baseURL = process.env.CLAUDE_LB_BROWSER_SMOKE_BASE_URL;
+const outputDir = process.env.CLAUDE_LB_BROWSER_SMOKE_OUTPUT_DIR;
 
 if (!baseURL || !outputDir) {
   throw new Error(

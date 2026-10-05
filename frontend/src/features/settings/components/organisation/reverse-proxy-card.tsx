@@ -48,13 +48,13 @@ export function ReverseProxyCard({ provider, roles, mutations, disabled = false 
       key: "identity",
       label: t("organisation.reverseProxy.identityHeader"),
       value: provider.config["identityHeader"],
-      variable: "CODEX_LB_DASHBOARD_AUTH_PROXY_HEADER",
+      variable: "CLAUDE_LB_DASHBOARD_AUTH_PROXY_HEADER",
     },
     {
       key: "groups",
       label: t("organisation.reverseProxy.groupsHeader"),
       value: provider.config["groupsHeader"],
-      variable: "CODEX_LB_DASHBOARD_AUTH_PROXY_GROUPS_HEADER",
+      variable: "CLAUDE_LB_DASHBOARD_AUTH_PROXY_GROUPS_HEADER",
     },
   ];
 

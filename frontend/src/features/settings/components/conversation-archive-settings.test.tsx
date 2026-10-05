@@ -22,7 +22,7 @@ describe("ConversationArchiveSettings", () => {
     renderSettings(
       createDashboardSettings({
         conversationArchiveEnabled: false,
-        conversationArchiveDir: "/srv/codex-lb/conversation-archive",
+        conversationArchiveDir: "/srv/claude-lb/conversation-archive",
         provenance: DEFAULT_PROVENANCE,
       }),
     );
@@ -30,7 +30,7 @@ describe("ConversationArchiveSettings", () => {
     expect(screen.getByText("Conversation archive")).toBeInTheDocument();
     expect(screen.getByRole("switch", { name: "Archive upstream conversations" })).not.toBeChecked();
     expect(screen.getByText("Default (off)")).toBeInTheDocument();
-    expect(screen.getByText("/srv/codex-lb/conversation-archive")).toBeInTheDocument();
+    expect(screen.getByText("/srv/claude-lb/conversation-archive")).toBeInTheDocument();
     expect(screen.getByText(/per-replica local shard/i)).toBeInTheDocument();
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
   });

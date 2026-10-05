@@ -54,7 +54,7 @@ describe("TelemetrySettings", () => {
 
     const toggle = await screen.findByRole("switch", { name: "Enable anonymous telemetry" });
     await waitFor(() =>
-      expect(screen.getByText(/CODEX_LB_TELEMETRY_ENABLED/)).toBeInTheDocument(),
+      expect(screen.getByText(/CLAUDE_LB_TELEMETRY_ENABLED/)).toBeInTheDocument(),
     );
     // The environment only decides while no dashboard decision is saved, so
     // the operator must still be able to persist one from here.

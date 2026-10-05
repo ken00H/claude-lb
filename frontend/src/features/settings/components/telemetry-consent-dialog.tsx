@@ -16,7 +16,7 @@ import { useTelemetryConsent } from "@/features/settings/hooks/use-settings";
 
 // Same published page the backend startup notice points operators to
 // (TELEMETRY_FIELDS_DOCUMENTATION in app/modules/telemetry/scheduler.py).
-const TELEMETRY_DOCS_URL = "https://soju06.github.io/codex-lb/telemetry/";
+const TELEMETRY_DOCS_URL = "https://soju06.github.io/claude-lb/telemetry/";
 
 export function TelemetryConsentDialog() {
   const { t } = useTranslation();
