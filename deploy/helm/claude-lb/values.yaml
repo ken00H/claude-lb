@@ -28,7 +28,7 @@ image:
   # @param image.registry Container image registry
   registry: ghcr.io
   # @param image.repository Container image repository
-  repository: ken00H/claude-lb
+  repository: ken00h/claude-lb
   # @param image.tag Container image tag (defaults to appVersion)
   tag: ""
   # @param image.digest Container image digest (overrides tag when set)

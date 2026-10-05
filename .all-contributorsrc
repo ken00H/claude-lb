@@ -1513,7 +1513,8 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/104075208?v=4",
       "profile": "https://github.com/uniskela",
       "contributions": [
-        "doc"      ]
+        "doc"
+      ]
     },
     {
       "login": "nhdong1993",
@@ -1529,6 +1530,15 @@
       "name": "Vincent Dev",
       "avatar_url": "https://avatars.githubusercontent.com/u/246649517?v=4",
       "profile": "https://github.com/tubededentifrice-dev",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "ken00h",
+      "name": "ken00H",
+      "avatar_url": "https://avatars.githubusercontent.com/u/ken00h",
+      "profile": "https://github.com/ken00h",
       "contributions": [
         "code"
       ]

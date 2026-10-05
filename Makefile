@@ -243,10 +243,10 @@ helm-check: helm-lint helm-template helm-kubeconform
 
 helm-smoke-kind:
 	kind create cluster --name claude-lb-smoke --image kindest/node:v1.35.0 --wait 120s
-	docker build -t ghcr.io/ken00H/claude-lb:ci .
-	kind load docker-image ghcr.io/ken00H/claude-lb:ci --name claude-lb-smoke
-	KUBE_CONTEXT=kind-claude-lb-smoke IMAGE_REGISTRY=ghcr.io IMAGE_REPOSITORY=ken00H/claude-lb IMAGE_TAG=ci ./scripts/helm-kind-smoke.sh bundled
-	KUBE_CONTEXT=kind-claude-lb-smoke IMAGE_REGISTRY=ghcr.io IMAGE_REPOSITORY=ken00H/claude-lb IMAGE_TAG=ci ./scripts/helm-kind-smoke.sh external-db
+	docker build -t ghcr.io/ken00h/claude-lb:ci .
+	kind load docker-image ghcr.io/ken00h/claude-lb:ci --name claude-lb-smoke
+	KUBE_CONTEXT=kind-claude-lb-smoke IMAGE_REGISTRY=ghcr.io IMAGE_REPOSITORY=ken00h/claude-lb IMAGE_TAG=ci ./scripts/helm-kind-smoke.sh bundled
+	KUBE_CONTEXT=kind-claude-lb-smoke IMAGE_REGISTRY=ghcr.io IMAGE_REPOSITORY=ken00h/claude-lb IMAGE_TAG=ci ./scripts/helm-kind-smoke.sh external-db
 
 .PHONY: ci-fast ci
 ci-fast: lint typecheck frontend-test test-unit package

@@ -4,7 +4,7 @@
 
 ### Requirement: Environment variable prefix
 
-Every application setting resolves from the environment under the single prefix `CLAUDE_LB_`, declared once as the `env_prefix` of the `Settings` model in `app/core/config/settings.py`. No setting may be read under the legacy `CODEX_LB_` prefix and no compatibility alias between the two prefixes MAY exist. Where any other requirement of this capability, an operator document, or the generated settings reference names a prefixed variable, the `CLAUDE_LB_` form is the canonical name.
+Every application setting MUST resolve from the environment under the single prefix `CLAUDE_LB_`, declared once as the `env_prefix` of the `Settings` model in `app/core/config/settings.py`. No setting may be read under the legacy `CODEX_LB_` prefix and no compatibility alias between the two prefixes MAY exist. Where any other requirement of this capability, an operator document, or the generated settings reference names a prefixed variable, the `CLAUDE_LB_` form is the canonical name.
 
 #### Scenario: Prefix is declared once
 
@@ -34,3 +34,18 @@ Under `app/`, `os.environ`, `os.getenv` and `dotenv_values` MUST be referenced o
 
 - **WHEN** a PR reads a `CLAUDE_LB_*` variable through `os.environ` outside `app/core/config/settings.py` without an allowlist entry
 - **THEN** `make lint` fails naming the file and the variable
+
+#### Scenario: New direct environment read
+
+- **WHEN** a PR adds a line reading `os.environ`, `os.getenv` or `dotenv_values` under `app/` outside `app/core/config/settings.py`
+- **THEN** `make lint` fails until the read is promoted to a `Settings` field or an allowlist entry is created
+
+#### Scenario: New read added to an allowlisted file
+
+- **WHEN** a PR adds an environment read to a file that already has an `ENV_READ_ALLOWLIST` entry beyond the file's recorded cap
+- **THEN** `make lint` fails naming the file and the over-cap read
+
+#### Scenario: Allowlisted site is migrated
+
+- **WHEN** a PR removes the last environment read from an allowlisted file or promotes the last allowlisted variable to a `Settings` field
+- **THEN** the allowlist entry for that file is lowered or deleted in the same diff

@@ -1,6 +1,6 @@
 # claude-lb Helm Chart
 
-Production-ready Helm chart for [claude-lb](https://github.com/ken00H/claude-lb), an OpenAI API load balancer with account pooling, usage tracking, and dashboard.
+Production-ready Helm chart for [claude-lb](https://github.com/ken00h/claude-lb), an OpenAI API load balancer with account pooling, usage tracking, and dashboard.
 
 ## Design Goal
 

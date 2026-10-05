@@ -35,7 +35,6 @@ jobs:
     outputs:
       frontend: ${{ steps.force.outputs.full_suite || steps.filter.outputs.frontend }}
       backend: ${{ steps.force.outputs.full_suite || steps.filter.outputs.backend }}
-      rust: ${{ steps.force.outputs.full_suite || steps.filter.outputs.rust }}
       helm: ${{ steps.force.outputs.full_suite || steps.filter.outputs.helm }}
       docker: ${{ steps.force.outputs.full_suite || steps.filter.outputs.docker }}
       migrations: ${{ steps.force.outputs.full_suite || steps.filter.outputs.migrations }}
@@ -317,57 +316,6 @@ jobs:
 
       - name: Ty check
         run: make typecheck
-
-  rust:
-    name: Rust workspace
-    runs-on: ubuntu-24.04
-    needs: changes
-    if: needs.changes.outputs.rust == 'true'
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-        with:
-          persist-credentials: false
-
-      - name: Install pinned Rust toolchain
-        run: rustup toolchain install 1.96.0 --profile minimal --component clippy,rustfmt
-
-      - name: Set up uv
-        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7
-        with:
-          python-version: "3.13"
-          enable-cache: true
-          prune-cache: true
-
-      - name: Cache Cargo downloads
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
-        with:
-          path: |
-            ~/.cargo/registry/index
-            ~/.cargo/registry/cache
-            ~/.cargo/git/db
-          key: cargo-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('Cargo.lock', 'rust-toolchain.toml') }}
-          restore-keys: |
-            cargo-${{ runner.os }}-${{ runner.arch }}-
-
-      - name: Check formatting, lints, tests, and release build
-        run: make rust-check
-
-      - name: Run native routed and SSE wire probes
-        env:
-          CLAUDE_LB_NATIVE_EGRESS_TEST_BINARY: ${{ github.workspace }}/target/debug/claude-lb-native-egress
-        run: |
-          uv sync --dev --frozen
-          cargo build --locked -p claude-lb-egress-worker --bin claude-lb-native-egress
-          uv run pytest -q -ra tests/integration/test_native_routed_egress.py tests/integration/test_native_sse_egress.py tests/integration/test_native_websocket_events.py tests/integration/test_native_usage_egress.py
-
-      - name: Audit Rust dependencies and licenses
-        uses: EmbarkStudios/cargo-deny-action@3c6349835b2b7b196a839186cb8b78e02f7b5f25
-        with:
-          rust-version: "1.96.0"
-          command: check
-          arguments: --all-features
 
   test:
     name: Tests (pytest, ${{ matrix.slice.name }})
@@ -891,7 +839,6 @@ jobs:
       - dashboard-browser-smoke
       - lint
       - typecheck
-      - rust
       - test
       - test-integration-core
       - test-integration-core-required

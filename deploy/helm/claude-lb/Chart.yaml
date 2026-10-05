@@ -7,9 +7,9 @@ type: application
 version: 1.25.0-beta.9
 appVersion: 1.25.0-beta.9
 kubeVersion: '>=1.32.0-0'
-home: https://github.com/ken00H/claude-lb
+home: https://github.com/ken00h/claude-lb
 sources:
-  - https://github.com/ken00H/claude-lb
+  - https://github.com/ken00h/claude-lb
 keywords:
   - load-balancer
   - openai
