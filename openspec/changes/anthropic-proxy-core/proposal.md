@@ -22,6 +22,8 @@ claude.ai OAuth seat — can serve real `/v1/messages` traffic end-to-end.
   column for `oauth_seat` rows.
 - Rate-limit response headers (`anthropic-ratelimit-*` and any subscription limit headers) are recorded
   where existing fields fit; no window capacity constants (umbrella context: no invented numbers).
+- Normalize Messages usage, including nested streaming usage and cache input, into existing request
+  logs, API-key token limits, and dashboard rollups; preserve measured usage on partial failures.
 - Route-layer tests with mocked Anthropic upstream endpoints.
 
 ## Capabilities
@@ -37,6 +39,6 @@ claude.ai OAuth seat — can serve real `/v1/messages` traffic end-to-end.
   `app/modules/proxy/account_eligibility.py`, `app/main.py` (router registration).
 - Explicitly deferred (stay on the umbrella): 5-hour/weekly window capacities (3.3 constants, blocked on
   live Pro/Max evidence), Codex proxy core + OpenAI-compat layer removal (3.5), legacy column drops,
-  usage rollup remapping, model-registry swap, dashboard rebrand (section 4).
+  model-registry swap, Claude/cache-write dollar pricing, dashboard rebrand (section 4).
 - No new `CLAUDE_LB_*` settings; new constants are protocol constants (PRINCIPLES.md P2), not tunables.
 - The bundled Codex proxy core remains inert reference code until 3.5.

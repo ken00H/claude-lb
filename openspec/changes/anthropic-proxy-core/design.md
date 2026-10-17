@@ -88,6 +88,24 @@ events). No buffered re-emission (umbrella context: compatibility break for Clau
 startup-error probe pattern (peek first event so pre-stream upstream errors become real HTTP error
 responses) is reused. Keepalives follow the existing inject helper.
 
+### D9 — Measured usage feeds existing accounting
+
+The Anthropic adapter owns cumulative usage normalization. `message_start.message.usage` seeds input,
+cache creation/read, and output; `message_delta.usage` replaces only supplied valid counters. Existing
+`input_tokens` means total input, so it includes uncached, creation, and read counts;
+`cached_input_tokens` remains the cache-read subset. Missing log measurements stay null. Settlement
+fills unobserved counterparts with zero only when some usage was measured, allowing partial usage to
+consume key token limits without declaring the request successful.
+
+Reservation writes explicitly finish before account health writes. A startup failure releases its
+reservation; another attempt reacquires limits before opening upstream. Finalizers own reservation
+cleanup and committed-stream closure, including downstream cancellation. Native SSE error events pass
+through once but count as failed requests. Existing request-log readers and hourly folds consume the
+normalized fields without a schema change. Historically discarded counts cannot be reconstructed.
+
+Claude dollar pricing, including differentiated cache-write lifetimes, remains on the catalog/pricing
+follow-up; absent prices remain null in request logs. These token totals are not a dollar estimate.
+
 ## Risks / Trade-offs
 
 - Impersonation headers are best-effort evidence until the live probe; wrong set fails upstream with

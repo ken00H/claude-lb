@@ -155,3 +155,25 @@ def test_as_anthropic_envelope_passes_through_anthropic_shape():
 def test_as_anthropic_envelope_converts_openai_shape():
     converted = as_anthropic_error_envelope({"error": {"code": "no_accounts", "message": "No accounts"}})
     assert converted == {"type": "error", "error": {"type": "no_accounts", "message": "No accounts"}}
+
+
+@pytest.mark.asyncio
+async def test_messages_unconfirmed_settlement_fails_closed():
+    from app.core.clients.proxy import ProxyResponseError
+    from app.modules.proxy._service.anthropic import _AnthropicServiceProtocol, _MessagesUsage, _settle_messages_usage
+
+    class UnavailableSettlement:
+        async def _settle_stream_api_key_usage(self, *args, **kwargs):
+            assert kwargs["wait_for_settlement"] is True
+            return False
+
+    with pytest.raises(ProxyResponseError) as exc_info:
+        await _settle_messages_usage(
+            cast(_AnthropicServiceProtocol, UnavailableSettlement()),
+            None,
+            None,
+            _MessagesUsage(uncached_input_tokens=3),
+            "claude-test",
+            "test-settle",
+        )
+    assert exc_info.value.status_code == 503

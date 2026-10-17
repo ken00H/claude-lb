@@ -39,3 +39,10 @@
 - [ ] 7.1 `make lint`; `make typecheck`; `make test-unit`; integration shards (openspec CLI unavailable locally — validate pending until restored)
 - [ ] 7.2 Live verification with a real Claude account: token exchange capture (confirm/flip `OAUTH_TOKEN_PATH`), one real `/v1/messages` through the proxy, record response/rate-limit headers in notes (unparks `add-anthropic-account-model` 1.1/1.2)
 - [ ] 7.3 Reconcile umbrella `anthropic-upstream-adaptation/tasks.md` (3.1, 3.2, 3.4, 3.6 done; 3.3 partial)
+
+## 9. Messages usage accounting
+
+- [x] 9.1 Normalize unary/nested SSE usage, including cache creation/read and cumulative snapshots
+- [x] 9.2 Preserve measured usage in key settlement and request logs across success, failure, retry and disconnect; close upstream iterators
+- [x] 9.3 Prove route-level storage, token limits and raw/folded dashboard parity with regression tests
+- [x] 9.4 Run focused tests, lint, typecheck and strict OpenSpec validation where available; record evidence *(84 tests, full lint and ty pass; strict OpenSpec validation blocked by missing CLI — see notes)*

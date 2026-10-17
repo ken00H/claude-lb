@@ -41,7 +41,7 @@
 
 ## 4. Usage + dashboard
 
-- [ ] 4.1 Map Anthropic usage fields onto usage rollups; backfill strategy for schema changes
+- [x] 4.1 Map Anthropic usage fields onto usage rollups; backfill strategy for schema changes *(Messages usage now feeds existing logs, token limits and hourly folds; no schema change. Historically discarded measurements cannot be reconstructed. Claude dollar pricing/cache-write rates remain separate catalog work; see `anthropic-proxy-core/notes.md`.)
 - [ ] 4.2 Model registry swap to Anthropic catalog
 - [ ] 4.3 Dashboard rebrand + account-type-aware UI; before/after screenshots
 - [ ] 4.4 Docs sweep: `docs/**` re-scoped to claude-lb, each page linked to owning spec

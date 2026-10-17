@@ -375,3 +375,252 @@ def test_messages_stream_blocks_split_on_blank_lines():
         'event: message_start\ndata: {"a": 1}\n',
         'event: message_stop\ndata: {"b": 2}\n',
     ]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("mode", "expected"),
+    [
+        ("unary", (15, 2, 7)),
+        ("stream", (15, 2, 7)),
+        ("failover", (15, 2, 7)),
+        ("partial_error", (15, 2, 7)),
+        ("error_event", (15, 2, 7)),
+        ("unconfirmed", (15, 2, 7)),
+        ("unknown", (None, None, None)),
+        ("invalid", (None, None, None)),
+        ("zero", (0, 0, 0)),
+        ("cache_only", (12, 2, 7)),
+    ],
+)
+async def test_messages_usage_reaches_limits_logs_and_rollups(async_client, app_instance, monkeypatch, mode, expected):
+    import json
+    from datetime import timedelta
+
+    from app.db.models import ApiKeyLimit, ApiKeyUsageReservation, RequestLog
+    from app.modules.accounts.usage_time_rollup import FOLD_LAG, run_hourly_fold_pass
+    from app.modules.request_logs.repository import RequestLogsRepository
+
+    await _seed_oauth_seat("usage_a", "usage-a@example.com")
+    if mode == "failover":
+        await _seed_oauth_seat("usage_b", "usage-b@example.com")
+    enabled = await async_client.put("/api/settings", json={"apiKeyAuthEnabled": True})
+    assert enabled.status_code == 200
+    created = await async_client.post(
+        "/api/api-keys/",
+        json={
+            "name": "usage-test",
+            "limits": [{"limitType": "total_tokens", "limitWindow": "weekly", "maxValue": 1000}],
+        },
+    )
+    assert created.status_code == 200
+    key = created.json()
+    usage = {"input_tokens": 3, "output_tokens": 0, "cache_creation_input_tokens": 5, "cache_read_input_tokens": 7}
+    calls = 0
+    closed = False
+    health_states: list[str] = []
+    real_health = proxy_module.ProxyService._handle_proxy_error
+
+    async def check_settlement_before_health(self, account, exc):
+        async with SessionLocal() as session:
+            states = list(
+                (
+                    await session.execute(
+                        select(ApiKeyUsageReservation.status).where(ApiKeyUsageReservation.api_key_id == key["id"])
+                    )
+                ).scalars()
+            )
+            assert states
+            assert not any(state in {"reserved", "settling"} for state in states)
+            health_states.extend(states)
+        await real_health(self, account, exc)
+
+    monkeypatch.setattr(proxy_module.ProxyService, "_handle_proxy_error", check_settlement_before_health)
+    if mode == "unconfirmed":
+        real_settle = proxy_module.ProxyService._settle_stream_api_key_usage
+        unconfirmed = True
+
+        async def settle_without_first_confirmation(self, *args, **kwargs):
+            nonlocal unconfirmed
+            result = await real_settle(self, *args, **kwargs)
+            if unconfirmed:
+                unconfirmed = False
+                return False
+            return result
+
+        monkeypatch.setattr(
+            proxy_module.ProxyService, "_settle_stream_api_key_usage", settle_without_first_confirmation
+        )
+    blocks = [
+        "event: message_start\ndata: " + json.dumps({"type": "message_start", "message": {"usage": usage}}) + "\n\n",
+        'event: message_delta\ndata: {"type":"message_delta","usage":{"output_tokens":1}}\n\n',
+        'event: message_delta\ndata: {"type":"message_delta","usage":{"output_tokens":2}}\n\n',
+        'event: message_stop\ndata: {"type":"message_stop"}\n\n',
+    ]
+
+    async def fake_request(*args, **kwargs):
+        nonlocal calls
+        calls += 1
+        if mode == "failover" and calls == 1:
+            raise AnthropicUpstreamError(500, "api_error", "retry")
+        body = _messages_body()
+        if mode == "unknown":
+            body.pop("usage")
+        elif mode == "invalid":
+            body["usage"] = {
+                "input_tokens": True,
+                "output_tokens": -1,
+                "cache_creation_input_tokens": "5",
+                "cache_read_input_tokens": 0.5,
+            }
+        elif mode == "zero":
+            body["usage"] = dict.fromkeys(usage, 0)
+        elif mode == "cache_only":
+            body["usage"] = {"cache_creation_input_tokens": 5, "cache_read_input_tokens": 7, "output_tokens": 2}
+        else:
+            body["usage"] = {**usage, "output_tokens": 2}
+        return MessagesResult(status_code=200, headers={}, data=body)
+
+    async def fake_stream(*args, **kwargs):
+        nonlocal closed
+        try:
+            for block in blocks:
+                if mode == "partial_error" and "message_stop" in block:
+                    raise AnthropicUpstreamError(500, "api_error", "partial failure")
+                if mode == "error_event" and "message_stop" in block:
+                    yield 'event: error\ndata: {"type":"error","error":{"type":"api_error","message":"failed"}}\n\n'
+                    return
+                yield block
+        finally:
+            closed = True
+
+    monkeypatch.setattr(anthropic_service_module, "core_request_messages", fake_request)
+    monkeypatch.setattr(anthropic_service_module, "core_stream_messages", fake_stream)
+    streaming = mode in {"stream", "partial_error", "error_event", "unconfirmed"}
+    response = await async_client.post(
+        "/v1/messages",
+        json=_messages_payload(stream=streaming),
+        headers={"Authorization": f"Bearer {key['key']}"},
+    )
+    assert response.status_code == 200
+    if mode == "stream":
+        assert response.text == "".join(blocks)
+    if streaming:
+        assert closed
+    if mode == "unconfirmed":
+        assert not health_states
+        assert "event: error" in response.text
+    if mode in {"failover", "partial_error", "error_event"}:
+        assert health_states == (["released"] if mode == "failover" else ["finalized"])
+    assert await app_instance.state.proxy_service.drain_persistence_tasks(timeout_seconds=5)
+    async with SessionLocal() as session:
+        log = (await session.execute(select(RequestLog).where(RequestLog.api_key_id == key["id"]))).scalar_one()
+        assert (log.input_tokens, log.output_tokens, log.cached_input_tokens) == expected
+        assert log.status == ("error" if mode in {"partial_error", "error_event", "unconfirmed"} else "success")
+        assert log.cost_usd is None  # No Claude price is configured; never invent one.
+        limit = (await session.execute(select(ApiKeyLimit).where(ApiKeyLimit.api_key_id == key["id"]))).scalar_one()
+        assert limit.current_value == (expected[0] or 0) + (expected[1] or 0)
+        reservations = list(
+            (
+                await session.execute(
+                    select(ApiKeyUsageReservation).where(ApiKeyUsageReservation.api_key_id == key["id"])
+                )
+            ).scalars()
+        )
+        assert not any(row.status in {"reserved", "settling"} for row in reservations)
+        assert sum(row.status == "finalized" for row in reservations) == int(expected[0] is not None)
+        if mode == "failover":
+            assert calls == 2
+            assert len(reservations) == 2
+        since = utcnow() - timedelta(hours=1)
+        before = await RequestLogsRepository(session).aggregate_activity_since(since)
+        assert (before.input_tokens, before.output_tokens, before.cached_input_tokens) == tuple(
+            count or 0 for count in expected
+        )
+    assert await run_hourly_fold_pass(now=utcnow() + FOLD_LAG + timedelta(hours=2)) >= 1
+    async with SessionLocal() as session:
+        after = await RequestLogsRepository(session).aggregate_activity_since(since)
+        assert after == before
+
+
+@pytest.mark.asyncio
+async def test_messages_disconnect_keeps_usage_and_closes_upstream(async_client, app_instance, monkeypatch):
+    import json
+
+    from app.db.models import ApiKeyLimit, ApiKeyUsageReservation, RequestLog
+
+    await _seed_oauth_seat("disconnect_usage", "disconnect-usage@example.com")
+    assert (await async_client.put("/api/settings", json={"apiKeyAuthEnabled": True})).status_code == 200
+    created = await async_client.post(
+        "/api/api-keys/",
+        json={
+            "name": "disconnect-usage",
+            "limits": [{"limitType": "total_tokens", "limitWindow": "weekly", "maxValue": 1000}],
+        },
+    )
+    assert created.status_code == 200
+    key = created.json()
+    delivered = asyncio.Event()
+    closed = False
+    health_writes = []
+
+    async def fake_stream(*args, **kwargs):
+        nonlocal closed
+        try:
+            yield (
+                'event: message_start\ndata: {"type":"message_start","message":{"usage":'
+                '{"input_tokens":3,"cache_read_input_tokens":7,"output_tokens":0}}}\n\n'
+            )
+            await asyncio.Event().wait()
+        finally:
+            closed = True
+
+    async def health_spy(*args, **kwargs):
+        health_writes.append(True)
+
+    monkeypatch.setattr(anthropic_service_module, "core_stream_messages", fake_stream)
+    monkeypatch.setattr(proxy_module.ProxyService, "_handle_proxy_error", health_spy)
+    body = json.dumps(_messages_payload(stream=True)).encode()
+    sent_request = False
+
+    async def receive():
+        nonlocal sent_request
+        if not sent_request:
+            sent_request = True
+            return {"type": "http.request", "body": body, "more_body": False}
+        await delivered.wait()
+        return {"type": "http.disconnect"}
+
+    async def send(message):
+        if message["type"] == "http.response.body" and b"message_start" in message.get("body", b""):
+            delivered.set()
+
+    scope = {
+        "type": "http",
+        "asgi": {"version": "3.0", "spec_version": "2.0"},
+        "http_version": "1.1",
+        "method": "POST",
+        "scheme": "http",
+        "path": "/v1/messages",
+        "raw_path": b"/v1/messages",
+        "query_string": b"",
+        "root_path": "",
+        "server": ("testserver", 80),
+        "client": ("127.0.0.1", 1),
+        "headers": [(b"content-type", b"application/json"), (b"authorization", f"Bearer {key['key']}".encode())],
+    }
+    await asyncio.wait_for(app_instance(scope, receive, send), timeout=5)
+    assert await app_instance.state.proxy_service.drain_persistence_tasks(timeout_seconds=5)
+    assert delivered.is_set()
+    assert closed
+    assert not health_writes
+    async with SessionLocal() as session:
+        log = (await session.execute(select(RequestLog).where(RequestLog.api_key_id == key["id"]))).scalar_one()
+        assert (log.status, log.error_code) == ("cancelled", "client_disconnected")
+        assert (log.input_tokens, log.output_tokens, log.cached_input_tokens) == (10, 0, 7)
+        limit = (await session.execute(select(ApiKeyLimit).where(ApiKeyLimit.api_key_id == key["id"]))).scalar_one()
+        assert limit.current_value == 10
+        reservation = (
+            await session.execute(select(ApiKeyUsageReservation).where(ApiKeyUsageReservation.api_key_id == key["id"]))
+        ).scalar_one()
+        assert reservation.status == "finalized"

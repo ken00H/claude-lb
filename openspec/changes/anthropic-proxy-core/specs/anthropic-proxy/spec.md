@@ -117,3 +117,48 @@ through the existing rate-limit health machinery.
 - **WHEN** an upstream response carries `anthropic-ratelimit-requests-limit` and related headers
 - **THEN** the values are recorded on the account's usage state where the existing fields accept them,
   and no capacity constant is introduced
+
+### Requirement: Messages usage accounting
+
+The system SHALL normalize observed Anthropic usage into the existing request log and API-key
+settlement contracts. Input tokens SHALL include `input_tokens`, `cache_creation_input_tokens`, and
+`cache_read_input_tokens`; cached input SHALL represent the cache-read subset. Streaming usage SHALL
+be read from `message_start.message.usage` and `message_delta.usage`, treating updates as cumulative
+snapshots and retaining omitted fields. Only nonnegative integer counts SHALL be accepted; booleans
+SHALL NOT be accepted as counts. Missing measurements SHALL remain unknown in logs.
+
+Observed usage SHALL be persisted on success, upstream failure, and client disconnect. Observed partial
+usage SHALL settle key token limits exactly once before account health writes; requests with no
+measured usage SHALL release reservations. An unconfirmed settlement SHALL fail the request without
+writing account health. Retries following a released reservation SHALL acquire a new reservation
+before the next upstream request. Upstream iterators SHALL be closed on every
+committed-stream exit. An in-stream error event SHALL NOT be recorded as a successful request.
+
+#### Scenario: Unary cached input reaches dashboard
+
+- **WHEN** a response reports 3 uncached input, 5 cache creation, 7 cache read, and 2 output tokens
+- **THEN** logs and key settlement contain 15 input, 7 cached input, and 2 output tokens
+- **AND** raw and folded dashboard totals include all 17 tokens
+
+#### Scenario: Streaming cumulative usage
+
+- **WHEN** message_start reports input and cache usage and message_delta updates only output tokens
+- **THEN** input and cache measurements are retained and the latest output count replaces earlier output
+- **AND** forwarded event text is unchanged
+
+#### Scenario: Partial usage and failed retry
+
+- **WHEN** a committed stream fails or its client disconnects after usage has been observed
+- **THEN** measured usage remains in logs and key accounting without recording request success
+- **AND** client disconnect does not penalize account health
+
+#### Scenario: Successful failover charges usage
+
+- **WHEN** an attempt fails before emitting usage and a later attempt succeeds
+- **THEN** the first reservation is released before health writes and the new reservation is finalized
+- **AND** key limits include the successful attempt's usage exactly once
+
+#### Scenario: Unknown usage
+
+- **WHEN** a request ends without valid measured counts
+- **THEN** its reservation is released and log usage remains null
